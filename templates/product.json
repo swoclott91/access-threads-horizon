@@ -362,7 +362,7 @@
         }
       },
       "custom_css": [
-        "@media screen and (max-width: 1024px) {.group-block-content .group-block.group-block--height-fit.group-block--width-fill {display: none !important; }}"
+        "@media screen and (max-width: 768px) {.group-block-content .group-block.group-block--height-fit.group-block--width-fill {display: none !important; }}"
       ],
       "settings": {
         "content_width": "content-center-aligned",
