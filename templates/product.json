@@ -362,7 +362,7 @@
         }
       },
       "custom_css": [
-        "@media screen and (max-width: 989px) {.mobile-column .group-block-content__title {display: none !important; }}"
+        "@media screen and (max-width: 989px) {#ProductInformation-template--21696630915322__main > div > div.group-block-content.layout-panel-flex.layout-panel-flex--column > div.group-block.group-block--height-fit.group-block--width-fill.border-style.spacing-style.size-style {display: none !important; }}"
       ],
       "settings": {
         "content_width": "content-center-aligned",
