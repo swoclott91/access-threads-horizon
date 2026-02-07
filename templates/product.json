@@ -80,6 +80,9 @@
         "price_jciNMp",
         "review_F7DUyt"
       ],
+      "custom_css": [
+        "@media screen and (min-width: 990px) {{display: none !important; }}"
+      ],
       "name": "t:names.custom_section",
       "settings": {
         "content_direction": "column",
