@@ -52,7 +52,7 @@
             "height": "fit",
             "details_position": "flex-start",
             "gap": 28,
-            "sticky_details_desktop": true,
+            "sticky_details_desktop": false,
             "inherit_color_scheme": true,
             "color_scheme": "scheme-1",
             "background_media": "none",
