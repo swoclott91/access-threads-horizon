@@ -361,6 +361,9 @@
           ]
         }
       },
+      "custom_css": [
+        ".group-block__media-wrapper{display:none; }"
+      ],
       "settings": {
         "content_width": "content-center-aligned",
         "desktop_media_position": "left",
