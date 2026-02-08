@@ -99,24 +99,38 @@
     endif
   endif
 
+  # AT CUSTOM: variant metafield gallery – if variant has custom.variant_gallery_images (list.file_reference), use it; else use product media
   assign sorted_media = '' | split: ','
-  if selected_variant_media
-    assign sorted_media = sorted_media | concat: selected_product.media | where: 'id', selected_variant_media.id
-
-    for media in selected_product.media
-      if block_settings.hide_variants and variant_images contains media.src and sorted_media.size > 0
-        continue
-      endif
-
-      if media.id != selected_variant_media.id
-        assign found_media = selected_product.media | where: 'id', media.id
-        assign sorted_media = sorted_media | concat: found_media
-      endif
-    endfor
+  assign current_variant = selected_product.selected_or_first_available_variant
+  assign variant_gallery_images = current_variant.metafields.custom.variant_gallery_images.value
+  if variant_gallery_images != blank and variant_gallery_images.size > 0
+    assign sorted_media = variant_gallery_images
   else
-    assign sorted_media = selected_product.media
+    if selected_variant_media
+      assign sorted_media = sorted_media | concat: selected_product.media | where: 'id', selected_variant_media.id
+
+      for media in selected_product.media
+        if block_settings.hide_variants and variant_images contains media.src and sorted_media.size > 0
+          continue
+        endif
+
+        if media.id != selected_variant_media.id
+          assign found_media = selected_product.media | where: 'id', media.id
+          assign sorted_media = sorted_media | concat: found_media
+        endif
+      endfor
+    else
+      assign sorted_media = selected_product.media
+    endif
   endif
-  assign has_image_drop = sorted_media | has: 'media_type', 'image'
+  # /AT CUSTOM
+  assign has_image_drop = false
+  for media in sorted_media
+    if media.media_type == 'image' or media.media_type == blank
+      assign has_image_drop = true
+      break
+    endif
+  endfor
 
   # Determine if we're in single column mode (carousel or grid with one column)
   assign is_single_column = false
@@ -162,14 +176,18 @@
     assign lowest_aspect_ratio_index = 0
 
     for media in sorted_media
-      # Find the media with the lowest aspect ratio (tallest)
-
-      if media.preview_image and media.preview_image.aspect_ratio
-        if media.preview_image.aspect_ratio < lowest_aspect_ratio
-          assign lowest_aspect_ratio = media.preview_image.aspect_ratio
-          assign lowest_aspect_ratio_index = forloop.index0
-        endif
+      assign media_ratio = 999
+      if media.media_type != blank and media.preview_image and media.preview_image.aspect_ratio
+        assign media_ratio = media.preview_image.aspect_ratio
+      elsif media.media_type == blank and media.width and media.height
+        assign width_num = media.width | default: 1
+        assign height_num = media.height | default: 1
+        assign media_ratio = width_num | times: 1.0 | divided_by: height_num
       endif
+      unless media_ratio >= lowest_aspect_ratio
+        assign lowest_aspect_ratio = media_ratio
+        assign lowest_aspect_ratio_index = forloop.index0
+      endunless
     endfor
   endif
 -%}
@@ -372,11 +390,21 @@
           {% endif %}
         {% endcapture %}
         {% capture class %}
-          {{ product_media_container_class }} product-media-container--{{ media.media_type }}{% if block_settings.zoom %} product-media-container--zoomable{% endif %}{% if forloop.index0 == lowest_aspect_ratio_index and block_settings.aspect_ratio == 'adapt' %} product-media-container--tallest{% endif %}
+          {{ product_media_container_class }} product-media-container--{{ media.media_type | default: 'image' }}{% if block_settings.zoom %} product-media-container--zoomable{% endif %}{% if forloop.index0 == lowest_aspect_ratio_index and block_settings.aspect_ratio == 'adapt' %} product-media-container--tallest{% endif %}
         {% endcapture %}
         {% if block_settings.aspect_ratio == 'adapt' %}
+          {%- liquid
+            assign slide_ratio = 1.0
+            if media.media_type != blank and media.preview_image.aspect_ratio
+              assign slide_ratio = media.preview_image.aspect_ratio
+            elsif media.media_type == blank and media.width and media.height
+              assign w = media.width | default: 1
+              assign h = media.height | default: 1
+              assign slide_ratio = w | times: 1.0 | divided_by: h
+            endif
+          -%}
           {% capture style %}
-            --media-preview-ratio: {{ media.preview_image.aspect_ratio | default: 1.0 }};
+            --media-preview-ratio: {{ slide_ratio }};
           {% endcapture %}
         {% endif %}
         {% if block_settings.zoom and media.media_type == 'model' %}
@@ -450,7 +478,7 @@
         {% for media in sorted_media %}
           <li
             ref="media[]"
-            class="{{ product_media_container_class }} product-media-container--{{ media.media_type }}"
+            class="{{ product_media_container_class }} product-media-container--{{ media.media_type | default: 'image' }}"
             style="{% if block_settings.aspect_ratio == 'adapt' %} --media-preview-ratio: {{ media.preview_image.aspect_ratio | default: 1.0 }};{% endif %}"
             {% if settings.transition_to_main_product and forloop.first %}
               data-view-transition-type="product-image-transition"
@@ -563,7 +591,7 @@
             {%- for media in sorted_media -%}
               <li
                 id="product-{{ media.id}}-{{ forloop.index }}"
-                class="{{ product_media_container_class | remove: 'media-fit-cover' }} product-media-container--{{ media.media_type }}{% if media.media_type == 'image' %} product-media-container--zoomable{% endif %}"
+                class="{{ product_media_container_class | remove: 'media-fit-cover' }} product-media-container--{{ media.media_type | default: 'image' }}{% if media.media_type == 'image' or media.media_type == blank %} product-media-container--zoomable{% endif %}"
                 style="{% if block_settings.aspect_ratio == 'adapt' %} --media-preview-ratio: {{ media.preview_image.aspect_ratio | default: 1.0 }};{% endif %}"
                 ref="media[]"
                 {% if media.media_type == 'image' %}

@@ -18,13 +18,45 @@
 
 {% liquid
   assign widths = widths | default: '240, 352, 832, 1200, 1600, 1920, 2560, 3840'
+  assign is_file_reference = false
+  if media.media_type == blank
+    assign is_file_reference = true
+  endif
+  assign ratio_value = media.aspect_ratio
+  if is_file_reference
+    assign width_num = media.width | default: 1
+    assign height_num = media.height | default: 1
+    assign ratio_value = width_num | times: 1.0 | divided_by: height_num
+  endif
 %}
-
+{%- comment -%} AT CUSTOM: support variant metafield file references (list.file_reference) alongside product media {%- endcomment %}
 <div
   class="product-media"
-  style="--ratio: {{ media.aspect_ratio }}"
-  data-media-id="{{ media.id }}"
+  style="--ratio: {{ ratio_value }}"
+  data-media-id="{{ media.id | default: '' }}"
 >
+  {% if is_file_reference %}
+    {% liquid
+      assign high_res_url = media | image_url: width: 3840
+      assign fetch_priority = 'auto'
+      if is_main_product_media
+        assign fetch_priority = 'high'
+      endif
+    %}
+    {{
+      media
+      | image_url: width: 3840
+      | image_tag:
+        widths: widths,
+        alt: media.alt,
+        sizes: sizes,
+        loading: loading,
+        class: 'product-media__image',
+        transitionToProduct: settings.transition_to_main_product,
+        data_max_resolution: high_res_url,
+        fetchpriority: fetch_priority
+    }}
+  {% else %}
   {% liquid
     assign high_res_url = media.preview_image | image_url: width: 3840
     assign fetch_priority = 'auto'
@@ -130,6 +162,7 @@
         -%}
     {% endcase %}
   {% endunless %}
+  {% endif %}
 </div>
 
 {% stylesheet %}
