@@ -240,7 +240,28 @@
                 {%- for val in opt.values -%}
                 {{ val.name | json }}{% unless forloop.last %},{% endunless %}
                 {%- endfor -%}
+              ]{%- if forloop.first -%},
+              "valueDetails": [
+                {%- for val in opt.values -%}
+                {%- liquid
+                  assign swatch_bg = null
+                  if val.swatch.color
+                    assign swatch_bg = 'rgb(' | append: val.swatch.color.rgb | append: ')'
+                  elsif val.swatch.image
+                    assign swatch_img_url = val.swatch.image | image_url: width: 80
+                    assign swatch_bg = 'url(' | append: swatch_img_url | append: ')'
+                  elsif settings.show_variant_image and val.variant.featured_media
+                    assign swatch_img_url = val.variant.featured_media | image_url: width: 80
+                    assign swatch_bg = 'url(' | append: swatch_img_url | append: ')'
+                  endif
+                -%}
+                {
+                  "name": {{ val.name | json }},
+                  "swatchBackground": {% if swatch_bg %}{{ swatch_bg | json }}{% else %}null{% endif %}
+                }{% unless forloop.last %},{% endunless %}
+                {%- endfor -%}
               ]
+              {%- endif -%}
             }{% unless forloop.last %},{% endunless %}
             {%- endfor -%}
           ]

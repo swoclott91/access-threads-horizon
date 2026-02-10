@@ -60,9 +60,16 @@ function renderDesktopGrid(container, config, sectionId) {
   const optionRow = config.options[0];
   const optionCol = config.options[1] || config.options[0];
   const colorValues = optionRow.values || [];
+  const colorDetails = optionRow.valueDetails || [];
   const sizeValues = optionCol.values || [];
   const optionRowName = optionRow.name;
   const optionColName = optionCol.name;
+
+  const getSwatchStyle = (colorName) => {
+    const detail = colorDetails.find((d) => d && d.name === colorName);
+    if (!detail || !detail.swatchBackground) return '';
+    return 'background:' + String(detail.swatchBackground).replace(/"/g, "'") + ';';
+  };
 
   const getVariant = (opt1, opt2) =>
     config.variants.find(
@@ -85,8 +92,13 @@ function renderDesktopGrid(container, config, sectionId) {
   html += '</tr></thead><tbody>';
 
   colorValues.forEach((color) => {
+    const swatchStyle = getSwatchStyle(color);
     html += '<tr data-at-bulk-color-row data-at-bulk-color-value="' + escapeAttr(color) + '">';
-    html += '<td class="at-bulk-grid__color-cell">' + escapeHtml(color) + '</td>';
+    html += '<td class="at-bulk-grid__color-cell">';
+    if (swatchStyle) {
+      html += '<span class="at-bulk-grid__swatch swatch" style="' + swatchStyle + '" aria-hidden="true"></span>';
+    }
+    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span></td>';
     sizeValues.forEach((size) => {
       const v = getVariant(color, size) || getVariant(size, color);
       if (!v) {
@@ -243,9 +255,16 @@ function renderMobileGrid(container, config, sectionId) {
   const optionRow = config.options[0];
   const optionCol = config.options[1] || config.options[0];
   const colorValues = optionRow.values || [];
+  const colorDetails = optionRow.valueDetails || [];
   const sizeValues = optionCol.values || [];
   const optionRowName = optionRow.name;
   const optionColName = optionCol.name;
+
+  const getSwatchStyle = (colorName) => {
+    const detail = colorDetails.find((d) => d && d.name === colorName);
+    if (!detail || !detail.swatchBackground) return '';
+    return 'background:' + String(detail.swatchBackground).replace(/"/g, "'") + ';';
+  };
 
   const getVariant = (opt1, opt2) =>
     config.variants.find(
@@ -259,9 +278,13 @@ function renderMobileGrid(container, config, sectionId) {
   html += '<div class="at-bulk-grid__mobile-accordions">';
 
   colorValues.forEach((color) => {
+    const swatchStyle = getSwatchStyle(color);
     html += '<div class="at-bulk-grid__mobile-accordion" data-at-bulk-color-row data-at-bulk-color-value="' + escapeAttr(color) + '">';
     html += '<button type="button" class="at-bulk-grid__mobile-accordion-header" data-at-bulk-accordion-toggle aria-expanded="false">';
-    html += escapeHtml(color) + ' <span aria-hidden="true">+</span>';
+    if (swatchStyle) {
+      html += '<span class="at-bulk-grid__swatch swatch" style="' + swatchStyle + '" aria-hidden="true"></span>';
+    }
+    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span> <span aria-hidden="true">+</span>';
     html += '</button>';
     html += '<div class="at-bulk-grid__mobile-accordion-content" hidden>';
     sizeValues.forEach((size) => {

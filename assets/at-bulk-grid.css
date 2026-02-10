@@ -10,6 +10,12 @@
   min-height: 200px;
 }
 
+/* When bulk grid is present, hide separate variant picker so colors live only in the grid */
+.popup-link__inner:has(.at-bulk-grid) .variant-picker,
+.popup-link__inner:has(.at-bulk-grid) .at-variant-picker {
+  display: none;
+}
+
 .at-bulk-grid__search {
   width: 100%;
   max-width: 280px;
@@ -46,6 +52,22 @@
 .at-bulk-grid__table td.at-bulk-grid__color-cell {
   text-align: left;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--padding-sm);
+}
+
+.at-bulk-grid__swatch {
+  flex-shrink: 0;
+  width: var(--variant-picker-swatch-width, 20px);
+  height: var(--variant-picker-swatch-height, 20px);
+  border-radius: var(--variant-picker-swatch-radius, 50%);
+  border: var(--style-border-width-inputs) solid var(--color-border);
+  background: var(--swatch-background, rgb(var(--color-foreground-rgb) / var(--opacity-5)));
+}
+
+.at-bulk-grid__color-name {
+  font-size: inherit;
 }
 
 .at-bulk-grid__qty-input {
@@ -120,12 +142,22 @@
     padding: var(--padding-sm) var(--padding-md);
     display: flex;
     align-items: center;
+    gap: var(--padding-sm);
     justify-content: space-between;
     background: rgb(var(--color-foreground-rgb) / var(--opacity-5));
     border: none;
     font-weight: 600;
     text-align: left;
     cursor: pointer;
+  }
+
+  .at-bulk-grid__mobile-accordion-header .at-bulk-grid__swatch {
+    flex-shrink: 0;
+  }
+
+  .at-bulk-grid__mobile-accordion-header .at-bulk-grid__color-name {
+    flex: 1;
+    text-align: left;
   }
 
   .at-bulk-grid__mobile-accordion-content {
