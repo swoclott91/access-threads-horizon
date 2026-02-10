@@ -264,6 +264,17 @@
     padding-inline-start: max(4px, var(--padding-inline-start));
   }
 
+  /* AT: Swatches above color labels (desktop and mobile) */
+  .at-variant-picker .variant-option--swatches {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .at-variant-picker .variant-option--swatches legend {
+    margin-block-end: 0;
+    margin-block-start: var(--margin-xs);
+  }
+
   .at-variant-picker__bulk-cta {
     margin-block-start: var(--gap-sm);
   }
