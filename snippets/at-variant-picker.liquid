@@ -212,17 +212,12 @@
     </form>
 
     {%- if block_settings.at_enable_bulk_order -%}
+      {%- comment -%} Options first so we can encode variants as [id,a,q,p,i1,i2[,i3]] and stay under section output limit {%- endcomment -%}
       <script type="application/json" data-at-bulk-grid-config data-at-section-id="{{ section.id }}" data-at-product-id="{{ product_resource.id }}">
         {
           "productId": {{ product_resource.id | json }},
           "productUrl": {{ product_resource.url | json }},
           "sectionId": {{ section.id | json }},
-          "variants": [
-            {%- comment -%} Compact keys to reduce JSON size and avoid truncation for large variant counts {%- endcomment -%}
-            {%- for v in product_resource.variants -%}
-            {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ v.option1 | json }},"o2":{{ v.option2 | json }},"o3":{{ v.option3 | json }}}{% unless forloop.last %},{% endunless %}
-            {%- endfor -%}
-          ],
           "options": [
             {%- for opt in product_resource.options_with_values -%}
             {
@@ -233,6 +228,7 @@
                 {{ val.name | json }}{% unless forloop.last %},{% endunless %}
                 {%- endfor -%}
               ]{%- if forloop.first -%},
+              "valueIds": [{%- for val in opt.values -%}{{ val.id }}{% unless forloop.last %},{% endunless %}{% endfor -%}],
               "valueDetails": [
                 {%- for val in opt.values -%}
                 {%- liquid
@@ -255,6 +251,26 @@
               ]
               {%- endif -%}
             }{% unless forloop.last %},{% endunless %}
+            {%- endfor -%}
+          ],
+          "variants": [
+            {%- assign opts = product_resource.options_with_values -%}
+            {%- for v in product_resource.variants -%}
+            {%- assign idx1 = 0 -%}
+            {%- assign idx2 = 0 -%}
+            {%- assign idx3 = 0 -%}
+            {%- for val in opts[0].values -%}
+              {%- if val == v.option1 -%}{%- assign idx1 = forloop.index0 -%}{%- break -%}{%- endif -%}
+            {%- endfor -%}
+            {%- for val in opts[1].values -%}
+              {%- if val == v.option2 -%}{%- assign idx2 = forloop.index0 -%}{%- break -%}{%- endif -%}
+            {%- endfor -%}
+            {%- if opts.size == 3 -%}
+              {%- for val in opts[2].values -%}
+                {%- if val == v.option3 -%}{%- assign idx3 = forloop.index0 -%}{%- break -%}{%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+            [{{ v.id }},{{ v.available }},{{ v.inventory_quantity | default: 0 }},{{ v.inventory_policy | json }},{{ idx1 }},{{ idx2 }}{% if opts.size == 3 %},{{ idx3 }}{% endif %}]{% unless forloop.last %},{% endunless %}
             {%- endfor -%}
           ]
         }

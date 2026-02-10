@@ -23,18 +23,35 @@ const ADD_TO_CART_ICON_SVG =
  * @returns {{ productId: number, productUrl: string, sectionId: string, variants: Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>, options: Array<{ name: string, position: number, values: string[] }> } | null}
  */
 /**
- * Normalize variant objects from compact JSON keys (a,q,p,o1,o2,o3) to full names.
- * Liquid can output compact keys to reduce payload size and avoid truncation.
+ * Normalize variant entries: either index arrays [id,a,q,p,i1,i2[,i3]] or compact
+ * objects (a,q,p,o1,o2,o3). Liquid outputs index arrays to stay under section size limits.
  */
 function normalizeBulkConfig(config) {
   if (!config || !Array.isArray(config.variants)) return config;
-  config.variants.forEach((v) => {
-    if (v.a !== undefined) v.available = v.a;
-    if (v.q !== undefined) v.inventory_quantity = v.q;
-    if (v.p !== undefined) v.inventory_policy = v.p;
-    if (v.o1 !== undefined) v.option1 = v.o1;
-    if (v.o2 !== undefined) v.option2 = v.o2;
-    if (v.o3 !== undefined) v.option3 = v.o3;
+  const opts = config.options || [];
+  config.variants.forEach((v, i) => {
+    if (Array.isArray(v)) {
+      const [id, a, q, p, i1, i2, i3] = v;
+      const values0 = opts[0]?.values || [];
+      const values1 = opts[1]?.values || [];
+      const values2 = opts[2]?.values || [];
+      config.variants[i] = {
+        id,
+        available: !!a,
+        inventory_quantity: q,
+        inventory_policy: p,
+        option1: values0[i1],
+        option2: values1[i2],
+        option3: opts.length >= 3 ? values2[i3] : null,
+      };
+    } else {
+      if (v.a !== undefined) v.available = v.a;
+      if (v.q !== undefined) v.inventory_quantity = v.q;
+      if (v.p !== undefined) v.inventory_policy = v.p;
+      if (v.o1 !== undefined) v.option1 = v.o1;
+      if (v.o2 !== undefined) v.option2 = v.o2;
+      if (v.o3 !== undefined) v.option3 = v.o3;
+    }
   });
   return config;
 }
@@ -50,6 +67,53 @@ function getBulkConfig(sectionId) {
   } catch {
     return null;
   }
+}
+
+/** Expected variant count from options (for deferred-load check). */
+function expectedVariantCount(config) {
+  if (!config?.options?.length) return 0;
+  let n = 1;
+  config.options.forEach((o) => {
+    n *= (o.values && o.values.length) || 0;
+  });
+  return n;
+}
+
+/**
+ * Load full variant set via Section Rendering API (option_values) when product has >250 variants.
+ * See https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products
+ * @param {{ productUrl: string, sectionId: string, options: Array<{ valueIds?: number[] }> }} config
+ * @returns {Promise<Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>>}
+ */
+function fetchDeferredVariants(config) {
+  const valueIds = config?.options?.[0]?.valueIds;
+  if (!valueIds?.length || !config.sectionId) return Promise.resolve([]);
+
+  const baseUrl = config.productUrl
+    ? new URL(config.productUrl, window.location.origin).href
+    : window.location.href.split('?')[0];
+  const sectionId = config.sectionId;
+  const byId = new Map();
+
+  return Promise.all(
+    valueIds.map((valueId) => {
+      const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}section_id=${encodeURIComponent(sectionId)}&option_values=${encodeURIComponent(valueId)}`;
+      return fetch(url)
+        .then((res) => res.text())
+        .then((html) => {
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const section = doc.getElementById(`shopify-section-${sectionId}`);
+          const script = section?.querySelector(BULK_GRID_SELECTORS.configScript);
+          if (!script?.textContent) return;
+          const parsed = JSON.parse(script.textContent.trim());
+          normalizeBulkConfig(parsed);
+          (parsed.variants || []).forEach((v) => {
+            if (v && v.id != null) byId.set(v.id, v);
+          });
+        })
+        .catch((err) => console.warn('at-bulk-grid: deferred fetch failed for option_values=' + valueId, err));
+    })
+  ).then(() => Array.from(byId.values()));
 }
 
 /**
@@ -504,10 +568,45 @@ function renderMobileGrid(container, config, sectionId) {
   updateTotal();
 }
 
+/** Cache full config per section after deferred load so we don't re-fetch on reopen. */
+const bulkGridConfigCache = new Map();
+
 function renderGrid(container) {
   const sectionId = container.dataset.atBulkGridSectionId;
   if (!sectionId) return;
-  const config = getBulkConfig(sectionId);
+
+  let config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
+  if (!config) return;
+
+  const expected = expectedVariantCount(config);
+  const needDeferred = expected > 0 && config.variants.length < expected && (config.options?.[0]?.valueIds?.length ?? 0) > 0;
+
+  if (needDeferred) {
+    container.innerHTML = '<p class="at-bulk-grid__loading" aria-live="polite">Loading variants…</p>';
+    fetchDeferredVariants(config)
+      .then((variants) => {
+        config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
+        if (!config) return;
+        const byId = new Map();
+        (config.variants || []).forEach((v) => byId.set(v.id, v));
+        variants.forEach((v) => byId.set(v.id, v));
+        config.variants = Array.from(byId.values());
+        bulkGridConfigCache.set(sectionId, config);
+        const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+        if (isMobile) {
+          renderMobileGrid(container, config, sectionId);
+        } else {
+          renderDesktopGrid(container, config, sectionId);
+        }
+      })
+      .catch((err) => {
+        console.error('at-bulk-grid: deferred load failed', err);
+        container.innerHTML = '<p class="at-bulk-grid__empty">Unable to load all variants. Try again later.</p>';
+      });
+    return;
+  }
+
+  if (config.variants?.length) bulkGridConfigCache.set(sectionId, config);
   const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
   if (isMobile) {
     renderMobileGrid(container, config, sectionId);

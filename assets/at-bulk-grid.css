@@ -17,6 +17,13 @@
   min-height: 200px;
 }
 
+.at-bulk-grid__loading,
+.at-bulk-grid__empty {
+  padding: var(--gap-md, 1rem);
+  text-align: center;
+  color: var(--color-foreground-muted, currentColor);
+}
+
 /* When bulk grid is present, hide separate variant picker and buy buttons so only grid actions show */
 .popup-link__inner:has(.at-bulk-grid) .variant-picker,
 .popup-link__inner:has(.at-bulk-grid) .at-variant-picker {
