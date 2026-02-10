@@ -554,3 +554,101 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+/**
+ * Console diagnostic for bulk grid: run window.atBulkGridDebug() or atBulkGridDebug('Turf Green').
+ * Call this with the bulk grid modal open (or after the product page has loaded). Optionally pass
+ * a color/option value to search for (e.g. 'Turf Green'). Logs config size, variants matching
+ * the search term, and lookup map checks. Returns an object you can expand in the console.
+ */
+window.atBulkGridDebug = function (searchOptionValue) {
+  const script = document.querySelector('script[data-at-bulk-grid-config]');
+  if (!script || !script.textContent) {
+    console.warn('atBulkGridDebug: No bulk grid config script found. Open the bulk grid modal on a product page first.');
+    return null;
+  }
+  let sectionId = script.dataset.atSectionId || script.getAttribute('data-at-section-id');
+  if (!sectionId) {
+    const sectionEl = script.closest('[id^="shopify-section-"]');
+    if (sectionEl?.id) sectionId = sectionEl.id.replace('shopify-section-', '');
+  }
+  if (!sectionId) {
+    console.warn('atBulkGridDebug: Could not determine section id (no data-at-section-id on config script).');
+    return null;
+  }
+  let config;
+  try {
+    config = JSON.parse(script.textContent.trim());
+    normalizeBulkConfig(config);
+  } catch (e) {
+    console.error('atBulkGridDebug: Failed to parse config:', e);
+    return null;
+  }
+
+  const norm = (s) => (s == null ? '' : String(s).trim());
+  const searchLower = (searchOptionValue || 'Turf Green').toLowerCase();
+
+  const variantsMatching = config.variants.filter(
+    (v) =>
+      norm(v.option1).toLowerCase().includes(searchLower) ||
+      norm(v.option2).toLowerCase().includes(searchLower) ||
+      norm(v.option3).toLowerCase().includes(searchLower)
+  );
+
+  const variantByOptionPair = new Map();
+  config.variants.forEach((v) => {
+    const a = norm(v.option1);
+    const b = norm(v.option2);
+    const c = norm(v.option3);
+    if (a && b) {
+      variantByOptionPair.set(a + '|' + b, v);
+      variantByOptionPair.set(b + '|' + a, v);
+    }
+    if (a && c) {
+      variantByOptionPair.set(a + '|' + c, v);
+      variantByOptionPair.set(c + '|' + a, v);
+    }
+    if (b && c) {
+      variantByOptionPair.set(b + '|' + c, v);
+      variantByOptionPair.set(c + '|' + b, v);
+    }
+  });
+
+  const mapKeysSample = Array.from(variantByOptionPair.keys()).slice(0, 20);
+  const lookupTurfGreenS =
+    variantByOptionPair.get('Turf Green|S') ||
+    variantByOptionPair.get('S|Turf Green') ||
+    variantByOptionPair.get(norm('Turf Green') + '|' + norm('S')) ||
+    variantByOptionPair.get(norm('S') + '|' + norm('Turf Green'));
+
+  const firstVariants = config.variants.slice(0, 2).map((v) => ({
+    id: v.id,
+    o1: v.option1,
+    o1Length: (v.option1 && v.option1.length) || 0,
+    o2: v.option2,
+    o2Length: (v.option2 && v.option2.length) || 0,
+  }));
+  const lastVariants = config.variants.slice(-2).map((v) => ({
+    id: v.id,
+    o1: v.option1,
+    o1Length: (v.option1 && v.option1.length) || 0,
+    o2: v.option2,
+    o2Length: (v.option2 && v.option2.length) || 0,
+  }));
+
+  const out = {
+    variantCount: config.variants.length,
+    options: config.options?.map((o) => ({ name: o.name, position: o.position, valueCount: (o.values || []).length })),
+    variantsMatchingSearch: variantsMatching.length,
+    variantsMatchingSample: variantsMatching.slice(0, 3).map((v) => ({ id: v.id, option1: v.option1, option2: v.option2 })),
+    mapSize: variantByOptionPair.size,
+    mapKeysSample,
+    lookupTurfGreenS: lookupTurfGreenS ? { id: lookupTurfGreenS.id, option1: lookupTurfGreenS.option1, option2: lookupTurfGreenS.option2 } : null,
+    firstVariants,
+    lastVariants,
+    configRawLength: script.textContent.length,
+  };
+
+  console.log('atBulkGridDebug:', out);
+  return out;
+};
