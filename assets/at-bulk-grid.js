@@ -14,6 +14,10 @@ const BULK_GRID_SELECTORS = {
 
 const MOBILE_BREAKPOINT = 750;
 
+/** Theme add-to-cart icon (icon-add-to-cart.svg) – same as add-to-cart-button secondary */
+const ADD_TO_CART_ICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--icon-stroke-width)" d="M16.608 9.421V6.906H3.392v8.016c0 .567.224 1.112.624 1.513.4.402.941.627 1.506.627H8.63M8.818 3h2.333c.618 0 1.212.247 1.649.686a2.35 2.35 0 0 1 .683 1.658v1.562H6.486V5.344c0-.622.246-1.218.683-1.658A2.33 2.33 0 0 1 8.82 3"/><path stroke="currentColor" stroke-linecap="round" stroke-width="var(--icon-stroke-width)" d="M14.608 12.563v5m2.5-2.5h-5"/></svg>';
+
 /**
  * @param {string} sectionId
  * @returns {{ productId: number, productUrl: string, sectionId: string, variants: Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>, options: Array<{ name: string, position: number, values: string[] }> } | null}
@@ -141,7 +145,12 @@ function renderDesktopGrid(container, config, sectionId) {
   html +=
     '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
-    '<button type="button" class="button add-to-cart-button" data-at-bulk-add-to-cart>Add to cart</button>' +
+    '<button type="button" class="button add-to-cart-button button-secondary" data-at-bulk-add-to-cart>' +
+    '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
+    ADD_TO_CART_ICON_SVG +
+    '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
+    '</button>' +
+    '<button type="button" class="button" data-at-bulk-buy-now>Buy it now</button>' +
     '</div>';
 
   container.innerHTML = html;
@@ -150,6 +159,7 @@ function renderDesktopGrid(container, config, sectionId) {
   const searchEl = container.querySelector(BULK_GRID_SELECTORS.search);
   const totalEl = container.querySelector('[data-at-bulk-total]');
   const addBtn = container.querySelector('[data-at-bulk-add-to-cart]');
+  const buyNowBtn = container.querySelector('[data-at-bulk-buy-now]');
 
   const updateTotal = () => {
     const inputs = container.querySelectorAll('[data-at-bulk-qty]');
@@ -186,43 +196,47 @@ function renderDesktopGrid(container, config, sectionId) {
     });
   }
 
-  if (addBtn) {
-    addBtn.addEventListener('click', () => {
-      const items = getLineItems();
-      if (items.length === 0) return;
-      const section = document.getElementById(`shopify-section-${sectionId}`);
-      const form = section?.querySelector('[data-at-bulk-form]');
-      const lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
-      if (lineItemsInput) lineItemsInput.value = JSON.stringify(items);
+  const submitBulkItems = (redirectToCheckout) => {
+    const items = getLineItems();
+    if (items.length === 0) return;
+    const section = document.getElementById(`shopify-section-${sectionId}`);
+    const form = section?.querySelector('[data-at-bulk-form]');
+    const lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
+    if (lineItemsInput) lineItemsInput.value = JSON.stringify(items);
 
-      const root = window.Shopify?.routes?.root || '/';
-      fetch(root + 'cart/add.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+    const root = window.Shopify?.routes?.root || '/';
+    fetch(root + 'cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status && data.status !== 200) {
+          console.warn('at-bulk-grid: cart add response', data);
+        }
+        window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
+        if (redirectToCheckout) {
+          window.location.href = root + 'checkout';
+          return;
+        }
+        fetch(root + 'cart.js')
+          .then((r) => r.json())
+          .then((cart) => {
+            document.body.dispatchEvent(
+              new CustomEvent('cart:update', {
+                bubbles: true,
+                detail: { resource: cart, sourceId: 'at-bulk-grid', data: {} },
+              })
+            );
+          })
+          .catch(() => {});
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status && data.status !== 200) {
-            console.warn('at-bulk-grid: cart add response', data);
-          }
-          window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
-          const rootRefresh = window.Shopify?.routes?.root || '/';
-          fetch(rootRefresh + 'cart.js')
-            .then((r) => r.json())
-            .then((cart) => {
-              document.body.dispatchEvent(
-                new CustomEvent('cart:update', {
-                  bubbles: true,
-                  detail: { resource: cart, sourceId: 'at-bulk-grid', data: {} },
-                })
-              );
-            })
-            .catch(() => {});
-        })
-        .catch((err) => console.error('at-bulk-grid: cart add failed', err));
-    });
-  }
+      .catch((err) => console.error('at-bulk-grid: cart add failed', err));
+  };
+
+  if (addBtn) addBtn.addEventListener('click', () => submitBulkItems(false));
+  if (buyNowBtn) buyNowBtn.addEventListener('click', () => submitBulkItems(true));
 
   updateTotal();
 }
@@ -325,7 +339,12 @@ function renderMobileGrid(container, config, sectionId) {
   html +=
     '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
-    '<button type="button" class="button add-to-cart-button" data-at-bulk-add-to-cart>Add to cart</button>' +
+    '<button type="button" class="button add-to-cart-button button-secondary" data-at-bulk-add-to-cart>' +
+    '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
+    ADD_TO_CART_ICON_SVG +
+    '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
+    '</button>' +
+    '<button type="button" class="button" data-at-bulk-buy-now>Buy it now</button>' +
     '</div>';
 
   container.innerHTML = html;
@@ -368,50 +387,60 @@ function renderMobileGrid(container, config, sectionId) {
     });
   }
 
-  const addBtn = container.querySelector('[data-at-bulk-add-to-cart]');
-  if (addBtn) {
-    addBtn.addEventListener('click', () => {
-      const items = [];
-      container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
-        const qty = parseInt(input.value, 10) || 0;
-        if (qty > 0 && input.dataset.variantId) {
-          items.push({ id: parseInt(input.dataset.variantId, 10), quantity: qty });
-        }
-      });
-      if (items.length === 0) return;
-      const section = document.getElementById(`shopify-section-${sectionId}`);
-      const form = section?.querySelector('[data-at-bulk-form]');
-      const lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
-      if (lineItemsInput) lineItemsInput.value = JSON.stringify(items);
-
-      const root = window.Shopify?.routes?.root || '/';
-      fetch(root + 'cart/add.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status && data.status !== 200) {
-            console.warn('at-bulk-grid: cart add response', data);
-          }
-          window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
-          const root = window.Shopify?.routes?.root || '/';
-          fetch(root + 'cart.js')
-            .then((r) => r.json())
-            .then((cart) => {
-              document.body.dispatchEvent(
-                new CustomEvent('cart:update', {
-                  bubbles: true,
-                  detail: { resource: cart, sourceId: 'at-bulk-grid', data: {} },
-                })
-              );
-            })
-            .catch(() => {});
-        })
-        .catch((err) => console.error('at-bulk-grid: cart add failed', err));
+  const getLineItemsMobile = () => {
+    const items = [];
+    container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
+      const qty = parseInt(input.value, 10) || 0;
+      if (qty > 0 && input.dataset.variantId) {
+        items.push({ id: parseInt(input.dataset.variantId, 10), quantity: qty });
+      }
     });
-  }
+    return items;
+  };
+
+  const submitBulkItemsMobile = (redirectToCheckout) => {
+    const items = getLineItemsMobile();
+    if (items.length === 0) return;
+    const section = document.getElementById(`shopify-section-${sectionId}`);
+    const form = section?.querySelector('[data-at-bulk-form]');
+    const lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
+    if (lineItemsInput) lineItemsInput.value = JSON.stringify(items);
+
+    const root = window.Shopify?.routes?.root || '/';
+    fetch(root + 'cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status && data.status !== 200) {
+          console.warn('at-bulk-grid: cart add response', data);
+        }
+        window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
+        if (redirectToCheckout) {
+          window.location.href = root + 'checkout';
+          return;
+        }
+        fetch(root + 'cart.js')
+          .then((r) => r.json())
+          .then((cart) => {
+            document.body.dispatchEvent(
+              new CustomEvent('cart:update', {
+                bubbles: true,
+                detail: { resource: cart, sourceId: 'at-bulk-grid', data: {} },
+              })
+            );
+          })
+          .catch(() => {});
+      })
+      .catch((err) => console.error('at-bulk-grid: cart add failed', err));
+  };
+
+  const addBtnMobile = container.querySelector('[data-at-bulk-add-to-cart]');
+  const buyNowBtnMobile = container.querySelector('[data-at-bulk-buy-now]');
+  if (addBtnMobile) addBtnMobile.addEventListener('click', () => submitBulkItemsMobile(false));
+  if (buyNowBtnMobile) buyNowBtnMobile.addEventListener('click', () => submitBulkItemsMobile(true));
 
   updateTotal();
 }

@@ -109,6 +109,25 @@
 
 .at-bulk-grid__total {
   font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Match theme buy buttons: same height, no quantity selector in this row */
+.at-bulk-grid__actions .button {
+  height: var(--height-buy-buttons);
+  min-height: var(--height-buy-buttons);
+}
+
+.at-bulk-grid__actions .add-to-cart-button .add-to-cart-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.at-bulk-grid__actions .add-to-cart-button .add-to-cart-icon svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
 }
 
 /* Mobile: full-width sheet feel; accordion per color */
