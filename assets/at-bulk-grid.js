@@ -152,7 +152,7 @@ function renderDesktopGrid(container, config, sectionId) {
 
   html += '</tbody></table></div>';
   html +=
-    '<div class="at-bulk-grid__actions">' +
+    '<div class="at-bulk-grid__actions" data-at-bulk-has-quantity="false">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
     '<button type="button" class="button add-to-cart-button button-secondary" data-at-bulk-add-to-cart>' +
     '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
@@ -177,6 +177,8 @@ function renderDesktopGrid(container, config, sectionId) {
       sum += parseInt(input.value, 10) || 0;
     });
     if (totalEl) totalEl.textContent = 'Total: ' + sum;
+    const actionsEl = container.querySelector('.at-bulk-grid__actions');
+    if (actionsEl) actionsEl.setAttribute('data-at-bulk-has-quantity', sum > 0 ? 'true' : 'false');
   };
 
   const getLineItems = () => {
@@ -355,7 +357,7 @@ function renderMobileGrid(container, config, sectionId) {
 
   html += '</div>';
   html +=
-    '<div class="at-bulk-grid__actions">' +
+    '<div class="at-bulk-grid__actions" data-at-bulk-has-quantity="false">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
     '<button type="button" class="button add-to-cart-button button-secondary" data-at-bulk-add-to-cart>' +
     '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
@@ -388,6 +390,8 @@ function renderMobileGrid(container, config, sectionId) {
       sum += parseInt(input.value, 10) || 0;
     });
     if (totalEl) totalEl.textContent = 'Total: ' + sum;
+    const actionsEl = container.querySelector('.at-bulk-grid__actions');
+    if (actionsEl) actionsEl.setAttribute('data-at-bulk-has-quantity', sum > 0 ? 'true' : 'false');
   };
   container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
     input.addEventListener('input', updateTotal);

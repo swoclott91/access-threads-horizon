@@ -2,6 +2,13 @@
  * AT Bulk order grid – minimal layout; reuses theme button/input/grid classes.
  */
 
+/* Desktop: wider modal when bulk grid is present */
+@media screen and (min-width: 750px) {
+  .at-popup-link .popup-link__content:has(.at-bulk-grid) {
+    max-width: 56rem;
+  }
+}
+
 .at-bulk-grid {
   --at-bulk-grid-gap: var(--gap-sm, 0.75rem);
   display: flex;
@@ -32,13 +39,28 @@
 
 .at-bulk-grid__table-wrapper {
   overflow-x: auto;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  max-height: min(60vh, 400px);
+}
+
+@media screen and (min-width: 750px) {
+  .at-bulk-grid__table-wrapper {
+    max-height: min(65vh, 500px);
+  }
 }
 
 .at-bulk-grid__table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--font-size--sm);
+}
+
+/* Sticky table header so Color/sizes stay visible when scrolling */
+.at-bulk-grid__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .at-bulk-grid__table th,
@@ -50,8 +72,9 @@
 }
 
 .at-bulk-grid__table th {
-  background: rgb(var(--color-foreground-rgb) / var(--opacity-5));
+  background: var(--color-background);
   font-weight: 600;
+  box-shadow: 0 1px 0 var(--color-border);
 }
 
 .at-bulk-grid__table td.at-bulk-grid__color-cell {
@@ -104,12 +127,36 @@
   color: var(--color-outofstock, red);
 }
 
+/* Footer: hidden until quantity > 0, then visible and sticky at bottom */
 .at-bulk-grid__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap-sm);
   align-items: center;
   margin-top: var(--gap-md);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+@media screen and (min-width: 750px) {
+  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: auto;
+    padding-block-start: var(--gap-md);
+    padding-block-end: var(--padding-xs);
+    background: var(--color-background);
+    box-shadow: 0 -1px 0 var(--color-border);
+  }
 }
 
 .at-bulk-grid__total {
