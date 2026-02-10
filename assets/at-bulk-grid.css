@@ -10,9 +10,14 @@
   min-height: 200px;
 }
 
-/* When bulk grid is present, hide separate variant picker so colors live only in the grid */
+/* When bulk grid is present, hide separate variant picker and buy buttons so only grid actions show */
 .popup-link__inner:has(.at-bulk-grid) .variant-picker,
 .popup-link__inner:has(.at-bulk-grid) .at-variant-picker {
+  display: none;
+}
+
+.popup-link__inner:has(.at-bulk-grid) .buy-buttons-block,
+.popup-link__inner:has(.at-bulk-grid) .at-buy-buttons-block {
   display: none;
 }
 
