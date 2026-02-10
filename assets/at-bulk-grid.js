@@ -75,13 +75,22 @@ function renderDesktopGrid(container, config, sectionId) {
     return 'background:' + String(detail.swatchBackground).replace(/"/g, "'") + ';';
   };
 
-  const getVariant = (opt1, opt2) =>
-    config.variants.find(
-      (v) =>
-        (v.option1 === opt1 && (optionColName === optionRowName ? true : v.option2 === opt2)) ||
-        (v.option2 === opt1 && v.option1 === opt2)
-    ) ||
-    config.variants.find((v) => v.option1 === opt1 && (v.option2 === opt2 || (!opt2 && !v.option2)));
+  /** Match variant by option position (option1/option2/option3) so order of options doesn't matter */
+  const norm = (s) => (s == null ? '' : String(s).trim());
+  const getVariant = (rowVal, colVal) => {
+    const rowPos = optionRow.position;
+    const colPos = optionCol.position;
+    const rowKey = rowPos <= 3 ? 'option' + rowPos : null;
+    const colKey = colPos <= 3 ? 'option' + colPos : null;
+    if (!rowKey || !colKey) {
+      return config.variants.find(
+        (v) => norm(v.option1) === norm(rowVal) && norm(v.option2) === norm(colVal)
+      ) || config.variants.find((v) => norm(v.option1) === norm(colVal) && norm(v.option2) === norm(rowVal));
+    }
+    return config.variants.find(
+      (v) => norm(v[rowKey]) === norm(rowVal) && norm(v[colKey]) === norm(colVal)
+    );
+  };
 
   let html = '';
   html += '<div class="at-bulk-grid__search-wrap">';
@@ -104,7 +113,7 @@ function renderDesktopGrid(container, config, sectionId) {
     }
     html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span></td>';
     sizeValues.forEach((size) => {
-      const v = getVariant(color, size) || getVariant(size, color);
+      const v = getVariant(color, size);
       if (!v) {
         html += '<td>—</td>';
         return;
@@ -280,12 +289,21 @@ function renderMobileGrid(container, config, sectionId) {
     return 'background:' + String(detail.swatchBackground).replace(/"/g, "'") + ';';
   };
 
-  const getVariant = (opt1, opt2) =>
-    config.variants.find(
-      (v) =>
-        (v.option1 === opt1 && (optionColName === optionRowName ? true : v.option2 === opt2)) ||
-        (v.option2 === opt1 && v.option1 === opt2)
-    ) || config.variants.find((v) => v.option1 === opt1 && (v.option2 === opt2 || (!opt2 && !v.option2)));
+  const normMobile = (s) => (s == null ? '' : String(s).trim());
+  const getVariantMobile = (rowVal, colVal) => {
+    const rowPos = optionRow.position;
+    const colPos = optionCol.position;
+    const rowKey = rowPos <= 3 ? 'option' + rowPos : null;
+    const colKey = colPos <= 3 ? 'option' + colPos : null;
+    if (!rowKey || !colKey) {
+      return config.variants.find(
+        (v) => normMobile(v.option1) === normMobile(rowVal) && normMobile(v.option2) === normMobile(colVal)
+      ) || config.variants.find((v) => normMobile(v.option1) === normMobile(colVal) && normMobile(v.option2) === normMobile(rowVal));
+    }
+    return config.variants.find(
+      (v) => normMobile(v[rowKey]) === normMobile(rowVal) && normMobile(v[colKey]) === normMobile(colVal)
+    );
+  };
 
   let html = '';
   html += '<input type="search" class="at-bulk-grid__search" placeholder="Search ' + escapeAttr(optionRowName) + '..." data-at-bulk-search aria-label="Search ' + escapeAttr(optionRowName) + '">';
@@ -302,7 +320,7 @@ function renderMobileGrid(container, config, sectionId) {
     html += '</button>';
     html += '<div class="at-bulk-grid__mobile-accordion-content" hidden>';
     sizeValues.forEach((size) => {
-      const v = getVariant(color, size) || getVariant(size, color);
+      const v = getVariantMobile(color, size);
       if (!v) return;
       const band = availabilityBand(
         v.inventory_quantity,
