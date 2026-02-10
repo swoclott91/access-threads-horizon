@@ -108,11 +108,11 @@ function fetchDeferredVariants(config) {
         })
         .then((html) => {
           const doc = new DOMParser().parseFromString(html, 'text/html');
+          const selectionScript = doc.querySelector('script[data-at-bulk-grid-variants-for-selection]');
           const section = doc.getElementById(`shopify-section-${sectionId}`);
-          if (!section && debug) console.warn('at-bulk-grid: section not found in response, id=shopify-section-' + sectionId);
-          const selectionScript = section?.querySelector('script[data-at-bulk-grid-variants-for-selection]');
           const mainScript = section?.querySelector(BULK_GRID_SELECTORS.configScript);
           const script = selectionScript ?? mainScript;
+          if (!section && debug) console.warn('at-bulk-grid: section not found in response, id=shopify-section-' + sectionId);
           if (!script?.textContent) {
             if (debug) console.warn('at-bulk-grid: no config script in section for option_values=' + valueId);
             return;
@@ -601,6 +601,7 @@ function renderGrid(container) {
   const needDeferred = expected > 0 && config.variants.length < expected && (config.options?.[0]?.valueIds?.length ?? 0) > 0;
 
   if (needDeferred) {
+    bulkGridConfigCache.delete(sectionId);
     container.innerHTML = '<p class="at-bulk-grid__loading" aria-live="polite">Loading variants…</p>';
     if (window.atBulkGridDebugVerbose) console.log('at-bulk-grid: deferred load starting, valueIds:', config.options?.[0]?.valueIds?.length, 'expected variants:', expected);
     fetchDeferredVariants(config)
