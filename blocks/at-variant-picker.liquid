@@ -1,0 +1,144 @@
+{%- comment -%}
+  AT: Access Threads duplicate of variant-picker with bulk order grid support.
+  Original variant-picker is unchanged.
+{%- endcomment -%}
+{% liquid
+  assign product_resource = closest.product
+  if request.visual_preview_mode and product_resource == blank
+    assign product_resource = collections.all.products.first
+  endif
+-%}
+
+{%- if block.settings.at_enable_bulk_order -%}
+  <script src="{{ 'at-bulk-grid.js' | asset_url }}" type="module"></script>
+{%- endif -%}
+
+{% unless product_resource == blank %}
+  {% render 'at-variant-picker', product_resource: product_resource, block: block %}
+{% endunless %}
+
+{% schema %}
+{
+  "name": "AT Variant picker",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "t:content.resource_reference_product_variant_picker"
+    },
+    {
+      "type": "paragraph",
+      "content": "t:content.edit_variants_in_theme_settings"
+    },
+    {
+      "type": "select",
+      "id": "variant_style",
+      "label": "t:settings.style",
+      "options": [
+        {
+          "value": "dropdowns",
+          "label": "t:options.dropdowns"
+        },
+        {
+          "value": "buttons",
+          "label": "t:options.buttons"
+        }
+      ],
+      "default": "buttons"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_swatches",
+      "label": "t:settings.swatches",
+      "default": true
+    },
+    {
+      "type": "text_alignment",
+      "id": "alignment",
+      "label": "t:settings.alignment",
+      "default": "left"
+    },
+    {
+      "type": "header",
+      "content": "Bulk order (Access Threads)"
+    },
+    {
+      "type": "checkbox",
+      "id": "at_enable_bulk_order",
+      "label": "Enable AT bulk order grid",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "at_bulk_order_desktop",
+      "label": "Enable desktop bulk grid modal",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "at_bulk_order_mobile",
+      "label": "Enable mobile bulk grid sheet",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "at_bulk_order_threshold",
+      "label": "Suggested bulk quantity threshold",
+      "min": 1,
+      "max": 100,
+      "step": 1,
+      "default": 24
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "AT Variant picker",
+      "category": "t:categories.product"
+    }
+  ]
+}
+{% endschema %}
