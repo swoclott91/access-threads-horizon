@@ -275,6 +275,29 @@
           ]
         }
       </script>
+      {%- comment -%} When page is requested with ?option_values=<id>, output variants from option_value.variant (avoids product.variants 250 cap). {%- endcomment -%}
+      {%- if request.url contains 'option_values=' -%}
+        {%- assign opts = product_resource.options_with_values -%}
+        {%- assign selected_name_1 = '' -%}
+        {%- for val in opts[0].values -%}
+          {%- if val.selected -%}
+            {%- assign selected_name_1 = val.name -%}
+            {%- break -%}
+          {%- endif -%}
+        {%- endfor -%}
+        <script type="application/json" data-at-bulk-grid-variants-for-selection data-at-section-id="{{ section.id }}">
+          {"variants":[
+            {%- assign first_v = true -%}
+            {%- for option_value in opts[1].values -%}
+              {%- assign v = option_value.variant -%}
+              {%- if v -%}
+            {%- unless first_v -%},{%- endunless -%}{%- assign first_v = false -%}
+            {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ selected_name_1 | json }},"o2":{{ option_value.name | json }}{% if opts.size == 3 %},"o3":{{ v.option3 | json }}{% endif %}}
+              {%- endif -%}
+            {%- endfor -%}
+          ]}
+        </script>
+      {%- endif -%}
     {%- endif -%}
   </variant-picker>
 {% endunless %}

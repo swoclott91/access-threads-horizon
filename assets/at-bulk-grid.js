@@ -80,7 +80,9 @@ function expectedVariantCount(config) {
 }
 
 /**
- * Load full variant set via Section Rendering API (option_values) when product has >250 variants.
+ * Load full variant set via product page + option_values when product has >250 variants.
+ * Requesting the full product page with ?option_values=<id> (no section_id) ensures Liquid
+ * receives the product with that option selected; section_id requests may not filter product.variants.
  * See https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products
  * @param {{ productUrl: string, sectionId: string, options: Array<{ valueIds?: number[] }> }} config
  * @returns {Promise<Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>>}
@@ -98,7 +100,7 @@ function fetchDeferredVariants(config) {
   const debug = window.atBulkGridDebugVerbose === true;
   return Promise.all(
     valueIds.map((valueId) => {
-      const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}section_id=${encodeURIComponent(sectionId)}&option_values=${encodeURIComponent(valueId)}`;
+      const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}option_values=${encodeURIComponent(valueId)}`;
       return fetch(url)
         .then((res) => {
           if (!res.ok && debug) console.warn('at-bulk-grid: fetch status', res.status, url);
@@ -108,7 +110,9 @@ function fetchDeferredVariants(config) {
           const doc = new DOMParser().parseFromString(html, 'text/html');
           const section = doc.getElementById(`shopify-section-${sectionId}`);
           if (!section && debug) console.warn('at-bulk-grid: section not found in response, id=shopify-section-' + sectionId);
-          const script = section?.querySelector(BULK_GRID_SELECTORS.configScript);
+          const selectionScript = section?.querySelector('script[data-at-bulk-grid-variants-for-selection]');
+          const mainScript = section?.querySelector(BULK_GRID_SELECTORS.configScript);
+          const script = selectionScript ?? mainScript;
           if (!script?.textContent) {
             if (debug) console.warn('at-bulk-grid: no config script in section for option_values=' + valueId);
             return;
@@ -116,7 +120,8 @@ function fetchDeferredVariants(config) {
           const parsed = JSON.parse(script.textContent.trim());
           normalizeBulkConfig(parsed);
           const count = (parsed.variants || []).length;
-          if (debug && count === 0) console.warn('at-bulk-grid: 0 variants in response for option_values=' + valueId);
+          if (debug) console.log('at-bulk-grid: option_values=' + valueId + ' returned', count, 'variants', selectionScript ? '(from option_value.variant)' : '');
+          if (count === 0 && debug) console.warn('at-bulk-grid: 0 variants in response for option_values=' + valueId);
           (parsed.variants || []).forEach((v) => {
             if (v && v.id != null) byId.set(v.id, v);
           });
