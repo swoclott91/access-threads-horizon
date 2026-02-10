@@ -22,13 +22,31 @@ const ADD_TO_CART_ICON_SVG =
  * @param {string} sectionId
  * @returns {{ productId: number, productUrl: string, sectionId: string, variants: Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>, options: Array<{ name: string, position: number, values: string[] }> } | null}
  */
+/**
+ * Normalize variant objects from compact JSON keys (a,q,p,o1,o2,o3) to full names.
+ * Liquid can output compact keys to reduce payload size and avoid truncation.
+ */
+function normalizeBulkConfig(config) {
+  if (!config || !Array.isArray(config.variants)) return config;
+  config.variants.forEach((v) => {
+    if (v.a !== undefined) v.available = v.a;
+    if (v.q !== undefined) v.inventory_quantity = v.q;
+    if (v.p !== undefined) v.inventory_policy = v.p;
+    if (v.o1 !== undefined) v.option1 = v.o1;
+    if (v.o2 !== undefined) v.option2 = v.o2;
+    if (v.o3 !== undefined) v.option3 = v.o3;
+  });
+  return config;
+}
+
 function getBulkConfig(sectionId) {
   const section = document.getElementById(`shopify-section-${sectionId}`);
   if (!section) return null;
   const script = section.querySelector(BULK_GRID_SELECTORS.configScript);
   if (!script || !script.textContent) return null;
   try {
-    return JSON.parse(script.textContent.trim());
+    const config = JSON.parse(script.textContent.trim());
+    return normalizeBulkConfig(config);
   } catch {
     return null;
   }
@@ -75,21 +93,31 @@ function renderDesktopGrid(container, config, sectionId) {
     return 'background:' + String(detail.swatchBackground).replace(/"/g, "'") + ';';
   };
 
-  /** Match variant by option position (option1/option2/option3) so order of options doesn't matter */
+  /** Normalize option value for matching (trim, avoid null) */
   const norm = (s) => (s == null ? '' : String(s).trim());
-  const getVariant = (rowVal, colVal) => {
-    const rowPos = optionRow.position;
-    const colPos = optionCol.position;
-    const rowKey = rowPos <= 3 ? 'option' + rowPos : null;
-    const colKey = colPos <= 3 ? 'option' + colPos : null;
-    if (!rowKey || !colKey) {
-      return config.variants.find(
-        (v) => norm(v.option1) === norm(rowVal) && norm(v.option2) === norm(colVal)
-      ) || config.variants.find((v) => norm(v.option1) === norm(colVal) && norm(v.option2) === norm(rowVal));
+  /** Pre-build map so every variant is findable by (valA|valB) or (valB|valA) – no position/order dependency */
+  const variantByOptionPair = new Map();
+  config.variants.forEach((v) => {
+    const a = norm(v.option1);
+    const b = norm(v.option2);
+    const c = norm(v.option3);
+    if (a && b) {
+      variantByOptionPair.set(a + '|' + b, v);
+      variantByOptionPair.set(b + '|' + a, v);
     }
-    return config.variants.find(
-      (v) => norm(v[rowKey]) === norm(rowVal) && norm(v[colKey]) === norm(colVal)
-    );
+    if (a && c) {
+      variantByOptionPair.set(a + '|' + c, v);
+      variantByOptionPair.set(c + '|' + a, v);
+    }
+    if (b && c) {
+      variantByOptionPair.set(b + '|' + c, v);
+      variantByOptionPair.set(c + '|' + b, v);
+    }
+  });
+  const getVariant = (rowVal, colVal) => {
+    const r = norm(rowVal);
+    const c = norm(colVal);
+    return variantByOptionPair.get(r + '|' + c) || variantByOptionPair.get(c + '|' + r);
   };
 
   let html = '';
@@ -292,19 +320,28 @@ function renderMobileGrid(container, config, sectionId) {
   };
 
   const normMobile = (s) => (s == null ? '' : String(s).trim());
-  const getVariantMobile = (rowVal, colVal) => {
-    const rowPos = optionRow.position;
-    const colPos = optionCol.position;
-    const rowKey = rowPos <= 3 ? 'option' + rowPos : null;
-    const colKey = colPos <= 3 ? 'option' + colPos : null;
-    if (!rowKey || !colKey) {
-      return config.variants.find(
-        (v) => normMobile(v.option1) === normMobile(rowVal) && normMobile(v.option2) === normMobile(colVal)
-      ) || config.variants.find((v) => normMobile(v.option1) === normMobile(colVal) && normMobile(v.option2) === normMobile(rowVal));
+  const variantByOptionPairMobile = new Map();
+  config.variants.forEach((v) => {
+    const a = normMobile(v.option1);
+    const b = normMobile(v.option2);
+    const c = normMobile(v.option3);
+    if (a && b) {
+      variantByOptionPairMobile.set(a + '|' + b, v);
+      variantByOptionPairMobile.set(b + '|' + a, v);
     }
-    return config.variants.find(
-      (v) => normMobile(v[rowKey]) === normMobile(rowVal) && normMobile(v[colKey]) === normMobile(colVal)
-    );
+    if (a && c) {
+      variantByOptionPairMobile.set(a + '|' + c, v);
+      variantByOptionPairMobile.set(c + '|' + a, v);
+    }
+    if (b && c) {
+      variantByOptionPairMobile.set(b + '|' + c, v);
+      variantByOptionPairMobile.set(c + '|' + b, v);
+    }
+  });
+  const getVariantMobile = (rowVal, colVal) => {
+    const r = normMobile(rowVal);
+    const c = normMobile(colVal);
+    return variantByOptionPairMobile.get(r + '|' + c) || variantByOptionPairMobile.get(c + '|' + r);
   };
 
   let html = '';

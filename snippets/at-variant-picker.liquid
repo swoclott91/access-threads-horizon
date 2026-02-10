@@ -218,17 +218,9 @@
           "productUrl": {{ product_resource.url | json }},
           "sectionId": {{ section.id | json }},
           "variants": [
+            {%- comment -%} Compact keys to reduce JSON size and avoid truncation for large variant counts {%- endcomment -%}
             {%- for v in product_resource.variants -%}
-            {
-              "id": {{ v.id }},
-              "available": {{ v.available }},
-              "inventory_quantity": {{ v.inventory_quantity | default: 0 }},
-              "inventory_policy": {{ v.inventory_policy | json }},
-              "inventory_management": {{ v.inventory_management | json }},
-              "option1": {{ v.option1 | json }},
-              "option2": {{ v.option2 | json }},
-              "option3": {{ v.option3 | json }}
-            }{% unless forloop.last %},{% endunless %}
+            {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ v.option1 | json }},"o2":{{ v.option2 | json }},"o3":{{ v.option3 | json }}}{% unless forloop.last %},{% endunless %}
             {%- endfor -%}
           ],
           "options": [
