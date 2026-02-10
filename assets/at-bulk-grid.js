@@ -79,14 +79,24 @@ function expectedVariantCount(config) {
   return n;
 }
 
+/** Run promise-returning tasks with a concurrency limit; resolves when all complete. */
+function runWithConcurrency(tasks, limit) {
+  let index = 0;
+  function runNext() {
+    if (index >= tasks.length) return Promise.resolve();
+    return tasks[index++]().then(() => runNext());
+  }
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, () => runNext());
+  return Promise.all(workers);
+}
+
 /**
  * Load full variant set via product page + option_values when product has >250 variants.
- * Requesting the full product page with ?option_values=<id> (no section_id) ensures Liquid
- * receives the product with that option selected; section_id requests may not filter product.variants.
+ * Uses option_value.variant (selection script) per request; limited concurrency to avoid overloading.
  * See https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products
- * @param {{ productUrl: string, sectionId: string, options: Array<{ valueIds?: number[] }> }} config
- * @returns {Promise<Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>>}
  */
+const DEFERRED_FETCH_CONCURRENCY = 10;
+
 function fetchDeferredVariants(config) {
   const valueIds = config?.options?.[0]?.valueIds;
   if (!valueIds?.length || !config.sectionId) return Promise.resolve([]);
@@ -96,41 +106,37 @@ function fetchDeferredVariants(config) {
     : window.location.href.split('?')[0];
   const sectionId = config.sectionId;
   const byId = new Map();
-
   const debug = window.atBulkGridDebugVerbose === true;
-  return Promise.all(
-    valueIds.map((valueId) => {
-      const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}option_values=${encodeURIComponent(valueId)}`;
-      return fetch(url)
-        .then((res) => {
-          if (!res.ok && debug) console.warn('at-bulk-grid: fetch status', res.status, url);
-          return res.text();
-        })
-        .then((html) => {
-          const doc = new DOMParser().parseFromString(html, 'text/html');
-          const selectionScript = doc.querySelector('script[data-at-bulk-grid-variants-for-selection]');
-          const section = doc.getElementById(`shopify-section-${sectionId}`);
-          const mainScript = section?.querySelector(BULK_GRID_SELECTORS.configScript);
-          const script = selectionScript ?? mainScript;
-          if (!section && debug) console.warn('at-bulk-grid: section not found in response, id=shopify-section-' + sectionId);
-          if (!script?.textContent) {
-            if (debug) console.warn('at-bulk-grid: no config script in section for option_values=' + valueId);
-            return;
-          }
-          const parsed = JSON.parse(script.textContent.trim());
-          normalizeBulkConfig(parsed);
-          const count = (parsed.variants || []).length;
-          if (debug) console.log('at-bulk-grid: option_values=' + valueId + ' returned', count, 'variants', selectionScript ? '(from option_value.variant)' : '');
-          if (count === 0 && debug) console.warn('at-bulk-grid: 0 variants in response for option_values=' + valueId);
-          (parsed.variants || []).forEach((v) => {
-            if (v && v.id != null) byId.set(v.id, v);
-          });
-        })
-        .catch((err) => console.warn('at-bulk-grid: deferred fetch failed for option_values=' + valueId, err));
-    })
-  ).then(() => {
+
+  const tasks = valueIds.map((valueId) => () => {
+    const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}option_values=${encodeURIComponent(valueId)}`;
+    return fetch(url)
+      .then((res) => {
+        if (!res.ok && debug) console.warn('at-bulk-grid: fetch status', res.status, url);
+        return res.text();
+      })
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const selectionScript = doc.querySelector('script[data-at-bulk-grid-variants-for-selection]');
+        const section = doc.getElementById(`shopify-section-${sectionId}`);
+        const mainScript = section?.querySelector(BULK_GRID_SELECTORS.configScript);
+        const script = selectionScript ?? mainScript;
+        if (!script?.textContent) {
+          if (debug) console.warn('at-bulk-grid: no config for option_values=' + valueId);
+          return;
+        }
+        const parsed = JSON.parse(script.textContent.trim());
+        normalizeBulkConfig(parsed);
+        (parsed.variants || []).forEach((v) => {
+          if (v && v.id != null) byId.set(v.id, v);
+        });
+      })
+      .catch((err) => console.warn('at-bulk-grid: deferred fetch failed for option_values=' + valueId, err));
+  });
+
+  return runWithConcurrency(tasks, DEFERRED_FETCH_CONCURRENCY).then(() => {
     const list = Array.from(byId.values());
-    if (debug) console.log('at-bulk-grid: deferred load complete, total variants:', list.length);
+    if (debug) console.log('at-bulk-grid: deferred load complete,', list.length, 'variants from', valueIds.length, 'requests');
     return list;
   });
 }
@@ -603,17 +609,18 @@ function renderGrid(container) {
   if (needDeferred) {
     bulkGridConfigCache.delete(sectionId);
     container.innerHTML = '<p class="at-bulk-grid__loading" aria-live="polite">Loading variants…</p>';
-    if (window.atBulkGridDebugVerbose) console.log('at-bulk-grid: deferred load starting, valueIds:', config.options?.[0]?.valueIds?.length, 'expected variants:', expected);
     fetchDeferredVariants(config)
       .then((variants) => {
         config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
         if (!config) return;
-        const byId = new Map();
-        (config.variants || []).forEach((v) => byId.set(v.id, v));
-        variants.forEach((v) => byId.set(v.id, v));
-        config.variants = Array.from(byId.values());
+        if (variants.length >= expected) {
+          config.variants = variants;
+        } else {
+          const byId = new Map((config.variants || []).map((v) => [v.id, v]));
+          variants.forEach((v) => byId.set(v.id, v));
+          config.variants = Array.from(byId.values());
+        }
         bulkGridConfigCache.set(sectionId, config);
-        if (window.atBulkGridDebugVerbose) console.log('at-bulk-grid: merged variant count', config.variants.length);
         const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
         if (isMobile) {
           renderMobileGrid(container, config, sectionId);
