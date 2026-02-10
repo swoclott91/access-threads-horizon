@@ -95,25 +95,39 @@ function fetchDeferredVariants(config) {
   const sectionId = config.sectionId;
   const byId = new Map();
 
+  const debug = window.atBulkGridDebugVerbose === true;
   return Promise.all(
     valueIds.map((valueId) => {
       const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}section_id=${encodeURIComponent(sectionId)}&option_values=${encodeURIComponent(valueId)}`;
       return fetch(url)
-        .then((res) => res.text())
+        .then((res) => {
+          if (!res.ok && debug) console.warn('at-bulk-grid: fetch status', res.status, url);
+          return res.text();
+        })
         .then((html) => {
           const doc = new DOMParser().parseFromString(html, 'text/html');
           const section = doc.getElementById(`shopify-section-${sectionId}`);
+          if (!section && debug) console.warn('at-bulk-grid: section not found in response, id=shopify-section-' + sectionId);
           const script = section?.querySelector(BULK_GRID_SELECTORS.configScript);
-          if (!script?.textContent) return;
+          if (!script?.textContent) {
+            if (debug) console.warn('at-bulk-grid: no config script in section for option_values=' + valueId);
+            return;
+          }
           const parsed = JSON.parse(script.textContent.trim());
           normalizeBulkConfig(parsed);
+          const count = (parsed.variants || []).length;
+          if (debug && count === 0) console.warn('at-bulk-grid: 0 variants in response for option_values=' + valueId);
           (parsed.variants || []).forEach((v) => {
             if (v && v.id != null) byId.set(v.id, v);
           });
         })
         .catch((err) => console.warn('at-bulk-grid: deferred fetch failed for option_values=' + valueId, err));
     })
-  ).then(() => Array.from(byId.values()));
+  ).then(() => {
+    const list = Array.from(byId.values());
+    if (debug) console.log('at-bulk-grid: deferred load complete, total variants:', list.length);
+    return list;
+  });
 }
 
 /**
@@ -583,6 +597,7 @@ function renderGrid(container) {
 
   if (needDeferred) {
     container.innerHTML = '<p class="at-bulk-grid__loading" aria-live="polite">Loading variants…</p>';
+    if (window.atBulkGridDebugVerbose) console.log('at-bulk-grid: deferred load starting, valueIds:', config.options?.[0]?.valueIds?.length, 'expected variants:', expected);
     fetchDeferredVariants(config)
       .then((variants) => {
         config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
@@ -592,6 +607,7 @@ function renderGrid(container) {
         variants.forEach((v) => byId.set(v.id, v));
         config.variants = Array.from(byId.values());
         bulkGridConfigCache.set(sectionId, config);
+        if (window.atBulkGridDebugVerbose) console.log('at-bulk-grid: merged variant count', config.variants.length);
         const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
         if (isMobile) {
           renderMobileGrid(container, config, sectionId);
@@ -655,34 +671,41 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * Console diagnostic for bulk grid: run window.atBulkGridDebug() or atBulkGridDebug('Turf Green').
- * Call this with the bulk grid modal open (or after the product page has loaded). Optionally pass
- * a color/option value to search for (e.g. 'Turf Green'). Logs config size, variants matching
- * the search term, and lookup map checks. Returns an object you can expand in the console.
+ * Console diagnostic for bulk grid: run atBulkGridDebug() or atBulkGridDebug('Turf Green').
+ * Use cached config (after deferred load) when available so you see full variant set.
+ * Set atBulkGridDebugVerbose = true before opening the grid to log each deferred fetch.
  */
 window.atBulkGridDebug = function (searchOptionValue) {
-  const script = document.querySelector('script[data-at-bulk-grid-config]');
-  if (!script || !script.textContent) {
-    console.warn('atBulkGridDebug: No bulk grid config script found. Open the bulk grid modal on a product page first.');
-    return null;
+  const container = document.querySelector(BULK_GRID_SELECTORS.container);
+  const sectionIdFromContainer = container?.dataset?.atBulkGridSectionId;
+  const cached = sectionIdFromContainer ? bulkGridConfigCache.get(sectionIdFromContainer) : null;
+  let config = cached || null;
+  let sectionId = sectionIdFromContainer || null;
+
+  if (!config) {
+    const script = document.querySelector('script[data-at-bulk-grid-config]');
+    if (!script || !script.textContent) {
+      console.warn('atBulkGridDebug: No config. Open the bulk grid on a product page (and wait for "Loading variants…" to finish if it appears).');
+      return null;
+    }
+    sectionId = script.dataset.atSectionId || script.getAttribute('data-at-section-id');
+    if (!sectionId) {
+      const sectionEl = script.closest('[id^="shopify-section-"]');
+      if (sectionEl?.id) sectionId = sectionEl.id.replace('shopify-section-', '');
+    }
+    if (!sectionId) {
+      console.warn('atBulkGridDebug: Could not determine section id.');
+      return null;
+    }
+    try {
+      config = JSON.parse(script.textContent.trim());
+      normalizeBulkConfig(config);
+    } catch (e) {
+      console.error('atBulkGridDebug: Failed to parse config:', e);
+      return null;
+    }
   }
-  let sectionId = script.dataset.atSectionId || script.getAttribute('data-at-section-id');
-  if (!sectionId) {
-    const sectionEl = script.closest('[id^="shopify-section-"]');
-    if (sectionEl?.id) sectionId = sectionEl.id.replace('shopify-section-', '');
-  }
-  if (!sectionId) {
-    console.warn('atBulkGridDebug: Could not determine section id (no data-at-section-id on config script).');
-    return null;
-  }
-  let config;
-  try {
-    config = JSON.parse(script.textContent.trim());
-    normalizeBulkConfig(config);
-  } catch (e) {
-    console.error('atBulkGridDebug: Failed to parse config:', e);
-    return null;
-  }
+  if (cached) console.log('atBulkGridDebug: using cached config (post–deferred load)');
 
   const norm = (s) => (s == null ? '' : String(s).trim());
   const searchLower = (searchOptionValue || 'Turf Green').toLowerCase();
@@ -735,7 +758,9 @@ window.atBulkGridDebug = function (searchOptionValue) {
     o2Length: (v.option2 && v.option2.length) || 0,
   }));
 
+  const scriptEl = document.querySelector('script[data-at-bulk-grid-config]');
   const out = {
+    fromCache: !!cached,
     variantCount: config.variants.length,
     options: config.options?.map((o) => ({ name: o.name, position: o.position, valueCount: (o.values || []).length })),
     variantsMatchingSearch: variantsMatching.length,
@@ -745,7 +770,7 @@ window.atBulkGridDebug = function (searchOptionValue) {
     lookupTurfGreenS: lookupTurfGreenS ? { id: lookupTurfGreenS.id, option1: lookupTurfGreenS.option1, option2: lookupTurfGreenS.option2 } : null,
     firstVariants,
     lastVariants,
-    configRawLength: script.textContent.length,
+    configRawLength: scriptEl?.textContent?.length ?? null,
   };
 
   console.log('atBulkGridDebug:', out);
