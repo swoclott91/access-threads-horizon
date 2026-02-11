@@ -4,6 +4,8 @@
  * Uses variant data from AT variant picker (script[data-at-bulk-grid-config]).
  */
 
+import { formatMoney } from '@theme/money-formatting';
+
 const BULK_GRID_SELECTORS = {
   container: '[data-at-bulk-grid]',
   trigger: '[data-at-bulk-grid-trigger]',
@@ -23,15 +25,19 @@ const ADD_TO_CART_ICON_SVG =
  * @returns {{ productId: number, productUrl: string, sectionId: string, variants: Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>, options: Array<{ name: string, position: number, values: string[] }> } | null}
  */
 /**
- * Normalize variant entries: either index arrays [id,a,q,p,i1,i2[,i3]] or compact
- * objects (a,q,p,o1,o2,o3). Liquid outputs index arrays to stay under section size limits.
+ * Normalize variant entries: either index arrays [id,a,q,p,i1,i2[,i3],price,compare_at_price]
+ * or compact objects (a,q,p,o1,o2,o3,pr,cp). Liquid outputs index arrays to stay under section size limits.
  */
 function normalizeBulkConfig(config) {
   if (!config || !Array.isArray(config.variants)) return config;
   const opts = config.options || [];
   config.variants.forEach((v, i) => {
     if (Array.isArray(v)) {
-      const [id, a, q, p, i1, i2, i3] = v;
+      const len = v.length;
+      const price = len >= 2 ? v[len - 2] : 0;
+      const compareAtPrice = len >= 1 ? v[len - 1] : 0;
+      const rest = len >= 2 ? v.slice(0, len - 2) : v;
+      const [id, a, q, p, i1, i2, i3] = rest;
       const values0 = opts[0]?.values || [];
       const values1 = opts[1]?.values || [];
       const values2 = opts[2]?.values || [];
@@ -43,6 +49,8 @@ function normalizeBulkConfig(config) {
         option1: values0[i1],
         option2: values1[i2],
         option3: opts.length >= 3 ? values2[i3] : null,
+        price: price,
+        compare_at_price: compareAtPrice,
       };
     } else {
       if (v.a !== undefined) v.available = v.a;
@@ -51,6 +59,8 @@ function normalizeBulkConfig(config) {
       if (v.o1 !== undefined) v.option1 = v.o1;
       if (v.o2 !== undefined) v.option2 = v.o2;
       if (v.o3 !== undefined) v.option3 = v.o3;
+      if (v.pr !== undefined) v.price = v.pr;
+      if (v.cp !== undefined) v.compare_at_price = v.cp;
     }
   });
   return config;
@@ -158,6 +168,32 @@ function availabilityBand(qty, available, inventory, policy) {
 }
 
 /**
+ * Format variant price HTML: compare-at (strikethrough) when on sale, then price. Matches theme price snippet.
+ * @param {{ price: number, compare_at_price?: number }} variant - price/compare_at_price in minor units (cents)
+ * @param {{ moneyFormat?: string, currency?: string }} config
+ * @returns {string} HTML fragment
+ */
+function formatVariantPriceHtml(variant, config) {
+  const format = config?.moneyFormat || '{{amount}}';
+  const currency = config?.currency || 'USD';
+  const price = variant?.price ?? 0;
+  const compareAt = variant?.compare_at_price ?? 0;
+  const priceStr = formatMoney(price, format, currency);
+  const onSale = compareAt > price && compareAt > 0;
+  const compareAtStr = onSale ? formatMoney(compareAt, format, currency) : '';
+  if (onSale) {
+    return (
+      '<span class="at-bulk-grid__price"><s class="compare-at-price">' +
+      escapeHtml(compareAtStr) +
+      '</s> <span class="price">' +
+      escapeHtml(priceStr) +
+      '</span></span>'
+    );
+  }
+  return '<span class="at-bulk-grid__price"><span class="price">' + escapeHtml(priceStr) + '</span></span>';
+}
+
+/**
  * @param {HTMLElement} container
  * @param {ReturnType<getBulkConfig>} config
  * @param {string} sectionId
@@ -247,6 +283,7 @@ function renderDesktopGrid(container, config, sectionId) {
           : band === 'Limited'
             ? 'at-bulk-grid__availability--low'
             : 'at-bulk-grid__availability--in-stock';
+      const priceHtml = formatVariantPriceHtml(v, config);
       html +=
         '<td data-at-bulk-cell data-variant-id="' +
         v.id +
@@ -258,6 +295,7 @@ function renderDesktopGrid(container, config, sectionId) {
         ' ' +
         escapeAttr(size) +
         '">' +
+        priceHtml +
         '<span class="at-bulk-grid__availability ' +
         bandClass +
         '">' +
@@ -462,10 +500,13 @@ function renderMobileGrid(container, config, sectionId) {
           : band === 'Limited'
             ? 'at-bulk-grid__availability--low'
             : 'at-bulk-grid__availability--in-stock';
+      const priceHtmlMobile = formatVariantPriceHtml(v, config);
       html +=
         '<div class="at-bulk-grid__mobile-size-row">' +
         '<span>' +
         escapeHtml(size) +
+        ' ' +
+        priceHtmlMobile +
         ' <span class="at-bulk-grid__availability ' +
         bandClass +
         '">' +

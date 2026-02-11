@@ -218,6 +218,8 @@
           "productId": {{ product_resource.id | json }},
           "productUrl": {{ product_resource.url | json }},
           "sectionId": {{ section.id | json }},
+          "moneyFormat": {{ shop.money_format | json }},
+          "currency": {{ shop.currency | json }},
           "options": [
             {%- for opt in product_resource.options_with_values -%}
             {
@@ -270,7 +272,7 @@
                 {%- if val == v.option3 -%}{%- assign idx3 = forloop.index0 -%}{%- break -%}{%- endif -%}
               {%- endfor -%}
             {%- endif -%}
-            [{{ v.id }},{{ v.available }},{{ v.inventory_quantity | default: 0 }},{{ v.inventory_policy | json }},{{ idx1 }},{{ idx2 }}{% if opts.size == 3 %},{{ idx3 }}{% endif %}]{% unless forloop.last %},{% endunless %}
+            [{{ v.id }},{{ v.available }},{{ v.inventory_quantity | default: 0 }},{{ v.inventory_policy | json }},{{ idx1 }},{{ idx2 }}{% if opts.size == 3 %},{{ idx3 }}{% endif %},{{ v.price }},{{ v.compare_at_price | default: 0 }}]{% unless forloop.last %},{% endunless %}
             {%- endfor -%}
           ]
         }
@@ -291,7 +293,7 @@
             {%- assign v = option_value.variant -%}
             {%- if v -%}
           {%- unless first_v -%},{%- endunless -%}{%- assign first_v = false -%}
-          {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ selected_name_1 | json }},"o2":{{ option_value.name | json }}{% if opts.size == 3 %},"o3":{{ v.option3 | json }}{% endif %}}
+          {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ selected_name_1 | json }},"o2":{{ option_value.name | json }}{% if opts.size == 3 %},"o3":{{ v.option3 | json }}{% endif %},"pr":{{ v.price }},"cp":{{ v.compare_at_price | default: 0 }}}
             {%- endif -%}
           {%- endfor -%}
         ]}

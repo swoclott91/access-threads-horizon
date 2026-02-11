@@ -84,6 +84,13 @@
   box-shadow: 0 1px 0 var(--color-border);
 }
 
+.at-bulk-grid__table td[data-at-bulk-cell] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
 .at-bulk-grid__table td.at-bulk-grid__color-cell {
   text-align: left;
   white-space: nowrap;
@@ -120,6 +127,22 @@
   border-radius: var(--style-border-radius-inputs);
   text-align: center;
   font-size: inherit;
+}
+
+.at-bulk-grid__price {
+  display: block;
+  font-size: var(--font-size--xs);
+  margin-top: 2px;
+}
+
+.at-bulk-grid__price .compare-at-price {
+  text-decoration: line-through;
+  color: var(--color-foreground-secondary);
+  margin-inline-end: 0.25em;
+}
+
+.at-bulk-grid__price .price {
+  color: var(--color-foreground);
 }
 
 .at-bulk-grid__availability {
