@@ -21,21 +21,24 @@ const CART_ICON_SELECTOR = '.header-actions__cart-icon';
 
 /**
  * On successful bulk add: optional fly animation, close modal, reset inputs, dispatch CartAddEvent.
+ * Cart opens after fly animation completes (0.6s) to match theme add-to-cart timing.
  * @param {HTMLElement} container - Bulk grid container
  * @param {() => void} updateTotal - Function to refresh total display
  * @param {HTMLButtonElement | null} addBtn - Add to cart button (source for fly animation)
  * @param {string} sectionId - Section ID for config lookup
  * @param {Object} cart - Cart object from cart.js
  */
-function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart) {
+async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart) {
   const doAnimation = container.dataset.atBulkAddToCartAnimation === 'true';
   const config = getBulkConfig(sectionId) || bulkGridConfigCache.get(sectionId);
   const productImage = config?.productFeaturedImage;
 
+  /** @type {Element | null} */
+  let flyToCartEl = null;
   if (doAnimation && addBtn && productImage && customElements.get('fly-to-cart')) {
     const cartIcon = document.querySelector(CART_ICON_SELECTOR);
     if (cartIcon) {
-      const flyToCartEl = document.createElement('fly-to-cart');
+      flyToCartEl = document.createElement('fly-to-cart');
       flyToCartEl.classList.add('fly-to-cart--main');
       flyToCartEl.style.setProperty('background-image', `url(${productImage})`);
       flyToCartEl.style.setProperty('--start-opacity', '0');
@@ -43,6 +46,12 @@ function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart) {
       flyToCartEl.destination = cartIcon;
       document.body.appendChild(flyToCartEl);
     }
+  }
+
+  // Wait for fly animation to complete (0.6s) before closing modal and opening cart.
+  // Fixed delay matches fly-to-cart--main animation-duration in base.css.
+  if (flyToCartEl) {
+    await new Promise((r) => setTimeout(r, 650));
   }
 
   const dialogComponent = container.closest('dialog-component');
@@ -55,13 +64,12 @@ function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart) {
   });
   const section = document.getElementById(`shopify-section-${sectionId}`);
   const form = section?.querySelector('[data-at-bulk-form]');
-  const   lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
+  const lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
   if (lineItemsInput) lineItemsInput.value = '';
   updateTotal();
 
   document.dispatchEvent(new CartAddEvent(cart, 'at-bulk-grid', { source: 'at-bulk-grid' }));
 
-  // Bulk shoppers always get the cart drawer; regular add-to-cart respects theme setting
   const cartDrawer = document.querySelector('cart-drawer-component');
   if (cartDrawer && typeof cartDrawer.open === 'function') {
     cartDrawer.open();
@@ -448,8 +456,8 @@ function renderDesktopGrid(container, config, sectionId) {
         window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
         fetch(root + 'cart.js')
           .then((r) => r.json())
-          .then((cart) => {
-            handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart);
+          .then(async (cart) => {
+            await handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart);
           })
           .catch(() => {});
       })
@@ -708,8 +716,8 @@ function renderMobileGrid(container, config, sectionId) {
         window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
         fetch(root + 'cart.js')
           .then((r) => r.json())
-          .then((cart) => {
-            handleBulkAddSuccess(container, updateTotal, addBtnMobile, sectionId, cart);
+          .then(async (cart) => {
+            await handleBulkAddSuccess(container, updateTotal, addBtnMobile, sectionId, cart);
           })
           .catch(() => {});
       })
