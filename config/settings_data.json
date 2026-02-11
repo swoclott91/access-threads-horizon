@@ -56,6 +56,7 @@
     "button_border_radius_secondary": 14,
     "cart_type": "drawer",
     "cart_price_font": "subheading",
+    "auto_open_cart_drawer": true,
     "show_cart_note": false,
     "show_add_discount_code": true,
     "drawer_drop_shadow": true,
