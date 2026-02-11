@@ -226,6 +226,18 @@
     padding-block-end: var(--padding-2xl);
   }
 
+  /* Sticky footer when quantity > 0 so user can add to cart without scrolling to bottom */
+  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: auto;
+    padding-block-start: var(--gap-md);
+    padding-block-end: var(--padding-xs);
+    background: var(--color-background);
+    box-shadow: 0 -1px 0 var(--color-border);
+  }
+
   .at-bulk-grid__search {
     max-width: none;
   }
