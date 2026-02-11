@@ -88,7 +88,14 @@
 
     @media screen and (min-width: 750px) {
       padding: var(--padding-5xl);
+      /* Prevent horizontal scroll: cap width to viewport minus gutter */
+      max-width: min(var(--normal-content-width), calc(100vw - 2rem));
     }
+  }
+
+  .popup-link__inner {
+    min-width: 0;
+    overflow-x: auto;
   }
 
   .popup-link__content[open] {
