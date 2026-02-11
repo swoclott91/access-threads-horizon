@@ -172,15 +172,14 @@
   gap: var(--gap-sm);
   align-items: center;
   margin-top: var(--gap-md);
-  opacity: 0;
-  visibility: hidden;
+  /* Fully hidden when no quantity so it doesn’t take space or show */
+  display: none;
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
 .at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
-  opacity: 1;
-  visibility: visible;
+  display: flex;
   pointer-events: auto;
 }
 

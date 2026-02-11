@@ -548,6 +548,7 @@ function renderMobileGrid(container, config, sectionId) {
       if (btn.querySelector('span[aria-hidden="true"]')) {
         btn.querySelector('span[aria-hidden="true"]').textContent = open ? '−' : '+';
       }
+      updateTotal();
     });
   });
 
@@ -713,7 +714,7 @@ function init() {
 
   window.addEventListener('resize', () => {
     document.querySelectorAll(BULK_GRID_SELECTORS.container).forEach((container) => {
-      if (container.dataset.atBulkSectionId && container.closest('dialog')?.open) {
+      if (container.dataset.atBulkGridSectionId && container.closest('dialog')?.open) {
         renderGrid(container);
       }
     });
