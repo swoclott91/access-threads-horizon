@@ -178,13 +178,15 @@
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
-.at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
+.at-bulk-grid__actions[data-at-bulk-has-quantity="true"],
+.at-bulk-grid__actions.at-bulk-grid__actions--has-quantity {
   display: flex;
   pointer-events: auto;
 }
 
 @media screen and (min-width: 750px) {
-  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
+  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"],
+  .at-bulk-grid__actions.at-bulk-grid__actions--has-quantity {
     position: sticky;
     bottom: 0;
     z-index: 2;
@@ -221,12 +223,37 @@
 
 /* Mobile: full-width sheet feel; accordion per color */
 @media screen and (max-width: 749px) {
+  /* Bulk grid modal: at least 85dvh so sticky footer has a proper viewport to stick to */
+  .at-popup-link .popup-link__content:has(.at-bulk-grid) {
+    max-height: 85dvh;
+    height: 85dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Inner is the scroll container so sticky footer sticks to bottom of visible modal */
+  .at-popup-link .popup-link__inner:has(.at-bulk-grid) {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .at-popup-link .at-bulk-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
   .at-bulk-grid {
     padding-block-end: var(--padding-2xl);
   }
 
-  /* Sticky footer when quantity > 0 so user can add to cart without scrolling to bottom */
-  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"] {
+  /* Sticky footer sticks to bottom of .popup-link__inner (the scroll container) */
+  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"],
+  .at-bulk-grid__actions.at-bulk-grid__actions--has-quantity {
     position: sticky;
     bottom: 0;
     z-index: 2;

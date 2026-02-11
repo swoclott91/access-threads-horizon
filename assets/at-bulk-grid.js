@@ -333,9 +333,13 @@ function renderDesktopGrid(container, config, sectionId) {
     inputs.forEach((input) => {
       sum += parseInt(input.value, 10) || 0;
     });
+    const hasQuantity = sum > 0;
     if (totalEl) totalEl.textContent = 'Total: ' + sum;
     const actionsEl = container.querySelector('.at-bulk-grid__actions');
-    if (actionsEl) actionsEl.setAttribute('data-at-bulk-has-quantity', sum > 0 ? 'true' : 'false');
+    if (actionsEl) {
+      actionsEl.setAttribute('data-at-bulk-has-quantity', hasQuantity ? 'true' : 'false');
+      actionsEl.classList.toggle('at-bulk-grid__actions--has-quantity', hasQuantity);
+    }
   };
 
   const getLineItems = () => {
@@ -349,9 +353,11 @@ function renderDesktopGrid(container, config, sectionId) {
     return items;
   };
 
-  container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
-    input.addEventListener('input', updateTotal);
-    input.addEventListener('change', updateTotal);
+  container.addEventListener('input', (e) => {
+    if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
+  });
+  container.addEventListener('change', (e) => {
+    if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
   });
 
   if (searchEl) {
@@ -539,6 +545,29 @@ function renderMobileGrid(container, config, sectionId) {
   container.innerHTML = html;
   container.dataset.atBulkGridSectionId = sectionId;
 
+  const totalEl = container.querySelector('[data-at-bulk-total]');
+  const updateTotal = () => {
+    const inputs = container.querySelectorAll('[data-at-bulk-qty]');
+    let sum = 0;
+    inputs.forEach((input) => {
+      sum += parseInt(input.value, 10) || 0;
+    });
+    const hasQuantity = sum > 0;
+    if (totalEl) totalEl.textContent = 'Total: ' + sum;
+    const actionsEl = container.querySelector('.at-bulk-grid__actions');
+    if (actionsEl) {
+      actionsEl.setAttribute('data-at-bulk-has-quantity', hasQuantity ? 'true' : 'false');
+      actionsEl.classList.toggle('at-bulk-grid__actions--has-quantity', hasQuantity);
+    }
+  };
+
+  container.addEventListener('input', (e) => {
+    if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
+  });
+  container.addEventListener('change', (e) => {
+    if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
+  });
+
   container.querySelectorAll('[data-at-bulk-accordion-toggle]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const content = btn.nextElementSibling;
@@ -550,22 +579,6 @@ function renderMobileGrid(container, config, sectionId) {
       }
       updateTotal();
     });
-  });
-
-  const totalEl = container.querySelector('[data-at-bulk-total]');
-  const updateTotal = () => {
-    const inputs = container.querySelectorAll('[data-at-bulk-qty]');
-    let sum = 0;
-    inputs.forEach((input) => {
-      sum += parseInt(input.value, 10) || 0;
-    });
-    if (totalEl) totalEl.textContent = 'Total: ' + sum;
-    const actionsEl = container.querySelector('.at-bulk-grid__actions');
-    if (actionsEl) actionsEl.setAttribute('data-at-bulk-has-quantity', sum > 0 ? 'true' : 'false');
-  };
-  container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
-    input.addEventListener('input', updateTotal);
-    input.addEventListener('change', updateTotal);
   });
 
   const searchEl = container.querySelector('.at-bulk-grid__search');
