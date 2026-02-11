@@ -127,7 +127,7 @@
   border: var(--style-border-width-inputs) solid var(--color-border);
   border-radius: var(--style-border-radius-inputs);
   text-align: center;
-  font-size: inherit;
+  font-size: 16px;
 }
 
 .at-bulk-grid__price {
