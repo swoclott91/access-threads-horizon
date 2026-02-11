@@ -224,11 +224,11 @@ function renderDesktopGrid(container, config, sectionId) {
   colorValues.forEach((color) => {
     const swatchStyle = getSwatchStyle(color);
     html += '<tr data-at-bulk-color-row data-at-bulk-color-value="' + escapeAttr(color) + '">';
-    html += '<td class="at-bulk-grid__color-cell">';
+    html += '<td class="at-bulk-grid__color-cell"><div class="at-bulk-grid__color-cell-inner">';
     if (swatchStyle) {
       html += '<span class="at-bulk-grid__swatch swatch" style="' + swatchStyle + '" aria-hidden="true"></span>';
     }
-    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span></td>';
+    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span></div></td>';
     sizeValues.forEach((size) => {
       const v = getVariant(color, size);
       if (!v) {

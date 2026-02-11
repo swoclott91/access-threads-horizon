@@ -87,11 +87,16 @@
 .at-bulk-grid__table td.at-bulk-grid__color-cell {
   text-align: left;
   white-space: nowrap;
+  vertical-align: middle;
+}
+
+.at-bulk-grid__color-cell-inner {
   display: flex;
   align-items: center;
   gap: var(--padding-sm);
-  /* Match row height of quantity cells (input + availability + padding) so color column aligns */
-  min-height: 3.5rem;
+  min-height: 100%;
+  /* Fallback when % doesn’t resolve so color row matches quantity row height */
+  min-height: max(100%, 3.5rem);
 }
 
 .at-bulk-grid__swatch {
@@ -205,10 +210,6 @@
   .at-bulk-grid__table td {
     padding: var(--padding-2xs) var(--padding-xs);
     font-size: var(--font-size--xs);
-  }
-
-  .at-bulk-grid__table td.at-bulk-grid__color-cell {
-    min-height: 2.75rem;
   }
 
   .at-bulk-grid__qty-input {
