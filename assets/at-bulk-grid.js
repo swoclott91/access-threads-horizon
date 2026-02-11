@@ -83,6 +83,10 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
 const ADD_TO_CART_ICON_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--icon-stroke-width)" d="M16.608 9.421V6.906H3.392v8.016c0 .567.224 1.112.624 1.513.4.402.941.627 1.506.627H8.63M8.818 3h2.333c.618 0 1.212.247 1.649.686a2.35 2.35 0 0 1 .683 1.658v1.562H6.486V5.344c0-.622.246-1.218.683-1.658A2.33 2.33 0 0 1 8.82 3"/><path stroke="currentColor" stroke-linecap="round" stroke-width="var(--icon-stroke-width)" d="M14.608 12.563v5m2.5-2.5h-5"/></svg>';
 
+/** Theme accordion caret – same as icon-caret.svg (mobile bulk grid expand/collapse) */
+const ICON_CARET_SVG =
+  '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 5.5L7 9.5L3 5.5" stroke="currentColor" stroke-width="var(--icon-stroke-width)" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 /** Theme quantity selector icons – same as quantity-selector.liquid (mobile bulk grid +/-) */
 const ICON_MINUS_SVG =
   '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.75 7H11.25" stroke="currentColor" stroke-width="var(--icon-stroke-width)" stroke-linecap="round"/></svg>';
@@ -547,7 +551,7 @@ function renderMobileGrid(container, config, sectionId) {
     if (swatchStyle) {
       html += '<span class="at-bulk-grid__swatch swatch" style="' + swatchStyle + '" aria-hidden="true"></span>';
     }
-    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span> <span class="at-bulk-grid__accordion-icon" aria-hidden="true" data-at-bulk-accordion-icon>+</span>';
+    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span> <span class="svg-wrapper icon-caret icon-animated at-bulk-grid__accordion-icon" aria-hidden="true" data-at-bulk-accordion-icon>' + ICON_CARET_SVG + '</span>';
     html += '</button>';
     html += '<div class="at-bulk-grid__mobile-accordion-content" hidden>';
     sizeValues.forEach((size) => {
@@ -668,10 +672,6 @@ function renderMobileGrid(container, config, sectionId) {
       const open = content?.getAttribute('hidden') != null;
       content?.toggleAttribute('hidden', !open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      const accordionIcon = btn.querySelector('[data-at-bulk-accordion-icon]');
-      if (accordionIcon) {
-        accordionIcon.textContent = open ? '−' : '+';
-      }
       updateTotal();
     });
   });

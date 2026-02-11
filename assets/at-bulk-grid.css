@@ -328,6 +328,18 @@
     text-align: left;
   }
 
+  .at-bulk-grid__mobile-accordion-header .at-bulk-grid__accordion-icon {
+    height: var(--icon-size-xs);
+    width: var(--icon-size-xs);
+    flex-shrink: 0;
+    margin-inline-start: auto;
+  }
+
+  /* Caret rotates when accordion expanded (matches accordion block style) */
+  .at-bulk-grid__mobile-accordion-header[aria-expanded="true"] .at-bulk-grid__accordion-icon svg {
+    transform: rotate(180deg);
+  }
+
   .at-bulk-grid__mobile-accordion-content {
     padding: var(--padding-sm);
   }
