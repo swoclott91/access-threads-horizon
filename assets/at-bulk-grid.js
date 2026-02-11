@@ -174,8 +174,9 @@ function availabilityBand(qty, available, inventory, policy) {
  * @returns {string} HTML fragment
  */
 function formatVariantPriceHtml(variant, config) {
-  const format = config?.moneyFormat || '{{amount}}';
-  const currency = config?.currency || 'USD';
+  let format = config?.moneyFormat?.trim() || '';
+  const currency = (config?.currency || 'USD').toString().toUpperCase();
+  if (!format) format = currency === 'USD' ? '${{amount}}' : '{{amount}} ' + currency;
   const price = variant?.price ?? 0;
   const compareAt = variant?.compare_at_price ?? 0;
   const priceStr = formatMoney(price, format, currency);
@@ -288,6 +289,7 @@ function renderDesktopGrid(container, config, sectionId) {
         '<td data-at-bulk-cell data-variant-id="' +
         v.id +
         '">' +
+        '<div class="at-bulk-grid__cell-inner">' +
         '<input type="number" class="at-bulk-grid__qty-input" min="0" value="0" data-at-bulk-qty data-variant-id="' +
         v.id +
         '" aria-label="Quantity ' +
@@ -300,7 +302,7 @@ function renderDesktopGrid(container, config, sectionId) {
         bandClass +
         '">' +
         band +
-        '</span></td>';
+        '</span></div></td>';
     });
     html += '</tr>';
   });

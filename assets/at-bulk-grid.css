@@ -84,13 +84,6 @@
   box-shadow: 0 1px 0 var(--color-border);
 }
 
-.at-bulk-grid__table td[data-at-bulk-cell] {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
 .at-bulk-grid__table td.at-bulk-grid__color-cell {
   text-align: left;
   white-space: nowrap;
@@ -117,6 +110,14 @@
 
 .at-bulk-grid__color-name {
   font-size: inherit;
+}
+
+.at-bulk-grid__cell-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
 }
 
 .at-bulk-grid__qty-input {
