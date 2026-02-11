@@ -547,7 +547,7 @@ function renderMobileGrid(container, config, sectionId) {
     if (swatchStyle) {
       html += '<span class="at-bulk-grid__swatch swatch" style="' + swatchStyle + '" aria-hidden="true"></span>';
     }
-    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span> <span aria-hidden="true">+</span>';
+    html += '<span class="at-bulk-grid__color-name">' + escapeHtml(color) + '</span> <span class="at-bulk-grid__accordion-icon" aria-hidden="true" data-at-bulk-accordion-icon>+</span>';
     html += '</button>';
     html += '<div class="at-bulk-grid__mobile-accordion-content" hidden>';
     sizeValues.forEach((size) => {
@@ -668,8 +668,9 @@ function renderMobileGrid(container, config, sectionId) {
       const open = content?.getAttribute('hidden') != null;
       content?.toggleAttribute('hidden', !open);
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (btn.querySelector('span[aria-hidden="true"]')) {
-        btn.querySelector('span[aria-hidden="true"]').textContent = open ? '−' : '+';
+      const accordionIcon = btn.querySelector('[data-at-bulk-accordion-icon]');
+      if (accordionIcon) {
+        accordionIcon.textContent = open ? '−' : '+';
       }
       updateTotal();
     });
