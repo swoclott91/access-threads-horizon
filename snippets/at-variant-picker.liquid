@@ -212,12 +212,19 @@
     </form>
 
     {%- if block_settings.at_enable_bulk_order -%}
+      {%- liquid
+        assign at_bulk_product_img = product_resource.selected_or_first_available_variant.featured_media.preview_image
+        if at_bulk_product_img == blank
+          assign at_bulk_product_img = product_resource.featured_media.preview_image
+        endif
+      -%}
       {%- comment -%} Options first so we can encode variants as [id,a,q,p,i1,i2[,i3]] and stay under section output limit {%- endcomment -%}
       <script type="application/json" data-at-bulk-grid-config data-at-section-id="{{ section.id }}" data-at-product-id="{{ product_resource.id }}">
         {
           "productId": {{ product_resource.id | json }},
           "productUrl": {{ product_resource.url | json }},
           "sectionId": {{ section.id | json }},
+          "productFeaturedImage": {% if at_bulk_product_img == blank %}null{% else %}{{ at_bulk_product_img | image_url: width: 100 | json }}{% endif %},
           "moneyFormat": {{ shop.money_format | json }},
           "currency": {{ shop.currency | json }},
           "options": [

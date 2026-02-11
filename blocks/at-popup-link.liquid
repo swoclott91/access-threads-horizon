@@ -53,7 +53,7 @@
     </h2>
     <div class="popup-link__inner">
       {%- if block_settings.at_enable_bulk_grid -%}
-        <div class="at-bulk-grid" data-at-bulk-grid data-at-bulk-grid-section-id="{{ section.id }}" data-at-bulk-grid-block-id="{{ block.id }}">
+        <div class="at-bulk-grid" data-at-bulk-grid data-at-bulk-grid-section-id="{{ section.id }}" data-at-bulk-grid-block-id="{{ block.id }}" data-at-bulk-add-to-cart-animation="{{ settings.add_to_cart_animation }}" data-at-bulk-auto-open-cart="{{ settings.auto_open_cart_drawer }}">
           {%- comment -%} Bulk grid content rendered by at-bulk-grid.js from data provided by AT variant picker {%- endcomment -%}
         </div>
       {%- endif -%}

@@ -5,6 +5,7 @@
  */
 
 import { formatMoney } from '@theme/money-formatting';
+import { CartAddEvent } from '@theme/events';
 
 const BULK_GRID_SELECTORS = {
   container: '[data-at-bulk-grid]',
@@ -15,6 +16,57 @@ const BULK_GRID_SELECTORS = {
 };
 
 const MOBILE_BREAKPOINT = 750;
+
+const CART_ICON_SELECTOR = '.header-actions__cart-icon';
+
+/**
+ * On successful bulk add: optional fly animation, close modal, reset inputs, dispatch CartAddEvent.
+ * @param {HTMLElement} container - Bulk grid container
+ * @param {() => void} updateTotal - Function to refresh total display
+ * @param {HTMLButtonElement | null} addBtn - Add to cart button (source for fly animation)
+ * @param {string} sectionId - Section ID for config lookup
+ * @param {Object} cart - Cart object from cart.js
+ */
+function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart) {
+  const doAnimation = container.dataset.atBulkAddToCartAnimation === 'true';
+  const config = getBulkConfig(sectionId) || bulkGridConfigCache.get(sectionId);
+  const productImage = config?.productFeaturedImage;
+
+  if (doAnimation && addBtn && productImage && customElements.get('fly-to-cart')) {
+    const cartIcon = document.querySelector(CART_ICON_SELECTOR);
+    if (cartIcon) {
+      const flyToCartEl = document.createElement('fly-to-cart');
+      flyToCartEl.classList.add('fly-to-cart--main');
+      flyToCartEl.style.setProperty('background-image', `url(${productImage})`);
+      flyToCartEl.style.setProperty('--start-opacity', '0');
+      flyToCartEl.source = addBtn;
+      flyToCartEl.destination = cartIcon;
+      document.body.appendChild(flyToCartEl);
+    }
+  }
+
+  const dialogComponent = container.closest('dialog-component');
+  if (dialogComponent && typeof dialogComponent.closeDialog === 'function') {
+    dialogComponent.closeDialog();
+  }
+
+  container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
+    if (input instanceof HTMLInputElement) input.value = '0';
+  });
+  const section = document.getElementById(`shopify-section-${sectionId}`);
+  const form = section?.querySelector('[data-at-bulk-form]');
+  const   lineItemsInput = form?.querySelector(BULK_GRID_SELECTORS.lineItemsInput);
+  if (lineItemsInput) lineItemsInput.value = '';
+  updateTotal();
+
+  document.dispatchEvent(new CartAddEvent(cart, 'at-bulk-grid', { source: 'at-bulk-grid' }));
+
+  // Bulk shoppers always get the cart drawer; regular add-to-cart respects theme setting
+  const cartDrawer = document.querySelector('cart-drawer-component');
+  if (cartDrawer && typeof cartDrawer.open === 'function') {
+    cartDrawer.open();
+  }
+}
 
 /** Theme add-to-cart icon (icon-add-to-cart.svg) – same as add-to-cart-button secondary */
 const ADD_TO_CART_ICON_SVG =
@@ -317,12 +369,11 @@ function renderDesktopGrid(container, config, sectionId) {
   html +=
     '<div class="at-bulk-grid__actions" data-at-bulk-has-quantity="false">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
-    '<button type="button" class="button add-to-cart-button button-secondary" data-at-bulk-add-to-cart>' +
+    '<button type="button" class="button add-to-cart-button button-primary" data-at-bulk-add-to-cart>' +
     '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
     ADD_TO_CART_ICON_SVG +
     '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
     '</button>' +
-    '<button type="button" class="button" data-at-bulk-buy-now>Buy it now</button>' +
     '</div>';
 
   container.innerHTML = html;
@@ -331,7 +382,6 @@ function renderDesktopGrid(container, config, sectionId) {
   const searchEl = container.querySelector(BULK_GRID_SELECTORS.search);
   const totalEl = container.querySelector('[data-at-bulk-total]');
   const addBtn = container.querySelector('[data-at-bulk-add-to-cart]');
-  const buyNowBtn = container.querySelector('[data-at-bulk-buy-now]');
 
   const updateTotal = () => {
     const inputs = container.querySelectorAll('[data-at-bulk-qty]');
@@ -376,7 +426,7 @@ function renderDesktopGrid(container, config, sectionId) {
     });
   }
 
-  const submitBulkItems = (redirectToCheckout) => {
+  const submitBulkItems = () => {
     const items = getLineItems();
     if (items.length === 0) return;
     const section = document.getElementById(`shopify-section-${sectionId}`);
@@ -396,27 +446,17 @@ function renderDesktopGrid(container, config, sectionId) {
           console.warn('at-bulk-grid: cart add response', data);
         }
         window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
-        if (redirectToCheckout) {
-          window.location.href = root + 'checkout';
-          return;
-        }
         fetch(root + 'cart.js')
           .then((r) => r.json())
           .then((cart) => {
-            document.body.dispatchEvent(
-              new CustomEvent('cart:update', {
-                bubbles: true,
-                detail: { resource: cart, sourceId: 'at-bulk-grid', data: {} },
-              })
-            );
+            handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, cart);
           })
           .catch(() => {});
       })
       .catch((err) => console.error('at-bulk-grid: cart add failed', err));
   };
 
-  if (addBtn) addBtn.addEventListener('click', () => submitBulkItems(false));
-  if (buyNowBtn) buyNowBtn.addEventListener('click', () => submitBulkItems(true));
+  if (addBtn) addBtn.addEventListener('click', submitBulkItems);
 
   updateTotal();
 }
@@ -551,12 +591,11 @@ function renderMobileGrid(container, config, sectionId) {
   html +=
     '<div class="at-bulk-grid__actions" data-at-bulk-has-quantity="false">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
-    '<button type="button" class="button add-to-cart-button button-secondary" data-at-bulk-add-to-cart>' +
+    '<button type="button" class="button add-to-cart-button button-primary" data-at-bulk-add-to-cart>' +
     '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
     ADD_TO_CART_ICON_SVG +
     '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
     '</button>' +
-    '<button type="button" class="button" data-at-bulk-buy-now>Buy it now</button>' +
     '</div>';
 
   if (container._atBulkMobileAbortController) {
@@ -647,7 +686,7 @@ function renderMobileGrid(container, config, sectionId) {
     return items;
   };
 
-  const submitBulkItemsMobile = (redirectToCheckout) => {
+  const submitBulkItemsMobile = () => {
     const items = getLineItemsMobile();
     if (items.length === 0) return;
     const section = document.getElementById(`shopify-section-${sectionId}`);
@@ -667,19 +706,10 @@ function renderMobileGrid(container, config, sectionId) {
           console.warn('at-bulk-grid: cart add response', data);
         }
         window.dispatchEvent(new CustomEvent('at:bulk:added', { detail: { items, response: data } }));
-        if (redirectToCheckout) {
-          window.location.href = root + 'checkout';
-          return;
-        }
         fetch(root + 'cart.js')
           .then((r) => r.json())
           .then((cart) => {
-            document.body.dispatchEvent(
-              new CustomEvent('cart:update', {
-                bubbles: true,
-                detail: { resource: cart, sourceId: 'at-bulk-grid', data: {} },
-              })
-            );
+            handleBulkAddSuccess(container, updateTotal, addBtnMobile, sectionId, cart);
           })
           .catch(() => {});
       })
@@ -687,9 +717,7 @@ function renderMobileGrid(container, config, sectionId) {
   };
 
   const addBtnMobile = container.querySelector('[data-at-bulk-add-to-cart]');
-  const buyNowBtnMobile = container.querySelector('[data-at-bulk-buy-now]');
-  if (addBtnMobile) addBtnMobile.addEventListener('click', () => submitBulkItemsMobile(false));
-  if (buyNowBtnMobile) buyNowBtnMobile.addEventListener('click', () => submitBulkItemsMobile(true));
+  if (addBtnMobile) addBtnMobile.addEventListener('click', submitBulkItemsMobile);
 
   updateTotal();
 }
