@@ -88,11 +88,12 @@
 
     @media screen and (min-width: 750px) {
       padding: var(--padding-5xl);
-      /* Prevent horizontal scroll: cap width to viewport minus gutter */
+      /* Cap width to viewport so page never scrolls horizontally */
       max-width: min(var(--normal-content-width), calc(100vw - 2rem));
     }
   }
 
+  /* Allow inner content to use full width; bulk grid modal overrides max-width via at-bulk-grid.css */
   .popup-link__inner {
     min-width: 0;
     overflow-x: auto;

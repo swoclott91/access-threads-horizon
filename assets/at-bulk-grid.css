@@ -2,10 +2,10 @@
  * AT Bulk order grid – minimal layout; reuses theme button/input/grid classes.
  */
 
-/* Desktop: wider modal when bulk grid is present */
+/* Desktop: wider modal when bulk grid is present so table fits without horizontal scroll */
 @media screen and (min-width: 750px) {
   .at-popup-link .popup-link__content:has(.at-bulk-grid) {
-    max-width: 56rem;
+    max-width: min(72rem, calc(100vw - 2rem));
   }
 }
 
