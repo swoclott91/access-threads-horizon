@@ -559,6 +559,12 @@ function renderMobileGrid(container, config, sectionId) {
     '<button type="button" class="button" data-at-bulk-buy-now>Buy it now</button>' +
     '</div>';
 
+  if (container._atBulkMobileAbortController) {
+    container._atBulkMobileAbortController.abort();
+  }
+  container._atBulkMobileAbortController = new AbortController();
+  const mobileSignal = container._atBulkMobileAbortController.signal;
+
   container.innerHTML = html;
   container.dataset.atBulkGridSectionId = sectionId;
 
@@ -580,10 +586,10 @@ function renderMobileGrid(container, config, sectionId) {
 
   container.addEventListener('input', (e) => {
     if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
-  });
+  }, { signal: mobileSignal });
   container.addEventListener('change', (e) => {
     if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
-  });
+  }, { signal: mobileSignal });
 
   container.addEventListener('click', (e) => {
     const minusBtn = e.target.closest('[data-at-bulk-qty-minus]');
@@ -593,16 +599,18 @@ function renderMobileGrid(container, config, sectionId) {
     if (!input) return;
     if (minusBtn) {
       e.preventDefault();
+      e.stopPropagation();
       const val = Math.max(0, (parseInt(input.value, 10) || 0) - 1);
       input.value = String(val);
       updateTotal();
     } else if (plusBtn) {
       e.preventDefault();
+      e.stopPropagation();
       const val = (parseInt(input.value, 10) || 0) + 1;
       input.value = String(val);
       updateTotal();
     }
-  });
+  }, { signal: mobileSignal });
 
   container.querySelectorAll('[data-at-bulk-accordion-toggle]').forEach((btn) => {
     btn.addEventListener('click', () => {
