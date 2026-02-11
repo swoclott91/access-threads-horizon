@@ -274,8 +274,29 @@
     font-size: var(--font-size--xs);
   }
 
-  .at-bulk-grid__qty-input {
+  /* Plain number input (desktop table) min-width; mobile uses quantity-selector below */
+  .at-bulk-grid__table .at-bulk-grid__qty-input {
     min-width: 2.5rem;
+  }
+
+  /* Mobile: quantity selector (minus / input / plus) – same style as quantity-selector.liquid */
+  .at-bulk-grid__qty-selector-wrapper {
+    flex-shrink: 0;
+    min-width: var(--quantity-selector-width, 124px);
+  }
+
+  .at-bulk-grid .quantity-selector {
+    border-radius: var(--style-border-radius-buttons-primary);
+  }
+
+  .at-bulk-grid .quantity-selector .quantity-minus {
+    border-start-start-radius: var(--style-border-radius-buttons-primary);
+    border-end-start-radius: var(--style-border-radius-buttons-primary);
+  }
+
+  .at-bulk-grid .quantity-selector .quantity-plus {
+    border-start-end-radius: var(--style-border-radius-buttons-primary);
+    border-end-end-radius: var(--style-border-radius-buttons-primary);
   }
 
   .at-bulk-grid__mobile-accordion {

@@ -20,6 +20,12 @@ const MOBILE_BREAKPOINT = 750;
 const ADD_TO_CART_ICON_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--icon-stroke-width)" d="M16.608 9.421V6.906H3.392v8.016c0 .567.224 1.112.624 1.513.4.402.941.627 1.506.627H8.63M8.818 3h2.333c.618 0 1.212.247 1.649.686a2.35 2.35 0 0 1 .683 1.658v1.562H6.486V5.344c0-.622.246-1.218.683-1.658A2.33 2.33 0 0 1 8.82 3"/><path stroke="currentColor" stroke-linecap="round" stroke-width="var(--icon-stroke-width)" d="M14.608 12.563v5m2.5-2.5h-5"/></svg>';
 
+/** Theme quantity selector icons – same as quantity-selector.liquid (mobile bulk grid +/-) */
+const ICON_MINUS_SVG =
+  '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.75 7H11.25" stroke="currentColor" stroke-width="var(--icon-stroke-width)" stroke-linecap="round"/></svg>';
+const ICON_PLUS_SVG =
+  '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path class="vertical" d="M2.75 7H11.25" stroke="currentColor" stroke-width="var(--icon-stroke-width)" stroke-linecap="round"/><path class="horizontal" d="M7 2.75L7 11.25" stroke="currentColor" stroke-width="var(--icon-stroke-width)" stroke-linecap="round"/></svg>';
+
 /**
  * @param {string} sectionId
  * @returns {{ productId: number, productUrl: string, sectionId: string, variants: Array<{ id: number, available: boolean, inventory_quantity: number, inventory_policy: string, option1: string, option2?: string, option3?: string }>, options: Array<{ name: string, position: number, values: string[] }> } | null}
@@ -520,11 +526,22 @@ function renderMobileGrid(container, config, sectionId) {
         '">' +
         band +
         '</span></span>' +
+        '<div class="quantity-selector-wrapper at-bulk-grid__qty-selector-wrapper">' +
+        '<div class="quantity-selector at-bulk-grid__qty-selector">' +
+        '<button type="button" class="button quantity-minus button-unstyled" aria-label="Decrease quantity" data-at-bulk-qty-minus>' +
+        '<span class="visually-hidden">Decrease quantity</span><span class="svg-wrapper icon-plus">' +
+        ICON_MINUS_SVG +
+        '</span></button>' +
         '<input type="number" class="at-bulk-grid__qty-input" min="0" value="0" data-at-bulk-qty data-variant-id="' +
         v.id +
         '" aria-label="Quantity ' +
         escapeAttr(size) +
         '">' +
+        '<button type="button" class="button quantity-plus button-unstyled" aria-label="Increase quantity" data-at-bulk-qty-plus>' +
+        '<span class="visually-hidden">Increase quantity</span><span class="svg-wrapper icon-plus">' +
+        ICON_PLUS_SVG +
+        '</span></button>' +
+        '</div></div>' +
         '</div>';
     });
     html += '</div></div>';
@@ -566,6 +583,25 @@ function renderMobileGrid(container, config, sectionId) {
   });
   container.addEventListener('change', (e) => {
     if (e.target.matches('[data-at-bulk-qty]')) updateTotal();
+  });
+
+  container.addEventListener('click', (e) => {
+    const minusBtn = e.target.closest('[data-at-bulk-qty-minus]');
+    const plusBtn = e.target.closest('[data-at-bulk-qty-plus]');
+    const wrapper = minusBtn?.closest('.at-bulk-grid__qty-selector-wrapper') || plusBtn?.closest('.at-bulk-grid__qty-selector-wrapper');
+    const input = wrapper?.querySelector('[data-at-bulk-qty]');
+    if (!input) return;
+    if (minusBtn) {
+      e.preventDefault();
+      const val = Math.max(0, (parseInt(input.value, 10) || 0) - 1);
+      input.value = String(val);
+      updateTotal();
+    } else if (plusBtn) {
+      e.preventDefault();
+      const val = (parseInt(input.value, 10) || 0) + 1;
+      input.value = String(val);
+      updateTotal();
+    }
   });
 
   container.querySelectorAll('[data-at-bulk-accordion-toggle]').forEach((btn) => {
