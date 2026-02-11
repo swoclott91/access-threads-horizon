@@ -37,6 +37,7 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
   let flyToCartEl = null;
   if (doAnimation && addBtn && productImage && customElements.get('fly-to-cart')) {
     const cartIcon = document.querySelector(CART_ICON_SELECTOR);
+    const dialog = container.closest('dialog');
     if (cartIcon) {
       flyToCartEl = document.createElement('fly-to-cart');
       flyToCartEl.classList.add('fly-to-cart--main');
@@ -44,7 +45,9 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
       flyToCartEl.style.setProperty('--start-opacity', '0');
       flyToCartEl.source = addBtn;
       flyToCartEl.destination = cartIcon;
-      document.body.appendChild(flyToCartEl);
+      // Append to dialog (top layer) so animation appears above the modal
+      const flyParent = dialog || document.body;
+      flyParent.appendChild(flyToCartEl);
     }
   }
 
