@@ -66,7 +66,8 @@
     "remove": "Ukloni",
     "view_pricing_info": "Prikaži informacije o cijeni",
     "open_hotspot": "Otvori hotspot",
-    "slideshow": "Prezentacija"
+    "slideshow": "Prezentacija",
+    "header_navigation_label": "Primarna"
   },
   "actions": {
     "add_to_cart": "Dodaj u košaricu",

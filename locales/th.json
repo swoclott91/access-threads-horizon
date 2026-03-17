@@ -65,7 +65,8 @@
     "remove": "ลบ",
     "view_pricing_info": "ดูข้อมูลการกำหนดราคา",
     "open_hotspot": "เปิดฮอตสปอต",
-    "slideshow": "สไลด์โชว์"
+    "slideshow": "สไลด์โชว์",
+    "header_navigation_label": "หลัก"
   },
   "actions": {
     "add_to_cart": "เพิ่มลงในตะกร้าสินค้า",

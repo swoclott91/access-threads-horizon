@@ -65,7 +65,8 @@
     "remove": "Verwijderen",
     "view_pricing_info": "Prijsinformatie bekijken",
     "open_hotspot": "Hotspot openen",
-    "slideshow": "Diavoorstelling"
+    "slideshow": "Diavoorstelling",
+    "header_navigation_label": "Primair"
   },
   "actions": {
     "add_to_cart": "Aan winkelwagen toevoegen",

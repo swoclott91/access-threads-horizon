@@ -65,7 +65,8 @@
     "remove": "제거",
     "view_pricing_info": "가격 정보 보기",
     "open_hotspot": "핫스팟 열기",
-    "slideshow": "슬라이드 쇼"
+    "slideshow": "슬라이드 쇼",
+    "header_navigation_label": "기본"
   },
   "actions": {
     "add_to_cart": "카트에 추가",

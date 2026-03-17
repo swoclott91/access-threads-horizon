@@ -65,7 +65,8 @@
     "remove": "Eltávolítás",
     "view_pricing_info": "Árképzési adatok megtekintése",
     "open_hotspot": "Hotspot megnyitása",
-    "slideshow": "Diavetítés"
+    "slideshow": "Diavetítés",
+    "header_navigation_label": "Elsődleges"
   },
   "actions": {
     "add_to_cart": "Hozzáadás a kosárhoz",

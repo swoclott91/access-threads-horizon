@@ -525,7 +525,7 @@
       "heading": "Título",
       "description": "Descrição",
       "key": "Nome da propriedade",
-      "key_info": "Não pode estar em branco e tem de ser único para cada bloco. Aparece no carrinho, na finalização da compra e nos detalhes da encomenda.",
+      "key_info": "Não pode ficar em branco e tem de ser único para cada bloco. É apresentado no carrinho, na finalização da compra e nos detalhes da encomenda.",
       "placeholder_text": "Texto do marcador de posição",
       "default_heading": "Personalize o seu produto",
       "default_placeholder": "Introduza as suas instruções especiais",
@@ -548,7 +548,7 @@
     "post_count": "Contagem de publicações",
     "animation": "Animação",
     "top_level_size": "Tamanho do nível superior",
-    "empty_cart_button_link": "Ligação do botão do carrinho vazio",
+    "empty_cart_button_link": "Ligação do botão para o carrinho vazio",
     "auto_load_products": "Carregar produtos automaticamente ao navegar",
     "products_per_page": "Produtos por página",
     "custom_mobile_media": "Mostrar conteúdo multimédia diferente no telemóvel",
@@ -577,7 +577,8 @@
     "x_position": "Posição horizontal",
     "y_position": "Posição vertical",
     "enable_sticky_add_to_cart": "Barra fixa de adicionar ao carrinho",
-    "sticky_add_to_cart": "Barra fixa de adicionar ao carrinho"
+    "sticky_add_to_cart": "Barra fixa de adicionar ao carrinho",
+    "actions_display_style": "Estilo do menu"
   },
   "options": {
     "apple": "Maçã",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Com dicas",
     "below_media": "Abaixo do conteúdo multimédia",
-    "full_frame": "Ecrã inteiro"
+    "full_frame": "Ecrã inteiro",
+    "icons": "Ícones"
   },
   "content": {
     "advanced": "Avançado",
@@ -967,7 +969,8 @@
     "popover_position": "Posição do popover",
     "resource_reference_product_sku": "Apresenta o SKU do produto principal",
     "content_layout": "Esquema do conteúdo",
-    "mobile_media_1": "Conteúdo multimédia para telemóvel 1"
+    "mobile_media_1": "Conteúdo multimédia para telemóvel 1",
+    "utilities": "Utilitários"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Partilhe informações sobre a sua marca com os seus clientes. Descreva um produto, faça anúncios ou dê as boas-vindas aos clientes na sua loja.</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "Aplica-se apenas a imagens",
     "hover_effects": "Aplica-se a cartões de produto e de coleção",
     "hide_logo_on_home_page_help": "O logótipo permanecerá visível quando o cabeçalho fixo estiver ativo",
-    "media_type_info": "As funcionalidades são preenchidas a partir das ligações do seu menu",
-    "logo_height": "Afeta apenas o logótipo do cabeçalho"
+    "media_type_info": "As funcionalidades são preenchidas a partir das ligações do menu",
+    "logo_height": "Afeta apenas o logótipo do cabeçalho",
+    "actions_display_style": "Os ícones são sempre utilizados em telemóvel"
   },
   "categories": {
     "basic": "Básico",

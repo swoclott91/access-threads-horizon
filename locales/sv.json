@@ -65,7 +65,8 @@
     "remove": "Ta bort",
     "view_pricing_info": "Visa prissättningsinformation",
     "open_hotspot": "Öppna hotspot",
-    "slideshow": "Bildspel"
+    "slideshow": "Bildspel",
+    "header_navigation_label": "Primär"
   },
   "actions": {
     "add_to_cart": "Lägg till i varukorgen",

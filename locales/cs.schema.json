@@ -525,7 +525,7 @@
       "heading": "Nadpis",
       "description": "Popis",
       "key": "Název vlastnosti",
-      "key_info": "Pole nesmí být prázdné a musí být jedinečné pro každý blok. Zobrazuje se v košíku, na pokladně a v údajích o objednávce.",
+      "key_info": "Nesmí být prázdné a musí být jedinečné pro každý blok. Zobrazuje se v košíku, na pokladně a v údajích o objednávce.",
       "placeholder_text": "Zástupný text",
       "default_heading": "Upravte si produkt",
       "default_placeholder": "Zadejte speciální pokyny",
@@ -547,8 +547,8 @@
     "blog": "Blog",
     "post_count": "Počet příspěvků",
     "animation": "Animace",
-    "top_level_size": "Velikost nejvyšší úrovně",
-    "empty_cart_button_link": "Odkaz na tlačítko v prázdném košíku",
+    "top_level_size": "Velikost na nejvyšší úrovni",
+    "empty_cart_button_link": "Tlačítkový odkaz prázdného košíku",
     "auto_load_products": "Automaticky načítat produkty při rolování",
     "products_per_page": "Produktů na stránku",
     "custom_mobile_media": "Na mobilu zobrazit jiná média",
@@ -577,7 +577,8 @@
     "x_position": "Horizontální umístění",
     "y_position": "Vertikální umístění",
     "enable_sticky_add_to_cart": "Přilepený panel Přidat do košíku",
-    "sticky_add_to_cart": "Přilepené tlačítko Přidat do košíku"
+    "sticky_add_to_cart": "Přilepené tlačítko Přidat do košíku",
+    "actions_display_style": "Styl nabídky"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Přiblížení",
     "with_hints": "S nápovědou",
     "below_media": "Pod médii",
-    "full_frame": "Přes celou plochu"
+    "full_frame": "Přes celou plochu",
+    "icons": "Ikony"
   },
   "content": {
     "advanced": "Pokročilé",
@@ -959,7 +961,7 @@
     "block_link": "Odkaz bloku",
     "submenu_feature": "Funkce podnabídky",
     "cart_features": "Funkce košíku",
-    "email_signup": "Odběr e‑mailů",
+    "email_signup": "Přihlášení k odběru e-mailů",
     "mobile_media": "Média pro mobil",
     "mobile_media_2": "Média pro mobil 2",
     "navigation": "Navigace",
@@ -967,7 +969,8 @@
     "popover_position": "Pozice vyskakovací bubliny",
     "resource_reference_product_sku": "Zobrazuje SKU nadřazeného produktu",
     "content_layout": "Rozvržení obsahu",
-    "mobile_media_1": "Mobilní média 1"
+    "mobile_media_1": "Mobilní média 1",
+    "utilities": "Nástroje"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Sdílejte informace o značce se zákazníky. Popište produkt, oznamte novinky nebo přivítejte zákazníky v obchodě.</p>",
@@ -1084,8 +1087,9 @@
     "hover_effects": "Platí pro produktové a kolekční karty",
     "pills_usage": "Používá se pro aktivní filtry, slevové kódy a návrhy vyhledávání",
     "hide_logo_on_home_page_help": "Logo zůstane viditelné, když je aktivní přilepené záhlaví",
-    "media_type_info": "Funkce se plní z odkazů v nabídce",
-    "logo_height": "Ovlivňuje pouze logo v záhlaví"
+    "media_type_info": "Funkce se načítají z odkazů v nabídce",
+    "logo_height": "Týká se pouze loga v záhlaví",
+    "actions_display_style": "Na mobilních zařízeních se vždy používají ikony"
   },
   "categories": {
     "product_list": "Propagovaná kolekce",

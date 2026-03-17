@@ -65,7 +65,8 @@
     "remove": "Hapus",
     "view_pricing_info": "Lihat informasi harga",
     "open_hotspot": "Buka hotspot",
-    "slideshow": "Tayangan slide"
+    "slideshow": "Tayangan slide",
+    "header_navigation_label": "Utama"
   },
   "actions": {
     "add_to_cart": "Tambahkan ke keranjang",

@@ -89,6 +89,7 @@
           {%- render 'menu-font-styles', settings: block_settings, menu_type: 'drawer' %}
           {%- render 'submenu-font-styles', settings: block_settings %}
         "
+        aria-label="{{ 'accessibility.header_navigation_label' | t }}"
       >
         <ul
           class="menu-drawer__menu has-submenu"
@@ -180,7 +181,7 @@
                   <a
                     id="HeaderDrawer-{{ link.handle }}"
                     href="{{ link.url }}"
-                    class="menu-drawer__menu-item menu-drawer__menu-item--mainlist menu-drawer__animated-element focus-inset{% if link.current %} menu-drawer__menu-item--active{% endif %}"
+                    class="menu-drawer__menu-item menu-drawer__menu-item--mainlist menu-drawer__animated-element focus-inset"
                     {% if link.current %}
                       aria-current="page"
                     {% endif %}
@@ -211,6 +212,9 @@
                         <a
                           href="{{ childlink.url }}"
                           class="menu-drawer__menu-item menu-drawer__menu-item--child menu-drawer__animated-element focus-inset{% if childlink.current %} menu-drawer__menu-item--active{% endif %}"
+                          {% if childlink.current %}
+                            aria-current="page"
+                          {% endif %}
                         >
                           {% if render_link_image %}
                             {% render 'link-featured-image',
@@ -231,7 +235,7 @@
                   <a
                     id="HeaderDrawer-{{ link.handle }}"
                     href="{{ link.url }}"
-                    class="menu-drawer__menu-item menu-drawer__menu-item--mainlist menu-drawer__animated-element focus-inset{% if link.current %} menu-drawer__menu-item--active{% endif %}"
+                    class="menu-drawer__menu-item menu-drawer__menu-item--mainlist menu-drawer__animated-element focus-inset"
                     {% if link.current %}
                       aria-current="page"
                     {% endif %}
@@ -431,6 +435,9 @@
                                     id="HeaderDrawer-{{ link.handle }}-{{ childlink.handle }}"
                                     href="{{ childlink.url }}"
                                     class="menu-drawer__menu-item menu-drawer__menu-item--parent focus-inset{% if childlink.current %} menu-drawer__menu-item--active{% endif %}"
+                                    {% if childlink.current %}
+                                      aria-current="page"
+                                    {% endif %}
                                   >
                                     <span class="menu-drawer__menu-item-text wrap-text">
                                       {{- childlink.title | escape -}}
@@ -545,7 +552,7 @@
                   <a
                     id="HeaderDrawer-{{ link.handle }}"
                     href="{{ link.url }}"
-                    class="menu-drawer__menu-item menu-drawer__menu-item--mainlist menu-drawer__animated-element focus-inset{% if link.current %} menu-drawer__menu-item--active{% endif %}"
+                    class="menu-drawer__menu-item menu-drawer__menu-item--mainlist menu-drawer__animated-element focus-inset"
                     {% if link.current %}
                       aria-current="page"
                     {% endif %}
@@ -770,27 +777,40 @@
     height: var(--icon-size-xs);
   }
 
-  .header__drawer {
-    --header-drawer-min-height: 60px;
+  .menu-drawer__featured-content {
+    z-index: var(--layer-base);
+    container-type: inline-size;
+  }
+
+  .menu-drawer__featured-content--childlist {
+    z-index: var(--layer-flat);
+  }
+
+  .menu-drawer__featured-content-list {
     display: flex;
-    min-height: var(--header-drawer-min-height);
-    align-items: center;
+    gap: 1em;
+    overflow-x: auto;
+    padding-block-end: var(--padding-lg);
   }
 
-  #header-component[data-menu-style='drawer'] .header__drawer {
-    display: flex;
-    min-height: var(--header-drawer-min-height);
+  .menu-drawer__featured-content-list-item {
+    flex: 0 0 auto;
   }
 
-  @media screen and (min-width: 750px) {
-    #header-component[data-menu-style='menu'] .header__drawer {
-      display: none;
-      min-height: 0;
-    }
+  .menu-drawer__featured-content-list-item--product {
+    width: 35cqi;
   }
 
-  .header--compact .header__drawer {
-    min-height: var(--minimum-touch-target);
+  .menu-drawer__featured-content-list-item--collection img.resource-card__image {
+    width: 80cqi;
+  }
+
+  .menu-drawer__featured-content-list-item:first-child {
+    margin-inline-start: var(--margin-xl);
+  }
+
+  .menu-drawer__featured-content-list-item:last-child {
+    margin-inline-end: var(--margin-xl);
   }
 
   .menu-drawer__navigation {
@@ -839,10 +859,6 @@
 
     @media screen and (min-width: 750px) {
       width: 25rem;
-    }
-
-    .header__drawer--desktop & {
-      height: 100vh;
     }
   }
 

@@ -65,7 +65,8 @@
     "remove": "Fjern",
     "view_pricing_info": "Se prisinformasjon",
     "open_hotspot": "Åpne tilgangspunkt",
-    "slideshow": "Lysbildefremvisning"
+    "slideshow": "Lysbildefremvisning",
+    "header_navigation_label": "Primær"
   },
   "actions": {
     "add_to_cart": "Legg i handlekurv",

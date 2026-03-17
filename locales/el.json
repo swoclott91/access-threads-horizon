@@ -65,7 +65,8 @@
     "remove": "Κατάργηση",
     "view_pricing_info": "Προβολή πληροφοριών τιμολόγησης",
     "open_hotspot": "Άνοιγμα hotspot",
-    "slideshow": "Προβολή διαφανειών"
+    "slideshow": "Προβολή διαφανειών",
+    "header_navigation_label": "Κύρια"
   },
   "actions": {
     "add_to_cart": "Προσθήκη στο καλάθι",

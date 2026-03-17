@@ -525,7 +525,7 @@
       "heading": "Überschrift",
       "description": "Beschreibung",
       "key": "Eigenschaftsname",
-      "key_info": "Darf nicht leer sein und muss für jeden Block eindeutig sein. Wird im Warenkorb, im Checkout und in den Bestelldetails angezeigt.",
+      "key_info": "Darf nicht leer sein und muss für jeden Block einzigartig sein. Wird im Warenkorb, im Checkout und in den Bestelldetails angezeigt.",
       "placeholder_text": "Platzhaltertext",
       "default_heading": "Passe dein Produkt an",
       "default_placeholder": "Gib deine speziellen Anweisungen ein",
@@ -577,7 +577,8 @@
     "x_position": "Horizontale Position",
     "y_position": "Vertikale Position",
     "enable_sticky_add_to_cart": "Fixierte Leiste „In den Warenkorb“",
-    "sticky_add_to_cart": "Fixierte Schaltfläche „In den Warenkorb“"
+    "sticky_add_to_cart": "Fixierte Schaltfläche „In den Warenkorb“",
+    "actions_display_style": "Menüstil"
   },
   "options": {
     "apple": "Apfel",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Mit Hinweisen",
     "below_media": "Unter den Medien",
-    "full_frame": "Vollbild"
+    "full_frame": "Vollbild",
+    "icons": "Symbole"
   },
   "content": {
     "background_video": "Hintergrundvideo",
@@ -957,7 +959,7 @@
     "heading": "Überschrift",
     "resource_reference_product_custom_property": "Füge anpassbare Eingabefelder hinzu, um benutzerdefinierte Informationen zu erfassen, die dieser Bestellposition hinzugefügt und später in den Bestelldetails angezeigt werden.",
     "block_link": "Block-Link",
-    "submenu_feature": "Untermenü-Funktion",
+    "submenu_feature": "Untermenüfunktion",
     "cart_features": "Warenkorbfunktionen",
     "email_signup": "E-Mail-Anmeldung",
     "mobile_media": "Mobile Medien",
@@ -967,7 +969,8 @@
     "popover_position": "Popover-Position",
     "resource_reference_product_sku": "Zeigt die SKU vom Hauptprodukt an",
     "content_layout": "Inhaltslayout",
-    "mobile_media_1": "Mobile Medien 1"
+    "mobile_media_1": "Mobile Medien 1",
+    "utilities": "Dienstprogramme"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Teile Informationen über deine Marke mit deinen Kunden. Beschreibe ein Produkt, mache Ankündigungen oder heiße Kunden in deinem Shop willkommen.</p>",
@@ -1084,8 +1087,9 @@
     "hover_effects": "Gilt für Produkt- und Kollektionskarten",
     "pills_usage": "Wird für angewendete Filter, Rabattcodes und Suchvorschläge verwendet",
     "hide_logo_on_home_page_help": "Das Logo bleibt sichtbar, wenn der fixierte Header aktiv ist",
-    "media_type_info": "Funktionen werden aus deinen Menü-Links übernommen",
-    "logo_height": "Betrifft nur das Header-Logo"
+    "media_type_info": "Die Funktionen werden aus deinen Menü-Links übernommen",
+    "logo_height": "Betrifft nur das Header-Logo",
+    "actions_display_style": "Auf Mobilgeräten werden immer Symbole verwendet"
   },
   "categories": {
     "product_list": "Vorgestellte Kollektion",

@@ -525,7 +525,7 @@
       "heading": "标题",
       "description": "描述",
       "key": "属性名称",
-      "key_info": "不能为空，且每个块均需唯一。将显示在购物车、结账和订单详细信息中。",
+      "key_info": "不能为空，且对于每个块都必须唯一。将显示在购物车、结账和订单详细信息中。",
       "placeholder_text": "占位符文本",
       "default_heading": "自定义您的产品",
       "default_placeholder": "输入您的特殊说明",
@@ -577,7 +577,8 @@
     "x_position": "水平位置",
     "y_position": "垂直位置",
     "enable_sticky_add_to_cart": "悬浮“添加到购物车”栏",
-    "sticky_add_to_cart": "悬浮“添加到购物车”"
+    "sticky_add_to_cart": "悬浮“添加到购物车”",
+    "actions_display_style": "菜单样式"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "缩放",
     "with_hints": "带提示",
     "below_media": "媒体文件下方",
-    "full_frame": "全画幅"
+    "full_frame": "全画幅",
+    "icons": "图标"
   },
   "content": {
     "advanced": "高级",
@@ -967,7 +969,8 @@
     "popover_position": "弹出框位置",
     "resource_reference_product_sku": "显示主产品的 SKU",
     "content_layout": "内容布局",
-    "mobile_media_1": "移动版媒体文件 1"
+    "mobile_media_1": "移动版媒体文件 1",
+    "utilities": "实用工具"
   },
   "html_defaults": {
     "share_information_about_your": "<p>与您的客户分享有关您品牌的信息。描述产品、发布公告或欢迎客户光临您的商店。</p>",
@@ -1084,8 +1087,9 @@
     "pills_usage": "用于已应用的筛选器、折扣码和搜索建议",
     "applies_on_image_only": "仅适用于图片",
     "hide_logo_on_home_page_help": "当粘性标头处于活动状态时，logo 将保持可见",
-    "media_type_info": "功能从您的菜单链接填充",
-    "logo_height": "仅影响标头 logo"
+    "media_type_info": "功能内容来自您的菜单链接",
+    "logo_height": "仅影响标头 logo",
+    "actions_display_style": "在移动设备上始终使用图标"
   },
   "categories": {
     "basic": "基本",

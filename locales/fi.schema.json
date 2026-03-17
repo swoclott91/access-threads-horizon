@@ -577,7 +577,8 @@
     "x_position": "Vaakasuuntainen sijainti",
     "y_position": "Pystysuuntainen sijainti",
     "enable_sticky_add_to_cart": "Kiinteä Lisää ostoskoriin -palkki",
-    "sticky_add_to_cart": "Kiinteä Lisää ostoskoriin -toiminto"
+    "sticky_add_to_cart": "Kiinteä Lisää ostoskoriin -toiminto",
+    "actions_display_style": "Valikkotyyli"
   },
   "options": {
     "apple": "Omena",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoomaus",
     "with_hints": "Vihjeillä",
     "below_media": "Median alapuolella",
-    "full_frame": "Koko ruutu"
+    "full_frame": "Koko ruutu",
+    "icons": "Kuvakkeet"
   },
   "content": {
     "advanced": "Lisäasetukset",
@@ -967,7 +969,8 @@
     "popover_position": "Ponnahduksen sijainti",
     "resource_reference_product_sku": "Näyttää SKU-koodin päätuotteesta",
     "content_layout": "Sisällön asettelu",
-    "mobile_media_1": "Mobiilimedia 1"
+    "mobile_media_1": "Mobiilimedia 1",
+    "utilities": "Aputoiminnot"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Jaa tietoja brändistäsi asiakkaillesi. Kuvaile tuotetta, tee ilmoituksia tai toivota asiakkaat tervetulleiksi kauppaasi.</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "Koskee vain kuvia",
     "hover_effects": "Koskee tuote- ja kokoelmakortteja",
     "hide_logo_on_home_page_help": "Logo pysyy näkyvissä, kun kiinteä ylätunniste on aktiivinen",
-    "media_type_info": "Ominaisuudet täytetään valikkolinkkiesi perusteella",
-    "logo_height": "Vaikuttaa vain ylätunnisteen logoon"
+    "media_type_info": "Ominaisuudet noudetaan valikkolinkeistäsi",
+    "logo_height": "Vaikuttaa vain ylätunnisteen logoon",
+    "actions_display_style": "Kuvakkeet ovat aina käytössä mobiililaitteilla"
   },
   "categories": {
     "basic": "Perusosat",

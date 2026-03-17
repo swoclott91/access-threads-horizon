@@ -300,7 +300,14 @@
   }
 
   .product-information__grid--limit-details .product-details > .group-block {
-    max-width: var(--sidebar-width);
+    --details-max-width: var(--sidebar-width);
+    max-width: var(--details-max-width);
+  }
+
+  @media screen and (min-width: 1600px) {
+    .product-information__grid--limit-details .product-details > .group-block {
+      --details-max-width: 32rem;
+    }
   }
 
   /* If the header is sticky, make product details content stick underneath the header */

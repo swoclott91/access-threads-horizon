@@ -520,12 +520,12 @@
     "gift_card_form": "Formular til gavekort",
     "seller_note_open_by_default": "Åbn note til sælger som standard",
     "add_to_cart_animation": "Læg i kurv",
-    "custom_link": "Tilpasset link",
+    "custom_link": "Brugerdefineret link",
     "product_custom_property": {
       "heading": "Overskrift",
       "description": "Beskrivelse",
       "key": "Egenskabsnavn",
-      "key_info": "Må ikke være tom og skal være unik for hver blok. Vises i indkøbskurven, på betalingssiden og i ordreoplysningerne.",
+      "key_info": "Må ikke være tomt og skal være unikt for hver blok. Vises i indkøbskurven, på betalingssiden og i ordreoplysningerne.",
       "placeholder_text": "Pladsholdertekst",
       "default_heading": "Tilpas dit produkt",
       "default_placeholder": "Angiv dine særlige instruktioner",
@@ -577,7 +577,8 @@
     "x_position": "Vandret position",
     "y_position": "Lodret position",
     "enable_sticky_add_to_cart": "Fastgjort bjælke med 'Læg i kurv'",
-    "sticky_add_to_cart": "Fastgjort 'Læg i kurv'"
+    "sticky_add_to_cart": "Fastgjort 'Læg i kurv'",
+    "actions_display_style": "Menustil"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Med hints",
     "below_media": "Under mediet",
-    "full_frame": "Fuld ramme"
+    "full_frame": "Fuld ramme",
+    "icons": "Ikoner"
   },
   "content": {
     "advanced": "Avanceret",
@@ -967,7 +969,8 @@
     "popover_position": "Pop op-placering",
     "resource_reference_product_sku": "Viser SKU fra det overordnede produkt",
     "content_layout": "Indholdslayout",
-    "mobile_media_1": "Medie til mobil 1"
+    "mobile_media_1": "Medie til mobil 1",
+    "utilities": "Hjælpefunktioner"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Del oplysninger om dit brand med dine kunder. Beskriv et produkt, kom med meddelelser, eller byd kunder velkommen i din butik.</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "Gælder kun for billeder",
     "hover_effects": "Gælder for produkt- og kollektionskort",
     "hide_logo_on_home_page_help": "Logoet vil forblive synligt, når fastgjort sidehoved er aktivt",
-    "media_type_info": "Funktioner udfyldes fra dine menulinks",
-    "logo_height": "Påvirker kun logoet i sidehovedet"
+    "media_type_info": "Funktioner hentes fra linksene i menuen",
+    "logo_height": "Påvirker kun logoet i sidehovedet",
+    "actions_display_style": "Ikoner bruges altid på mobil"
   },
   "categories": {
     "basic": "Grundlæggende",

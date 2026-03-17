@@ -65,7 +65,8 @@
     "remove": "削除",
     "view_pricing_info": "価格情報を表示する",
     "open_hotspot": "ホットスポットを開く",
-    "slideshow": "スライドショー"
+    "slideshow": "スライドショー",
+    "header_navigation_label": "プライマリー"
   },
   "actions": {
     "add_to_cart": "カートに追加",

@@ -52,7 +52,12 @@
         </span>
       </summary>
 
-      <div class="details-content">
+      <nav
+        class="details-content"
+        {% if heading == blank %}
+          aria-label="{{ menu.title | escape }}"
+        {% endif %}
+      >
         {% if menu %}
           <ul class="list-unstyled">
             {% for link in menu.links %}
@@ -64,7 +69,7 @@
             {% endfor %}
           </ul>
         {% endif %}
-      </div>
+      </nav>
     </details>
   </accordion-custom>
 {% endif %}

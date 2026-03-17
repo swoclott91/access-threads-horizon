@@ -520,12 +520,12 @@
     "gift_card_form": "Formularz karty prezentowej",
     "seller_note_open_by_default": "Domyślnie otwieraj notatkę dla sprzedawcy",
     "add_to_cart_animation": "Dodaj do koszyka",
-    "custom_link": "Link niestandardowy",
+    "custom_link": "Własny link",
     "product_custom_property": {
       "heading": "Nagłówek",
       "description": "Opis",
       "key": "Nazwa właściwości",
-      "key_info": "Wartość nie może być pusta i musi być unikalna dla każdego bloku. Będzie widoczna w koszyku, kasie i szczegółach zamówienia.",
+      "key_info": "Nie może być pusty i musi być unikatowy dla każdego bloku. Wyświetla się w koszyku, kasie i szczegółach zamówienia.",
       "placeholder_text": "Tekst zastępczy",
       "default_heading": "Dostosuj swój produkt",
       "default_placeholder": "Wprowadź specjalne instrukcje",
@@ -547,8 +547,8 @@
     "blog": "Blog",
     "post_count": "Liczba postów",
     "animation": "Animacja",
-    "top_level_size": "Rozmiar najwyższego poziomu",
-    "empty_cart_button_link": "Link przycisku pustego koszyka",
+    "top_level_size": "Rozmiar pierwszego poziomu",
+    "empty_cart_button_link": "Link przycisku w pustym koszyku",
     "auto_load_products": "Automatycznie ładuj produkty podczas przewijania",
     "products_per_page": "Liczba produktów na stronie",
     "custom_mobile_media": "Pokaż inne multimedia na urządzeniach mobilnych",
@@ -577,7 +577,8 @@
     "x_position": "Pozycja pozioma",
     "y_position": "Pozycja pionowa",
     "enable_sticky_add_to_cart": "Przypięty pasek dodawania do koszyka",
-    "sticky_add_to_cart": "Przypięte dodawanie do koszyka"
+    "sticky_add_to_cart": "Przypięte dodawanie do koszyka",
+    "actions_display_style": "Styl menu"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Powiększenie",
     "with_hints": "Z podpowiedziami",
     "below_media": "Pod multimediami",
-    "full_frame": "Pełna klatka"
+    "full_frame": "Pełna klatka",
+    "icons": "Ikony"
   },
   "content": {
     "background_video": "Wideo w tle",
@@ -959,7 +961,7 @@
     "block_link": "Link do bloku",
     "submenu_feature": "Funkcja podmenu",
     "cart_features": "Funkcje koszyka",
-    "email_signup": "Rejestracja w celu otrzymywania e-maili",
+    "email_signup": "Subskrypcja e-mailowa",
     "mobile_media": "Multimedia na urządzenia mobilne",
     "mobile_media_2": "Multimedia 2 na urządzenia mobilne",
     "navigation": "Nawigacja",
@@ -967,7 +969,8 @@
     "popover_position": "Pozycja wyskakującego okienka",
     "resource_reference_product_sku": "Wyświetla SKU produktu nadrzędnego.",
     "content_layout": "Układ treści",
-    "mobile_media_1": "Mobilne multimedia 1"
+    "mobile_media_1": "Mobilne multimedia 1",
+    "utilities": "Narzędzia"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Podziel się informacjami o swojej marce z klientami. Opisz produkt, ogłaszaj nowości lub witaj klientów w swoim sklepie.</p>",
@@ -1084,8 +1087,9 @@
     "hover_effects": "Dotyczy kart produktów i kolekcji",
     "pills_usage": "Używane w przypadku zastosowanych filtrów, kodów rabatowych i sugestii wyszukiwania",
     "hide_logo_on_home_page_help": "Logo pozostanie widoczne, gdy aktywny jest lepki nagłówek",
-    "media_type_info": "Funkcje są wypełniane na podstawie linków w menu",
-    "logo_height": "Dotyczy tylko logo w nagłówku"
+    "media_type_info": "Funkcje są pobierane z linków menu",
+    "logo_height": "Dotyczy tylko logo w nagłówku",
+    "actions_display_style": "Na urządzeniach mobilnych zawsze używane są ikony"
   },
   "categories": {
     "product_list": "Polecana kolekcja",

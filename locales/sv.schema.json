@@ -525,7 +525,7 @@
       "heading": "Rubrik",
       "description": "Beskrivning",
       "key": "Egenskapsnamn",
-      "key_info": "Får inte vara tomt och måste vara unikt för varje block. Visas i varukorgen, kassan och orderdetaljerna.",
+      "key_info": "Får inte vara tomt och måste vara unikt för varje block. Visas i varukorgen, kassan och orderuppgifterna.",
       "placeholder_text": "Platshållartext",
       "default_heading": "Anpassa din produkt",
       "default_placeholder": "Ange dina särskilda anvisningar",
@@ -547,7 +547,7 @@
     "blog": "Blogg",
     "post_count": "Antal inlägg",
     "animation": "Animering",
-    "top_level_size": "Storlek på översta nivån",
+    "top_level_size": "Storlek för högsta nivån",
     "empty_cart_button_link": "Knapplänk för tom varukorg",
     "auto_load_products": "Läs in produkter automatiskt vid rullning",
     "products_per_page": "Produkter per sida",
@@ -577,7 +577,8 @@
     "x_position": "Horisontell position",
     "y_position": "Vertikal position",
     "enable_sticky_add_to_cart": "Fast fält för ”Lägg till i varukorgen”",
-    "sticky_add_to_cart": "Fast ”Lägg till i varukorgen”"
+    "sticky_add_to_cart": "Fast ”Lägg till i varukorgen”",
+    "actions_display_style": "Menystil"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Med tips",
     "below_media": "Under media",
-    "full_frame": "Helskärm"
+    "full_frame": "Helskärm",
+    "icons": "Ikoner"
   },
   "content": {
     "advanced": "Avancerat",
@@ -967,7 +969,8 @@
     "popover_position": "Popover-position",
     "resource_reference_product_sku": "Visar lagerhållningsenhet från överordnad produkt",
     "content_layout": "Innehållslayout",
-    "mobile_media_1": "Mobilmedia 1"
+    "mobile_media_1": "Mobilmedia 1",
+    "utilities": "Verktyg"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Dela information om ditt varumärke med dina kunder. Beskriv en produkt, gör tillkännagivanden eller välkomna kunder till din butik.</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "Gäller endast bilder",
     "hover_effects": "Gäller produkt- och produktseriekort",
     "hide_logo_on_home_page_help": "Logotypen förblir synlig när klistrigt sidhuvud är aktivt",
-    "media_type_info": "Funktioner fylls i från dina menylänkar",
-    "logo_height": "Påverkar endast logotypen i sidhuvudet"
+    "media_type_info": "Funktionerna hämtas från menylänkarna",
+    "logo_height": "Påverkar endast sidhuvudslogotypen",
+    "actions_display_style": "Ikoner används alltid på mobilen"
   },
   "categories": {
     "basic": "Grundläggande",

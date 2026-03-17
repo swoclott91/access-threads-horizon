@@ -67,7 +67,8 @@
     "remove": "Odstrániť",
     "view_pricing_info": "Zobraziť informácie o cenách",
     "open_hotspot": "Otvoriť hotspot",
-    "slideshow": "Prezentácia"
+    "slideshow": "Prezentácia",
+    "header_navigation_label": "Primárna"
   },
   "actions": {
     "add_to_cart": "Pridať do košíka",

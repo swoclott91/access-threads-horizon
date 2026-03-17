@@ -520,12 +520,12 @@
     "gift_card_form": "Gavekortskjema",
     "seller_note_open_by_default": "Åpne merknad til selger som standard",
     "add_to_cart_animation": "Legg i handlekurv",
-    "custom_link": "Egendefinert kobling",
+    "custom_link": "Egendefinert lenke",
     "product_custom_property": {
       "heading": "Overskrift",
       "description": "Beskrivelse",
       "key": "Egenskapsnavn",
-      "key_info": "Kan ikke være tom og må være unik for hver blokk. Vises i handlekurven, i kassen og i bestillingsdetaljene.",
+      "key_info": "Kan ikke være tomt og må være unikt for hver blokk. Vises i handlekurven, kassen og bestillingsdetaljene.",
       "placeholder_text": "Plassholdertekst",
       "default_heading": "Tilpass produktet ditt",
       "default_placeholder": "Angi spesielle instruksjoner",
@@ -547,7 +547,7 @@
     "blog": "Blogg",
     "post_count": "Antall innlegg",
     "animation": "Animasjon",
-    "top_level_size": "Størrelse på øverste nivå",
+    "top_level_size": "Størrelse på toppnivå",
     "empty_cart_button_link": "Knappekobling for tom handlekurv",
     "auto_load_products": "Last inn produkter automatisk ved rulling",
     "products_per_page": "Produkter per side",
@@ -577,7 +577,8 @@
     "x_position": "Vannrett posisjon",
     "y_position": "Loddrett posisjon",
     "enable_sticky_add_to_cart": "Festet «Legg i handlekurv»-linje",
-    "sticky_add_to_cart": "Festet «Legg i handlekurv»"
+    "sticky_add_to_cart": "Festet «Legg i handlekurv»",
+    "actions_display_style": "Menystil"
   },
   "options": {
     "apple": "Eple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Med hint",
     "below_media": "Under mediene",
-    "full_frame": "Full ramme"
+    "full_frame": "Full ramme",
+    "icons": "Ikoner"
   },
   "content": {
     "advanced": "Avansert",
@@ -967,7 +969,8 @@
     "popover_position": "Popover-posisjon",
     "resource_reference_product_sku": "Viser SKU fra hovedproduktet",
     "content_layout": "Innholdslayout",
-    "mobile_media_1": "Mobilmedium 1"
+    "mobile_media_1": "Mobilmedium 1",
+    "utilities": "Verktøy"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Del informasjon om merkevaren din med kundene. Beskriv et produkt, kom med kunngjøringer eller ønsk kundene velkommen til butikken.</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "Gjelder kun for bilder",
     "hover_effects": "Gjelder for produkt- og samlingskort",
     "hide_logo_on_home_page_help": "Logoen forblir synlig når klebrig topptekst er aktiv",
-    "media_type_info": "Funksjoner fylles ut fra menylenker",
-    "logo_height": "Påvirker bare logoen i toppteksten"
+    "media_type_info": "Funksjonene hentes fra menykoblingene",
+    "logo_height": "Påvirker kun logoen i toppteksten",
+    "actions_display_style": "Ikoner brukes alltid på mobil"
   },
   "categories": {
     "product_list": "Utvalgt samling",

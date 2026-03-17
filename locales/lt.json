@@ -67,7 +67,8 @@
     "remove": "Pašalinti",
     "view_pricing_info": "Peržiūrėti kainodaros informaciją",
     "open_hotspot": "Atverti interneto prieigos tašką",
-    "slideshow": "Skaidrių demonstracija"
+    "slideshow": "Skaidrių demonstracija",
+    "header_navigation_label": "Pagrindinis"
   },
   "actions": {
     "add_to_cart": "Įdėti į krepšelį",

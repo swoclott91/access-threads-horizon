@@ -28,6 +28,8 @@
     "inventory_status": "Inventory status",
     "localization_region_and_language": "Region and language selector",
     "menu": "Menu",
+    // This is the label for the header navigation menu when using screen readers, it will read "Primary navigation"
+    "header_navigation_label": "Primary",
     "nested_product": "{{ product_title }} for {{ parent_title }}",
     "new_window": "Opens in a new window.",
     "open_hotspot": "Open hotspot",

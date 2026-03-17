@@ -66,7 +66,8 @@
     "remove": "Elimină",
     "view_pricing_info": "Vezi informațiile de tarifare",
     "open_hotspot": "Pornește hotspot",
-    "slideshow": "Prezentare de diapozitive"
+    "slideshow": "Prezentare de diapozitive",
+    "header_navigation_label": "principală"
   },
   "actions": {
     "add_to_cart": "Adaugă în coș",

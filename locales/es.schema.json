@@ -525,7 +525,7 @@
       "heading": "Título",
       "description": "Descripción",
       "key": "Nombre de la propiedad",
-      "key_info": "No puede estar en blanco y debe ser único por bloque. Se muestra en el carrito, la página de pago y la información del pedido.",
+      "key_info": "No puede quedar en blanco y debe ser único por bloque. Se muestra en el carrito, la página de pago y los detalles del pedido.",
       "placeholder_text": "Texto del marcador de posición",
       "default_heading": "Personaliza tu producto",
       "default_placeholder": "Escribe tus instrucciones especiales",
@@ -548,7 +548,7 @@
     "post_count": "Número de publicaciones",
     "animation": "Animación",
     "top_level_size": "Tamaño del nivel superior",
-    "empty_cart_button_link": "Enlace del botón en carrito vacío",
+    "empty_cart_button_link": "Enlace del botón cuando el carrito está vacío",
     "auto_load_products": "Cargar productos automáticamente al desplazarte",
     "products_per_page": "Productos por página",
     "custom_mobile_media": "Mostrar multimedia diferente en dispositivos móviles",
@@ -577,7 +577,8 @@
     "x_position": "Posición horizontal",
     "y_position": "Posición vertical",
     "enable_sticky_add_to_cart": "Barra fija de agregar al carrito",
-    "sticky_add_to_cart": "Agregar al carrito fijo"
+    "sticky_add_to_cart": "Agregar al carrito fijo",
+    "actions_display_style": "Estilo del menú"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Con pistas",
     "below_media": "Debajo del contenido multimedia",
-    "full_frame": "Marco completo"
+    "full_frame": "Marco completo",
+    "icons": "Íconos"
   },
   "content": {
     "advanced": "Avanzado",
@@ -957,7 +959,7 @@
     "heading": "Encabezado",
     "resource_reference_product_custom_property": "Agrega campos de entrada personalizables para recabar información personalizada que se agregará a esta línea de artículo del pedido y luego será visible en los detalles del pedido.",
     "block_link": "Enlace del bloque",
-    "submenu_feature": "Función de submenú",
+    "submenu_feature": "Destacado del submenú",
     "cart_features": "Funciones del carrito",
     "email_signup": "Suscripción por correo electrónico",
     "mobile_media": "Multimedia en móvil",
@@ -967,7 +969,8 @@
     "popover_position": "Posición del cuadro emergente",
     "resource_reference_product_sku": "Muestra el SKU del producto principal",
     "content_layout": "Diseño del contenido",
-    "mobile_media_1": "Multimedia para dispositivos móviles 1"
+    "mobile_media_1": "Multimedia para dispositivos móviles 1",
+    "utilities": "Utilidades"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Comparte información sobre tu marca con tus clientes. Describe un producto, anuncia novedades o da la bienvenida a quienes visitan tu tienda.</p>",
@@ -1084,8 +1087,9 @@
     "hover_effects": "Se aplica a las tarjetas de producto y de colección",
     "pills_usage": "Se usa para filtros aplicados, códigos de descuento y sugerencias de búsqueda",
     "hide_logo_on_home_page_help": "El logo seguirá visible cuando el encabezado fijo esté activo",
-    "media_type_info": "Las funciones se completan a partir de los enlaces del menú",
-    "logo_height": "Solo afecta al logo del encabezado"
+    "media_type_info": "Los destacados se completan con los enlaces del menú",
+    "logo_height": "Solo afecta el logo del encabezado",
+    "actions_display_style": "Los íconos siempre se usan en la versión móvil"
   },
   "categories": {
     "basic": "Básico",

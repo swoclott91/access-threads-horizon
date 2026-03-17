@@ -525,7 +525,7 @@
       "heading": "標題",
       "description": "說明",
       "key": "屬性名稱",
-      "key_info": "此欄位不可留空，且您必須為每個區塊使用不重複的值。會顯示於購物車、結帳頁面及訂單詳情。",
+      "key_info": "不得留白，且不得在各區塊間重複。會顯示在購物車、結帳頁面與訂單詳情中。",
       "placeholder_text": "預留文字",
       "default_heading": "自訂您的產品",
       "default_placeholder": "輸入您的特別指示",
@@ -547,7 +547,7 @@
     "blog": "網誌",
     "post_count": "文章數",
     "animation": "動畫",
-    "top_level_size": "頂層大小",
+    "top_level_size": "最上層大小",
     "empty_cart_button_link": "購物車為空時的按鈕連結",
     "auto_load_products": "捲動時自動載入產品",
     "products_per_page": "每頁產品數",
@@ -577,7 +577,8 @@
     "x_position": "水平位置",
     "y_position": "垂直位置",
     "enable_sticky_add_to_cart": "固定加入購物車列",
-    "sticky_add_to_cart": "固定加入購物車"
+    "sticky_add_to_cart": "固定加入購物車",
+    "actions_display_style": "選單樣式"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "縮放",
     "with_hints": "附提示",
     "below_media": "多媒體檔案下方",
-    "full_frame": "滿版"
+    "full_frame": "滿版",
+    "icons": "圖示"
   },
   "content": {
     "advanced": "進階",
@@ -967,7 +969,8 @@
     "popover_position": "彈出式提示位置",
     "resource_reference_product_sku": "顯示父商品的存貨單位 (SKU)",
     "content_layout": "內容版面配置",
-    "mobile_media_1": "行動裝置用多媒體檔案 1"
+    "mobile_media_1": "行動裝置用多媒體檔案 1",
+    "utilities": "公用程式"
   },
   "html_defaults": {
     "share_information_about_your": "<p>向顧客分享您的品牌故事。可用來敘述產品、發布公告，或歡迎顧客造訪您的商店。</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "僅適用於圖片",
     "hover_effects": "適用於產品卡片與商品系列卡片",
     "hide_logo_on_home_page_help": "啟用固定頁首時，標誌仍會顯示",
-    "media_type_info": "功能會依您的選單連結自動填入",
-    "logo_height": "僅影響頁首標誌"
+    "media_type_info": "功能會根據您的選單連結自動帶入",
+    "logo_height": "僅影響頁首標誌",
+    "actions_display_style": "在行動裝置上一律使用圖示"
   },
   "categories": {
     "basic": "基本",

@@ -25,17 +25,15 @@ class HeaderMenu extends Component {
   connectedCallback() {
     super.connectedCallback();
 
-    this.overflowMenu?.addEventListener('pointerleave', () => this.#deactivate());
-    // on load, cache the max height of the submenu so you can use it in a translate
-    this.#cacheMaxOverflowMenuHeight();
-
     onDocumentLoaded(this.#preloadImages);
     window.addEventListener('resize', this.#resizeListener);
+    this.overflowMenu?.addEventListener('pointerleave', this.#overflowSubmenuListener);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('resize', this.#resizeListener);
+    this.overflowMenu?.removeEventListener('pointerleave', this.#overflowSubmenuListener);
     this.#cleanupMutationObserver();
   }
 
@@ -43,9 +41,13 @@ class HeaderMenu extends Component {
    * Debounced resize event listener to recalculate menu style
    */
   #resizeListener = debounce(() => {
-    this.#cacheMaxOverflowMenuHeight();
     setHeaderMenuStyle();
   }, 100);
+
+
+  #overflowSubmenuListener = () => {
+    this.#deactivate();
+  };
 
   /**
    * @type {State}
@@ -62,11 +64,11 @@ class HeaderMenu extends Component {
   }
 
   /**
-   * Whether the overflow menu is hovered
+   * Whether the overflow list is hovered
    * @returns {boolean}
    */
-  get overflowHovered() {
-    return this.refs.overflowMenu?.matches(':hover') ?? false;
+  get overflowListHovered() {
+    return this.refs.overflowMenu?.shadowRoot?.querySelector('[part="overflow-list"]')?.matches(':hover') ?? false;
   }
 
   get headerComponent() {
@@ -80,7 +82,7 @@ class HeaderMenu extends Component {
   activate = (event) => {
     this.dispatchEvent(new MegaMenuHoverEvent());
 
-    if (!(event.target instanceof Element)) return;
+    if (!(event.target instanceof Element) || !this.headerComponent) return;
 
     let item = findMenuItem(event.target);
 
@@ -101,8 +103,9 @@ class HeaderMenu extends Component {
     item.ariaExpanded = 'true';
 
     let submenu = findSubmenu(item);
+    const hasSubmenu = Boolean(submenu);
 
-    if (!submenu && !isDefaultSlot) {
+    if (!hasSubmenu && !isDefaultSlot) {
       submenu = this.overflowMenu;
     }
 
@@ -133,9 +136,28 @@ class HeaderMenu extends Component {
       }, 500);
     }
 
-    const submenuHeight = submenu ? submenu.offsetHeight : 0;
+    let finalHeight = submenu?.offsetHeight || 0;
 
-    this.headerComponent?.style.setProperty('--submenu-height', `${submenuHeight}px`);
+    // For overflow menu, the height needs to be either content of the submenu or the total height of the menu list links
+    if (!isDefaultSlot) {
+      const overflowListHeight = this.#getOverflowListLinksHeight();
+      if (hasSubmenu) {
+        /* Note: When the submenu is inside the overflow menu, its offsetHeight is not valid due to the lack of padding
+         * we could add the padding variables to the submenu.offsetHeight, but measuring the overflowMenu.offsetHeight is just easier */
+        const overflowHeight = this.overflowMenu?.offsetHeight || 0;
+        finalHeight = Math.max(overflowHeight, overflowListHeight);
+      } else {
+        finalHeight = overflowListHeight;
+      }
+    }
+
+    if (!submenu) {
+      // If there is no content to open, don't try to open it
+      finalHeight = 0;
+    }
+
+    this.headerComponent.style.setProperty('--submenu-height', `${finalHeight}px`);
+    this.#setFullOpenHeaderHeight(finalHeight);
     this.style.setProperty('--submenu-opacity', '1');
   };
 
@@ -164,9 +186,12 @@ class HeaderMenu extends Component {
    */
   #deactivate = (item = this.#state.activeItem) => {
     if (!item || item != this.#state.activeItem) return;
-    if (this.overflowHovered) return;
+
+    // Don't deactivate if the overflow menu or overflow list is still being hovered
+    if (this.overflowListHovered || this.overflowMenu?.matches(':hover')) return;
 
     this.headerComponent?.style.setProperty('--submenu-height', '0px');
+    this.#setFullOpenHeaderHeight(0);
     this.style.setProperty('--submenu-opacity', '0');
     this.dataset.overflowExpanded = 'false';
 
@@ -182,6 +207,52 @@ class HeaderMenu extends Component {
     }
   };
 
+  #getOverflowListLinksHeight() {
+    const slottedMenuLinks = this.overflowMenu?.querySelector('slot')?.assignedElements();
+    if (!slottedMenuLinks) return this.overflowMenu?.offsetHeight || 0;
+
+    /**
+     * @param {(submenu: HTMLElement) => void} cb
+     */
+    const mapSubmenus = (cb) => {
+      slottedMenuLinks.forEach((link) => {
+        const submenu = /** @type {HTMLElement | null} */ (link.querySelector('[ref="submenu[]"]'));
+        if (submenu) {
+          cb(submenu);
+        }
+      });
+    }
+
+    mapSubmenus((submenu) => {
+      submenu.style.setProperty('display', 'none');
+    });
+    const height = this.overflowMenu?.offsetHeight || 0;
+    mapSubmenus((submenu) => {
+      submenu.style.removeProperty('display');
+    });
+    return height;
+  }
+
+  /**
+   * Calculate and set the full open header height. If the submenu is not open, the full open header height is 0.
+   * @param {number} submenuHeight
+   */
+  #setFullOpenHeaderHeight(submenuHeight) {
+    if (!this.headerComponent) return;
+
+    const isOverlapSituation = this.headerComponent.hasAttribute('data-submenu-overlap-bottom-row');
+
+    const headerVisibleHeight =
+      isOverlapSituation && this.headerComponent.offsetHeight > 0
+        ? /** @type {HTMLElement | null} */ (this.headerComponent.querySelector('.header__row--top'))?.offsetHeight ?? 0
+        : this.headerComponent.offsetHeight;
+
+    const nothingToOpen = submenuHeight === 0;
+    const fullOpenHeaderHeight = nothingToOpen ? 0 : submenuHeight + (headerVisibleHeight ?? 0);
+
+    this.headerComponent?.style.setProperty('--full-open-header-height', `${fullOpenHeaderHeight}px`);
+  }
+
   /**
    * Preload images that are set to load lazily.
    */
@@ -189,20 +260,6 @@ class HeaderMenu extends Component {
     const images = this.querySelectorAll('img[loading="lazy"]');
     images?.forEach((image) => image.removeAttribute('loading'));
   };
-
-  /**
-   * Caches the maximum height of all submenus for consistent animations
-   * Stores the value in a CSS custom property for use in transitions
-   */
-  #cacheMaxOverflowMenuHeight() {
-    const submenus = this.querySelectorAll('[ref="submenu[]"]');
-    const maxHeight = Math.max(
-      ...Array.from(submenus)
-        .filter((submenu) => submenu instanceof HTMLElement)
-        .map((submenu) => submenu.offsetHeight)
-    );
-    this.headerComponent?.style.setProperty('--submenu-max-height', `${maxHeight}px`);
-  }
 
   #cleanupMutationObserver() {
     this.#submenuMutationObserver?.disconnect();

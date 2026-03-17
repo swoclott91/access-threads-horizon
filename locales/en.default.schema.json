@@ -72,6 +72,7 @@
     "grid_layout": "Grid layout",
     "heading": "Heading",
     "heading_size": "Heading size",
+    "utilities": "Utilities",
     "home_page": "Home page",
     "icon": "Icon",
     "image": "Image",
@@ -210,6 +211,7 @@
     "work_quickly_to_ship": "<p>We will work quickly to ship your order as soon as possible. Once your order has shipped, you will receive an email with further information. Delivery times vary depending on your location.</p>"
   },
   "info": {
+    "actions_display_style": "Icons are always used on mobile",
     "applies_on_image_only": "Applies to images only",
     "aspect_ratio_adjusted": "Adjusted in some layouts",
     "carousel_hover_behavior_not_supported": "\"Carousel\" hover is not supported when \"Carousel\" type is selected at the section level",
@@ -561,6 +563,7 @@
     "hint": "Hint",
     "horizontal": "Horizontal",
     "icon": "Icon",
+    "icons": "Icons",
     "image": "Image",
     "input": "Input",
     "inside_carousel": "Inside carousel",
@@ -748,6 +751,7 @@
   "settings": {
     "accordion": "Accordion",
     "account": "Account",
+    "actions_display_style": "Menu style",
     "alignment": "Alignment",
     "alignment_mobile": "Mobile alignment",
     "align_baseline": "Align text baseline",

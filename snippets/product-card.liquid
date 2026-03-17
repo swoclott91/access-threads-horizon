@@ -13,7 +13,7 @@
 
 {% style %}
   {% if request.visual_preview_mode %}
-    product-card-link {
+    product-card[data-product-transition] {
       width: 100%;
       min-width: 250px;
     }
@@ -54,21 +54,16 @@
   endif
 %}
 
-{%- if settings.transition_to_main_product -%}
-  <product-card-link
-    data-product-id="{{ product.id }}"
-    data-featured-media-url="{{ featured_media_url }}"
-    data-product-transition="{{ settings.transition_to_main_product }}"
-    {% if onboarding %}
-      data-placeholder="true"
-    {% endif %}
-  >
-{%- endif -%}
 <product-card
-  class="product-card"
+  class="product-card size-style"
+  style="{% render 'size-style', settings: block_settings %}"
   data-product-id="{{ product.id }}"
   id="product-card-{{ block.id }}"
-  data-product-transition="{{ settings.transition_to_main_product }}"
+  {% if settings.transition_to_main_product %}
+    data-product-transition="true"
+    data-featured-media-url="{{ featured_media_url }}"
+    on:click="/handleViewTransition"
+  {% endif %}
   {{ block.shopify_attributes }}
   {% if onboarding %}
     data-placeholder="true"
@@ -114,16 +109,8 @@
     {{ children }}
   </div>
 </product-card>
-{%- if settings.transition_to_main_product -%}
-  </product-card-link>
-{%- endif -%}
 
 {% stylesheet %}
-  product-card-link,
-  :not(product-card-link) product-card {
-    width: 100%;
-  }
-
   .product-card__placeholder-image svg {
     height: 100%;
   }

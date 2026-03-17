@@ -525,7 +525,7 @@
       "heading": "見出し",
       "description": "説明",
       "key": "プロパティ名",
-      "key_info": "空白にすることはできず、ブロックごとに一意である必要があります。カート、チェックアウト、注文詳細に表示されます。",
+      "key_info": "カート、チェックアウト、注文詳細に表示されるため、空白にすることはできず、各ブロックで固有である必要があります。",
       "placeholder_text": "プレースホルダーテキスト",
       "default_heading": "商品をカスタマイズする",
       "default_placeholder": "特別な指示を入力してください",
@@ -548,7 +548,7 @@
     "post_count": "投稿数",
     "animation": "アニメーション",
     "top_level_size": "トップレベルのサイズ",
-    "empty_cart_button_link": "空のカートのボタンのリンク",
+    "empty_cart_button_link": "カートが空の場合のボタンのリンク",
     "auto_load_products": "スクロール時に商品を自動で読み込む",
     "products_per_page": "ページあたりの商品数",
     "custom_mobile_media": "モバイルで別のメディアを表示する",
@@ -577,7 +577,8 @@
     "x_position": "横位置",
     "y_position": "縦位置",
     "enable_sticky_add_to_cart": "固定「カートに追加」バー",
-    "sticky_add_to_cart": "固定「カートに追加」"
+    "sticky_add_to_cart": "固定「カートに追加」",
+    "actions_display_style": "メニュースタイル"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "ズーム",
     "with_hints": "ヒント付き",
     "below_media": "メディアの下",
-    "full_frame": "フルフレーム"
+    "full_frame": "フルフレーム",
+    "icons": "アイコン"
   },
   "content": {
     "advanced": "高度な設定",
@@ -957,9 +959,9 @@
     "heading": "見出し",
     "resource_reference_product_custom_property": "カスタマイズ可能な入力フィールドを追加して、注文の項目に追加されるカスタム情報を収集します。この情報は後で注文詳細に表示されます。",
     "block_link": "ブロックリンク",
-    "submenu_feature": "サブメニュー機能",
+    "submenu_feature": "サブメニューの機能",
     "cart_features": "カートの機能",
-    "email_signup": "メールマガジン登録",
+    "email_signup": "メール登録",
     "mobile_media": "モバイルメディア",
     "mobile_media_2": "モバイルメディア2",
     "navigation": "メニュー",
@@ -967,7 +969,8 @@
     "popover_position": "ポップオーバーの位置",
     "resource_reference_product_sku": "親商品のSKUを表示します",
     "content_layout": "コンテンツレイアウト",
-    "mobile_media_1": "モバイルメディア1"
+    "mobile_media_1": "モバイルメディア1",
+    "utilities": "ユーティリティ"
   },
   "html_defaults": {
     "share_information_about_your": "<p>ブランドに関する情報をお客様に伝えましょう。商品の説明、お知らせ、ストアへのお客様への歓迎メッセージなどに使用します。</p>",
@@ -1084,8 +1087,9 @@
     "hover_effects": "商品カードとコレクションカードに適用されます",
     "pills_usage": "適用された絞り込み、ディスカウントコード、検索候補に使用されます",
     "hide_logo_on_home_page_help": "ロゴは、固定ヘッダーが有効な場合は表示されたままになります",
-    "media_type_info": "機能はメニューリンクから入力されます",
-    "logo_height": "ヘッダーのロゴにのみ影響します"
+    "media_type_info": "機能はメニューのリンクを元に表示されます。",
+    "logo_height": "ヘッダーのロゴにのみ適用されます。",
+    "actions_display_style": "モバイルでは常にアイコンが表示されます"
   },
   "categories": {
     "product_list": "特集コレクション",

@@ -65,7 +65,8 @@
     "remove": "Poista",
     "view_pricing_info": "Näytä hinnoittelutiedot",
     "open_hotspot": "Avoin yhteyspiste",
-    "slideshow": "Diaesitys"
+    "slideshow": "Diaesitys",
+    "header_navigation_label": "Ensisijainen"
   },
   "actions": {
     "add_to_cart": "Lisää ostoskoriin",

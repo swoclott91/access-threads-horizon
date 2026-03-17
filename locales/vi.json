@@ -65,7 +65,8 @@
     "remove": "Xóa",
     "view_pricing_info": "Xem thông tin về giá",
     "open_hotspot": "Mở điểm phát sóng",
-    "slideshow": "Bản trình chiếu"
+    "slideshow": "Bản trình chiếu",
+    "header_navigation_label": "Chính"
   },
   "actions": {
     "add_to_cart": "Thêm vào giỏ hàng",

@@ -267,14 +267,6 @@
   </script>
 {% endif %}
 
-{% if settings.transition_to_main_product %}
-  <script
-    src="{{ 'product-card-link.js' | asset_url }}"
-    type="module"
-    fetchpriority="low"
-  ></script>
-{% endif %}
-
 <script
   src="{{ 'auto-close-details.js' | asset_url }}"
   defer="defer"

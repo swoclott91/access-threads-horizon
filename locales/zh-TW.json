@@ -65,7 +65,8 @@
     "remove": "移除",
     "view_pricing_info": "檢視定價資訊",
     "open_hotspot": "開啟熱點",
-    "slideshow": "素材輪播"
+    "slideshow": "素材輪播",
+    "header_navigation_label": "主要"
   },
   "actions": {
     "add_to_cart": "加入購物車",

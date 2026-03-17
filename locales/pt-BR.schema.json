@@ -577,7 +577,8 @@
     "x_position": "Posição horizontal",
     "y_position": "Posição vertical",
     "enable_sticky_add_to_cart": "Barra fixa de adicionar ao carrinho",
-    "sticky_add_to_cart": "Adicionar ao carrinho fixo"
+    "sticky_add_to_cart": "Adicionar ao carrinho fixo",
+    "actions_display_style": "Estilo de menu"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Com dicas",
     "below_media": "Abaixo da mídia",
-    "full_frame": "Tela cheia"
+    "full_frame": "Tela cheia",
+    "icons": "Ícones"
   },
   "content": {
     "advanced": "Avançado",
@@ -959,7 +961,7 @@
     "block_link": "Link do bloco",
     "submenu_feature": "Recurso de submenu",
     "cart_features": "Recursos do carrinho",
-    "email_signup": "Inscrição por e-mail",
+    "email_signup": "Inscrição de e-mail",
     "mobile_media": "Mídia para celular",
     "mobile_media_2": "Mídia para celular 2",
     "navigation": "Navegação",
@@ -967,7 +969,8 @@
     "popover_position": "Posição do popover",
     "resource_reference_product_sku": "Exibe o SKU do produto principal",
     "content_layout": "Layout do conteúdo",
-    "mobile_media_1": "Mídia para celular 1"
+    "mobile_media_1": "Mídia para celular 1",
+    "utilities": "Utilitários"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Compartilhe informações sobre sua marca com seus clientes. Descreva um produto, faça anúncios ou dê as boas-vindas aos clientes em sua loja.</p>",
@@ -1084,8 +1087,9 @@
     "applies_on_image_only": "Aplica-se apenas a imagens",
     "hover_effects": "Aplica-se a cartões de produto e de coleção",
     "hide_logo_on_home_page_help": "O logo permanecerá visível quando o cabeçalho fixo estiver ativo",
-    "media_type_info": "Os recursos são preenchidos a partir dos links do seu menu",
-    "logo_height": "Afeta apenas o logo do cabeçalho"
+    "media_type_info": "Os recursos são preenchidos com base nos links do menu",
+    "logo_height": "Afeta apenas o logo do cabeçalho",
+    "actions_display_style": "Os ícones são sempre usados em dispositivos móveis"
   },
   "categories": {
     "basic": "Básico",

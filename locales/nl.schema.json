@@ -525,7 +525,7 @@
       "heading": "Kop",
       "description": "Beschrijving",
       "key": "Naam eigenschap",
-      "key_info": "Mag niet leeg zijn en moet uniek zijn voor elk blok. Wordt weergegeven in de winkelwagen, de checkout en de bestelgegevens.",
+      "key_info": "Mag niet leeg zijn en moet uniek zijn per blok. Wordt weergegeven in de winkelwagen, checkout en bestelgegevens.",
       "placeholder_text": "Tekst tijdelijke aanduiding",
       "default_heading": "Personaliseer je product",
       "default_placeholder": "Voer je speciale instructies in",
@@ -547,8 +547,8 @@
     "blog": "Blog",
     "post_count": "Aantal posts",
     "animation": "Animatie",
-    "top_level_size": "Grootte op hoofdniveau",
-    "empty_cart_button_link": "Knoplink lege winkelwagen",
+    "top_level_size": "Grootte hoogste niveau",
+    "empty_cart_button_link": "Knoplink voor lege winkelwagen",
     "auto_load_products": "Producten automatisch laden bij scrollen",
     "products_per_page": "Producten per pagina",
     "custom_mobile_media": "Andere media weergeven op mobiel",
@@ -577,7 +577,8 @@
     "x_position": "Horizontale positie",
     "y_position": "Verticale positie",
     "enable_sticky_add_to_cart": "Vaste 'Toevoegen aan winkelwagen'-balk",
-    "sticky_add_to_cart": "Vaste 'Toevoegen aan winkelwagen'-balk"
+    "sticky_add_to_cart": "Vaste 'Toevoegen aan winkelwagen'-balk",
+    "actions_display_style": "Menustijl"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Met hints",
     "below_media": "Onder media",
-    "full_frame": "Volledig kader"
+    "full_frame": "Volledig kader",
+    "icons": "Pictogrammen"
   },
   "content": {
     "background_video": "Achtergrondvideo",
@@ -959,7 +961,7 @@
     "block_link": "Bloklink",
     "submenu_feature": "Submenufunctie",
     "cart_features": "Winkelwagenfuncties",
-    "email_signup": "Aanmelding voor e-mail",
+    "email_signup": "E-mailaanmelding",
     "mobile_media": "Media voor mobiel",
     "mobile_media_2": "Media 2 voor mobiel",
     "navigation": "Navigatie",
@@ -967,7 +969,8 @@
     "popover_position": "Popoverpositie",
     "resource_reference_product_sku": "Toont de SKU van het bovenliggende product",
     "content_layout": "Contentopmaak",
-    "mobile_media_1": "Mobiele media 1"
+    "mobile_media_1": "Mobiele media 1",
+    "utilities": "Hulpmiddelen"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Deel informatie over je merk met je klanten. Beschrijf een product, doe aankondigingen of heet klanten welkom in je winkel.</p>",
@@ -1085,7 +1088,8 @@
     "hover_effects": "Van toepassing op product- en collectiekaarten",
     "hide_logo_on_home_page_help": "Logo blijft zichtbaar wanneer de vaste koptekst actief is",
     "media_type_info": "Functies worden gevuld vanuit je menulinks",
-    "logo_height": "Heeft alleen invloed op het logo in de koptekst"
+    "logo_height": "Alleen van invloed op het koptekstlogo",
+    "actions_display_style": "Op mobiel worden altijd pictogrammen gebruikt"
   },
   "categories": {
     "product_list": "Uitgelichte collectie",

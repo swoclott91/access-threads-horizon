@@ -525,7 +525,7 @@
       "heading": "제목",
       "description": "설명",
       "key": "속성 이름",
-      "key_info": "비워 둘 수 없으며 각 블록마다 고유해야 합니다. 카트, 결제, 주문 세부 정보에 표시됩니다.",
+      "key_info": "비워 둘 수 없으며 각 블록마다 고유해야 합니다. 카트, 체크아웃 및 주문 세부 정보에 표시됩니다.",
       "placeholder_text": "플레이스 홀더 텍스트",
       "default_heading": "제품 사용자 지정",
       "default_placeholder": "특별 지침을 입력하세요",
@@ -547,7 +547,7 @@
     "blog": "블로그",
     "post_count": "게시물 수",
     "animation": "애니메이션",
-    "top_level_size": "최상위 레벨 사이즈",
+    "top_level_size": "최상위 사이즈",
     "empty_cart_button_link": "빈 카트 버튼 링크",
     "auto_load_products": "스크롤 시 제품 자동 로드",
     "products_per_page": "페이지당 제품 수",
@@ -577,7 +577,8 @@
     "x_position": "가로 위치",
     "y_position": "세로 위치",
     "enable_sticky_add_to_cart": "고정 카트 추가 바",
-    "sticky_add_to_cart": "고정 카트 추가"
+    "sticky_add_to_cart": "고정 카트 추가",
+    "actions_display_style": "메뉴 스타일"
   },
   "options": {
     "apple": "Apple",
@@ -851,7 +852,8 @@
     "subtle_zoom": "확대/축소",
     "with_hints": "힌트 포함",
     "below_media": "미디어 아래",
-    "full_frame": "전체 프레임"
+    "full_frame": "전체 프레임",
+    "icons": "아이콘"
   },
   "content": {
     "background_video": "배경 비디오",
@@ -957,7 +959,7 @@
     "heading": "제목",
     "resource_reference_product_custom_property": "사용자 지정 정보를 수집하기 위해 사용자 지정 가능한 입력 필드를 추가합니다. 이 정보는 이 주문 품목에 추가되며 나중에 주문 세부 정보에서 볼 수 있습니다.",
     "block_link": "블록 링크",
-    "submenu_feature": "하위 메뉴 기능",
+    "submenu_feature": "서브메뉴 기능",
     "cart_features": "카트 기능",
     "email_signup": "이메일 가입",
     "mobile_media": "모바일 미디어",
@@ -967,7 +969,8 @@
     "popover_position": "팝오버 위치",
     "resource_reference_product_sku": "상위 제품의 SKU(재고 관리 코드)를 표시합니다",
     "content_layout": "콘텐츠 레이아웃",
-    "mobile_media_1": "모바일 미디어 1"
+    "mobile_media_1": "모바일 미디어 1",
+    "utilities": "유틸리티"
   },
   "html_defaults": {
     "share_information_about_your": "<p>고객과 브랜드에 대한 정보를 공유하세요. 제품을 설명하거나, 공지 사항을 알리거나, 스토어를 방문하는 고객을 환영할 수 있습니다.</p>",
@@ -1084,8 +1087,9 @@
     "hover_effects": "제품 및 컬렉션 카드에 적용됩니다",
     "pills_usage": "적용된 필터, 할인 코드, 검색 제안에 사용됩니다",
     "hide_logo_on_home_page_help": "고정 머리글이 활성화되면 로고가 계속 표시됩니다",
-    "media_type_info": "기능은 메뉴 링크에서 채워집니다",
-    "logo_height": "머리글 로고에만 영향을 줍니다"
+    "media_type_info": "기능은 메뉴 링크에서 가져옵니다.",
+    "logo_height": "머리글 로고에만 적용됩니다.",
+    "actions_display_style": "모바일에서는 항상 아이콘이 사용됩니다."
   },
   "categories": {
     "basic": "기본",

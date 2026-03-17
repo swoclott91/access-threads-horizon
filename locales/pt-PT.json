@@ -66,7 +66,8 @@
     "remove": "Remover",
     "view_pricing_info": "Ver informações sobre preços",
     "open_hotspot": "Hotspot aberto",
-    "slideshow": "Apresentação de diapositivos"
+    "slideshow": "Apresentação de diapositivos",
+    "header_navigation_label": "Principal"
   },
   "actions": {
     "add_to_cart": "Adicionar ao carrinho",

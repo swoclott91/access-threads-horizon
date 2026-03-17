@@ -604,7 +604,8 @@
                       media: media,
                       sizes: '100vw',
                       loading: 'lazy',
-                      is_main_product_media: forloop.first
+                      is_main_product_media: forloop.first,
+                      image_ref: 'image'
                     -%}
                   </drag-zoom-wrapper>
                 {% else %}
@@ -830,7 +831,7 @@
     animation-timing-function: step-end;
   }
 
-  @media screen and (min-width: 749px) {
+  @media screen and (min-width: 750px) {
     :root:active-view-transition .product-media__image {
       background-color: transparent;
     }

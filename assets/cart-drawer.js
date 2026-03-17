@@ -1,5 +1,6 @@
-import { DialogComponent, DialogOpenEvent } from '@theme/dialog';
+import { DialogComponent, DialogOpenEvent, DialogCloseEvent } from '@theme/dialog';
 import { CartAddEvent } from '@theme/events';
+import { isMobileBreakpoint } from '@theme/utilities';
 
 /**
  * A custom element that manages a cart drawer.
@@ -13,17 +14,55 @@ class CartDrawerComponent extends DialogComponent {
   /** @type {number} */
   #summaryThreshold = 0.5;
 
+  /** @type {AbortController | null} */
+  #historyAbortController = null;
+
   connectedCallback() {
     super.connectedCallback();
     document.addEventListener(CartAddEvent.eventName, this.#handleCartAdd);
     this.addEventListener(DialogOpenEvent.eventName, this.#updateStickyState);
+    this.addEventListener(DialogOpenEvent.eventName, this.#handleHistoryOpen);
+    this.addEventListener(DialogCloseEvent.eventName, this.#handleHistoryClose);
+
+    if (history.state?.cartDrawerOpen) {
+      history.replaceState(null, '');
+    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
     document.removeEventListener(CartAddEvent.eventName, this.#handleCartAdd);
     this.removeEventListener(DialogOpenEvent.eventName, this.#updateStickyState);
+    this.removeEventListener(DialogOpenEvent.eventName, this.#handleHistoryOpen);
+    this.removeEventListener(DialogCloseEvent.eventName, this.#handleHistoryClose);
+    this.#historyAbortController?.abort();
   }
+
+  #handleHistoryOpen = () => {
+    if (!isMobileBreakpoint()) return;
+
+    if (!history.state?.cartDrawerOpen) {
+      history.pushState({ cartDrawerOpen: true }, '');
+    }
+
+    this.#historyAbortController = new AbortController();
+    window.addEventListener('popstate', this.#handlePopState, { signal: this.#historyAbortController.signal });
+  };
+
+  #handleHistoryClose = () => {
+    this.#historyAbortController?.abort();
+    if (history.state?.cartDrawerOpen) {
+      history.back();
+    }
+  };
+
+  #handlePopState = async () => {
+    if (this.refs.dialog?.open) {
+      this.refs.dialog.style.setProperty('--dialog-drawer-closing-animation', 'none');
+      await this.closeDialog();
+      this.refs.dialog.style.removeProperty('--dialog-drawer-closing-animation');
+    }
+  };
 
   #handleCartAdd = () => {
     if (this.hasAttribute('auto-open')) {

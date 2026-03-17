@@ -66,7 +66,8 @@
     "remove": "Rimuovi",
     "view_pricing_info": "Visualizza informazioni sui prezzi",
     "open_hotspot": "Apri hotspot",
-    "slideshow": "Presentazione"
+    "slideshow": "Presentazione",
+    "header_navigation_label": "Principale"
   },
   "actions": {
     "add_to_cart": "Aggiungi al carrello",

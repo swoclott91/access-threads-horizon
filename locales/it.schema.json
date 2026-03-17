@@ -525,7 +525,7 @@
       "heading": "Intestazione",
       "description": "Descrizione",
       "key": "Nome proprietà",
-      "key_info": "Non può essere vuoto e deve essere unico per ogni blocco. Viene visualizzato nel carrello, al check-out e nei dettagli dell'ordine.",
+      "key_info": "Non può essere vuoto e deve essere univoco per ogni blocco. Viene visualizzato nel carrello, al check-out e nei dettagli dell’ordine.",
       "placeholder_text": "Testo segnaposto",
       "default_heading": "Personalizza il tuo prodotto",
       "default_placeholder": "Inserisci le tue istruzioni speciali",
@@ -547,8 +547,8 @@
     "blog": "Blog",
     "post_count": "Conteggio post",
     "animation": "Animazione",
-    "top_level_size": "Dimensione livello superiore",
-    "empty_cart_button_link": "Link pulsante carrello vuoto",
+    "top_level_size": "Dimensione primo livello",
+    "empty_cart_button_link": "Link pulsante per carrello vuoto",
     "auto_load_products": "Carica automaticamente i prodotti durante lo scorrimento",
     "products_per_page": "Prodotti per pagina",
     "custom_mobile_media": "Mostra contenuti multimediali diversi su mobile",
@@ -577,7 +577,8 @@
     "x_position": "Posizione orizzontale",
     "y_position": "Posizione verticale",
     "enable_sticky_add_to_cart": "Barra fissa per l'aggiunta al carrello",
-    "sticky_add_to_cart": "Aggiunta al carrello fissa"
+    "sticky_add_to_cart": "Aggiunta al carrello fissa",
+    "actions_display_style": "Stile menu"
   },
   "options": {
     "apple": "Mela",
@@ -851,7 +852,8 @@
     "subtle_zoom": "Zoom",
     "with_hints": "Con suggerimenti",
     "below_media": "Sotto i contenuti multimediali",
-    "full_frame": "A schermo intero"
+    "full_frame": "A schermo intero",
+    "icons": "Icone"
   },
   "content": {
     "advanced": "Avanzate",
@@ -967,7 +969,8 @@
     "popover_position": "Posizione popover",
     "resource_reference_product_sku": "Mostra lo SKU del prodotto principale",
     "content_layout": "Layout del contenuto",
-    "mobile_media_1": "Contenuto multimediale per mobile 1"
+    "mobile_media_1": "Contenuto multimediale per mobile 1",
+    "utilities": "Utilità"
   },
   "html_defaults": {
     "share_information_about_your": "<p>Condividi informazioni sul tuo brand con i clienti. Descrivi un prodotto, fai annunci o dai il benvenuto ai clienti nel tuo negozio.</p>",
@@ -1085,7 +1088,8 @@
     "hover_effects": "Si applica alle schede di prodotto e di collezione",
     "hide_logo_on_home_page_help": "Il logo rimarrà visibile quando l'header permanente è attivo",
     "media_type_info": "Le funzionalità vengono popolate dai link del menu",
-    "logo_height": "Influisce solo sul logo dell'header"
+    "logo_height": "Riguarda solo il logo dell’header",
+    "actions_display_style": "Le icone vengono sempre usate sui dispositivi mobili"
   },
   "categories": {
     "product_list": "Collezione in evidenza",

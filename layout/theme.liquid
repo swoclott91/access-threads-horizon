@@ -58,6 +58,7 @@
 
         if (!header || !headerGroup) return;
 
+        const headerTopRow = header.querySelector('.header__row--top');
         const headerHeight = header.offsetHeight;
 
         // Calculate the total height of the header group
@@ -77,6 +78,12 @@
         // Set CSS variables
         document.body.style.setProperty('--header-height', `${headerHeight}px`);
         document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+
+        if (headerTopRow) {
+          window.requestAnimationFrame(function () {
+            document.body.style.setProperty('--top-row-height', `${headerTopRow.offsetHeight}px`);
+          });
+        }
 
         /**
          * Updates CSS custom properties for transparent header offset calculation
@@ -116,7 +123,9 @@
       {{ content_for_layout }}
     </main>
 
-    {% sections 'footer-group' %}
+    <footer>
+      {% sections 'footer-group' %}
+    </footer>
 
     {% render 'search-modal' %}
 

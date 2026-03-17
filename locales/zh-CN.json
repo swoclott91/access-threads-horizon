@@ -65,7 +65,8 @@
     "remove": "删除",
     "view_pricing_info": "查看定价信息",
     "open_hotspot": "打开热点",
-    "slideshow": "幻灯片"
+    "slideshow": "幻灯片",
+    "header_navigation_label": "主要"
   },
   "actions": {
     "add_to_cart": "添加到购物车",
