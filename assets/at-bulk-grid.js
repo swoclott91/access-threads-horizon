@@ -857,12 +857,15 @@ function renderGrid(container) {
 
 /**
  * Set up bulk grid support for the quick-add modal context (modal-in-modal).
- * Uses event delegation so it works after AJAX content loads into #quick-add-modal-content.
- * When a [data-at-bulk-grid-trigger] inside the quick-add content is clicked:
- *   - Reads the config script from #quick-add-modal-content
- *   - Caches it under QUICK_ADD_SECTION_KEY
- *   - Renders the grid into #at-bulk-grid-quick-add-dialog's container
- *   - Opens the native <dialog> as a modal above the quick-add modal
+ *
+ * Optimized loading mirrors the product-page path:
+ *   1. A MutationObserver watches #quick-add-modal-content and starts the deferred
+ *      variant fetch the moment the config script appears in the DOM — before the
+ *      user touches the bulk trigger.  This reuses deferredLoadPromises exactly like
+ *      the hover/focusin preload does on the product page.
+ *   2. A window-capture click interceptor (fires before Horizon's document-capture
+ *      handler) calls renderGrid(), which picks up the already-in-flight promise
+ *      instead of starting a cold fetch on click.
  */
 function initQuickAddBulkGrid() {
   const bulkDialog = document.getElementById(QUICK_ADD_BULK_DIALOG_ID);
@@ -870,11 +873,8 @@ function initQuickAddBulkGrid() {
 
   if (!bulkDialog) return;
 
-  // Close button
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      bulkDialog.close();
-    });
+    closeBtn.addEventListener('click', () => bulkDialog.close());
   }
 
   // Backdrop click closes the dialog
@@ -882,31 +882,21 @@ function initQuickAddBulkGrid() {
     if (e.target === bulkDialog) bulkDialog.close();
   });
 
-  // Event delegation: intercept trigger clicks inside the quick-add modal content.
-  //
-  // WHY window, not document:
-  // Horizon's component.js also uses document.addEventListener('click', …, { capture: true })
-  // to handle on:click="/showDialog" attributes. It registers that listener at startup
-  // (before at-bulk-grid.js loads), so its document-capture handler fires first in
-  // registration order. Calling stopPropagation() in our document-capture handler is
-  // already too late — showDialog() has already been queued.
-  //
-  // window capture fires one step higher (window → document → … → target), so our
-  // listener runs before Horizon's document-capture listener. stopPropagation() here
-  // prevents the event from ever reaching document, keeping at-buy-buttons__bulk-dialog
-  // from opening.
-  window.addEventListener('click', (e) => {
-    const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
-    if (!trigger) return;
+  // ── Deferred-variant preload via MutationObserver ────────────────────────
+  // Watches for the config script landing in #quick-add-modal-content (which
+  // happens when quick-add.js morphs in the product page HTML over AJAX).
+  // Starts fetchDeferredVariants immediately so the promise is already in-flight
+  // by the time the user clicks the bulk trigger, matching the product-page
+  // hover-preload behaviour.
+  const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
+  let lastPreloadedProductId = null;
 
-    const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
-    if (!quickAddContent || !quickAddContent.contains(trigger)) return;
-
-    // Prevent the event from reaching Horizon's document-level capture handler,
-    // which would call dialog-component.showDialog() and open the wrong dialog.
-    e.stopPropagation();
-
-    const configScript = quickAddContent.querySelector(BULK_GRID_SELECTORS.configScript);
+  /**
+   * Called on every MutationObserver tick.  Parses the config script if present,
+   * guards against re-preloading the same product, then kicks off deferred fetch.
+   */
+  function tryPreloadQuickAdd() {
+    const configScript = quickAddContent?.querySelector(BULK_GRID_SELECTORS.configScript);
     if (!configScript?.textContent) return;
 
     let config;
@@ -917,20 +907,77 @@ function initQuickAddBulkGrid() {
       return;
     }
 
-    // Cache config under the quick-add sentinel key
+    // Guard: don't re-preload when the same product is still showing
+    if (config.productId != null && config.productId === lastPreloadedProductId) return;
+    lastPreloadedProductId = config.productId ?? null;
+
+    // Clear stale state from the previous product
+    bulkGridConfigCache.delete(QUICK_ADD_SECTION_KEY);
+    deferredLoadPromises.delete(QUICK_ADD_SECTION_KEY);
+
+    // Cache the base config immediately so the click handler can fall back to it
     bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
 
-    // Find the at-bulk-grid container inside the nested dialog
+    const expected = expectedVariantCount(config);
+    const needDeferred =
+      expected > 0 &&
+      config.variants.length < expected &&
+      (config.options?.[0]?.valueIds?.length ?? 0) > 0;
+
+    if (needDeferred) {
+      // Start the parallel deferred fetch now; renderGrid will await this promise
+      deferredLoadPromises.set(QUICK_ADD_SECTION_KEY, fetchDeferredVariants(config));
+    }
+  }
+
+  if (quickAddContent) {
+    new MutationObserver(tryPreloadQuickAdd).observe(quickAddContent, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  // ── Window-capture click interceptor ────────────────────────────────────
+  // WHY window, not document:
+  // Horizon's component.js registers document.addEventListener('click', …, { capture: true })
+  // at startup (before at-bulk-grid.js loads), so its document-capture handler fires
+  // first in registration order and calls showDialog() before ours could stop it.
+  // window capture fires one step higher (window → document → … → target), so our
+  // listener runs before Horizon's, and stopPropagation() here prevents the event
+  // from ever reaching document, keeping at-buy-buttons__bulk-dialog closed.
+  window.addEventListener('click', (e) => {
+    const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
+    if (!trigger) return;
+
+    const qac = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
+    if (!qac || !qac.contains(trigger)) return;
+
+    // Stop Horizon's document-capture handler from opening the wrong dialog
+    e.stopPropagation();
+
+    // Config should already be cached from the MutationObserver preload.
+    // Fall back to parsing from the DOM if the observer hasn't fired yet.
+    if (!bulkGridConfigCache.has(QUICK_ADD_SECTION_KEY)) {
+      const configScript = qac.querySelector(BULK_GRID_SELECTORS.configScript);
+      if (!configScript?.textContent) return;
+      try {
+        const config = JSON.parse(configScript.textContent.trim());
+        normalizeBulkConfig(config);
+        bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
+      } catch {
+        return;
+      }
+    }
+
     const container = bulkDialog.querySelector(BULK_GRID_SELECTORS.container);
     if (!container) return;
 
-    // Point the container at the cached config via the sentinel key
     container.dataset.atBulkGridSectionId = QUICK_ADD_SECTION_KEY;
 
-    // Render the grid (respects mobile/desktop breakpoint)
+    // renderGrid picks up the already-in-flight deferredLoadPromises entry
+    // instead of starting a cold fetch, matching the product-page experience.
     renderGrid(container);
 
-    // Open the nested dialog as a modal (enters browser top layer)
     if (typeof bulkDialog.showModal === 'function') {
       bulkDialog.showModal();
     }
