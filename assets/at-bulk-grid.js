@@ -789,6 +789,14 @@ const bulkGridConfigCache = new Map();
 const deferredLoadPromises = new Map();
 
 /**
+ * Per-product hover preloads for the quick-add context, keyed by productId.
+ * Populated when the user hovers a "Choose" button on a collection/home page,
+ * before they click it and before the quick-add AJAX request completes.
+ * @type {Map<number|string, Promise<any[]> | null>}
+ */
+const quickAddHoverPreloads = new Map();
+
+/**
  * Start loading deferred variants before the modal opens (called on hover/focus of trigger).
  * The promise is reused by renderGrid to avoid duplicate fetches.
  */
@@ -882,18 +890,85 @@ function initQuickAddBulkGrid() {
     if (e.target === bulkDialog) bulkDialog.close();
   });
 
+  // ── Hover preload on "Choose" buttons ───────────────────────────────────
+  // Mirrors the product-page mouseenter preload: fetch the product page HTML
+  // the moment the user hovers a "Choose" button, extract the config, and
+  // start the deferred variant fetch IN PARALLEL with the quick-add AJAX
+  // request that fires on click.  By the time the modal opens and the user
+  // finds the bulk trigger, the fetches are already largely complete.
+  //
+  // quick-add.js makes the identical product-page request on click; the
+  // browser serves that second request from the HTTP cache (the response from
+  // our hover fetch is already cached), so no extra network cost is incurred.
+  document.addEventListener(
+    'mouseover',
+    (e) => {
+      if (!(e.target instanceof Element)) return;
+      const btn = e.target.closest('.quick-add__button--choose');
+      if (!btn) return;
+
+      // Derive product URL the same way QuickAddComponent does:
+      // walk up to product-card and use its primary product link.
+      const card = btn.closest('product-card') || btn.closest('[data-product-id]');
+      if (!card) return;
+      const productLink = /** @type {HTMLAnchorElement | null} */ (card.querySelector('a[href*="/products/"]'));
+      if (!productLink?.href) return;
+
+      const url = new URL(productLink.href, window.location.origin);
+      const productPath = url.pathname;
+
+      // One preload per unique product path per page load
+      if (quickAddHoverPreloads.has(productPath)) return;
+      // Use path as placeholder so concurrent hovers don't fire duplicate fetches
+      quickAddHoverPreloads.set(productPath, null);
+
+      fetch(url.toString())
+        .then((r) => (r.ok ? r.text() : null))
+        .then((html) => {
+          if (!html) return;
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const configScript = doc.querySelector(BULK_GRID_SELECTORS.configScript);
+          if (!configScript?.textContent) return;
+
+          let config;
+          try {
+            config = JSON.parse(configScript.textContent.trim());
+            normalizeBulkConfig(config);
+          } catch {
+            return;
+          }
+
+          const expected = expectedVariantCount(config);
+          const needDeferred =
+            expected > 0 &&
+            config.variants.length < expected &&
+            (config.options?.[0]?.valueIds?.length ?? 0) > 0;
+
+          if (needDeferred) {
+            // Store promise keyed by productPath; tryPreloadQuickAdd reuses it
+            quickAddHoverPreloads.set(productPath, fetchDeferredVariants(config));
+          }
+          // Also pre-warm the config cache by productId so tryPreloadQuickAdd
+          // can pick up the hover-started promise when the modal content morphs in.
+          if (config.productId != null) {
+            quickAddHoverPreloads.set(String(config.productId), quickAddHoverPreloads.get(productPath) ?? null);
+          }
+        })
+        .catch(() => {});
+    },
+    { passive: true }
+  );
+
   // ── Deferred-variant preload via MutationObserver ────────────────────────
-  // Watches for the config script landing in #quick-add-modal-content (which
-  // happens when quick-add.js morphs in the product page HTML over AJAX).
-  // Starts fetchDeferredVariants immediately so the promise is already in-flight
-  // by the time the user clicks the bulk trigger, matching the product-page
-  // hover-preload behaviour.
+  // Second line of defence: fires when quick-add.js morphs content into
+  // #quick-add-modal-content.  Reuses the hover-preload promise when one
+  // exists; otherwise starts a fresh deferred fetch.
   const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
   let lastPreloadedProductId = null;
 
   /**
-   * Called on every MutationObserver tick.  Parses the config script if present,
-   * guards against re-preloading the same product, then kicks off deferred fetch.
+   * Called on every MutationObserver tick.  Parses the config, reuses any
+   * in-flight hover promise, otherwise starts a fresh deferred fetch.
    */
   function tryPreloadQuickAdd() {
     const configScript = quickAddContent?.querySelector(BULK_GRID_SELECTORS.configScript);
@@ -914,8 +989,6 @@ function initQuickAddBulkGrid() {
     // Clear stale state from the previous product
     bulkGridConfigCache.delete(QUICK_ADD_SECTION_KEY);
     deferredLoadPromises.delete(QUICK_ADD_SECTION_KEY);
-
-    // Cache the base config immediately so the click handler can fall back to it
     bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
 
     const expected = expectedVariantCount(config);
@@ -924,10 +997,16 @@ function initQuickAddBulkGrid() {
       config.variants.length < expected &&
       (config.options?.[0]?.valueIds?.length ?? 0) > 0;
 
-    if (needDeferred) {
-      // Start the parallel deferred fetch now; renderGrid will await this promise
-      deferredLoadPromises.set(QUICK_ADD_SECTION_KEY, fetchDeferredVariants(config));
-    }
+    if (!needDeferred) return;
+
+    // Reuse hover-preload promise if available (already in-flight since hover)
+    const hoverPromise =
+      config.productId != null ? quickAddHoverPreloads.get(String(config.productId)) : null;
+
+    deferredLoadPromises.set(
+      QUICK_ADD_SECTION_KEY,
+      hoverPromise ?? fetchDeferredVariants(config)
+    );
   }
 
   if (quickAddContent) {
