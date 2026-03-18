@@ -295,7 +295,7 @@
               "name": "AT Buy buttons",
               "settings": {
                 "at_enable_bulk_popup": true,
-                "at_bulk_trigger_label": "Bulk Add to Cart",
+                "at_bulk_trigger_label": "Bulk add to cart",
                 "at_bulk_behavior": "default",
                 "at_enable_bulk_quantities": true,
                 "stacking": false,
