@@ -69,7 +69,14 @@
         class="button button-secondary at-buy-buttons__bulk-trigger"
         data-at-bulk-grid-trigger
       >
-        {{ block_settings.at_bulk_trigger_label | default: 'Bulk Add to Cart' }}
+        <span class="add-to-cart-text">
+          <span aria-hidden="true" class="svg-wrapper add-to-cart-icon">
+            {{- 'at-bulk-add-to-cart.svg' | inline_asset_content -}}
+          </span>
+          <span class="add-to-cart-text__content">
+            {{ block_settings.at_bulk_trigger_label | default: 'Bulk Add to Cart' }}
+          </span>
+        </span>
       </button>
 
       <dialog
