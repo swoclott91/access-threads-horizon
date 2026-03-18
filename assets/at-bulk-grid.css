@@ -30,14 +30,23 @@
 }
 
 /* Nested bulk grid dialog – appears above the quick-add modal */
+/*
+ * <dialog> in the browser top layer defaults to fit-content sizing.
+ * We must set explicit width AND height (not just max-width/max-height)
+ * so that the flex-column layout and flex:1 inner container actually get
+ * the space they need to display the grid.
+ */
 #at-bulk-grid-quick-add-dialog {
   box-shadow: var(--shadow-popover);
   border: var(--style-border-popover);
   border-radius: var(--style-border-radius-popover);
   background-color: var(--color-background);
   padding: var(--padding-4xl) var(--padding-xl) var(--padding-xl);
-  max-width: min(var(--page-content-width, 72rem), calc(100vw - 2rem));
-  max-height: min(85dvh, 90svh);
+
+  /* Explicit dimensions – flex children won't grow without these on the dialog */
+  width: min(var(--page-content-width, 72rem), calc(100vw - 2rem));
+  height: min(85dvh, 85vh);
+
   display: flex;
   flex-direction: column;
 
@@ -47,8 +56,6 @@
 }
 
 #at-bulk-grid-quick-add-dialog:not([open]) {
-  /* Ensure nothing leaks out while closed (UA display:none covers this,
-     but be explicit for safety with any override stylesheets). */
   display: none;
 }
 
@@ -64,7 +71,7 @@
 
 .at-bulk-grid-modal__inner {
   min-width: 0;
-  overflow-x: auto;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   flex: 1 1 0;
