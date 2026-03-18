@@ -3,6 +3,12 @@
   Rendered inside quick-add-modal.liquid so it exists in the DOM on every page
   that has the quick-add modal, ready for any product's bulk trigger.
 
+  Assets are loaded here (not just in at-buy-buttons.liquid) because the
+  quick-add modal appears on collection and home pages where at-buy-buttons.liquid
+  never renders. Without loading these here, at-bulk-grid.js would not be
+  initialized on those pages and the capture-phase click interceptor would
+  never be set up.
+
   JS: at-bulk-grid.js → initQuickAddBulkGrid() finds this via:
     - #at-bulk-grid-quick-add-dialog  (the dialog element)
     - #at-bulk-grid-quick-add-close   (the close button)
@@ -11,6 +17,11 @@
   The <dialog> is display:none until showModal() is called – nothing here
   is visible while the dialog is closed.
 {%- endcomment -%}
+{{ 'at-bulk-grid.css' | asset_url | stylesheet_tag }}
+<script
+  src="{{ 'at-bulk-grid.js' | asset_url }}?v=2"
+  type="module"
+></script>
 <dialog
   id="at-bulk-grid-quick-add-dialog"
   class="at-bulk-grid-modal__dialog color-{{ settings.popover_color_scheme }}"
