@@ -883,20 +883,27 @@ function initQuickAddBulkGrid() {
   });
 
   // Event delegation: intercept trigger clicks inside the quick-add modal content.
-  // MUST use capture phase (true) so this fires before the dialog-component's
-  // bubble-phase showDialog handler — otherwise the dialog-component opens its
-  // own (empty) dialog first and we can't stop it.
-  document.addEventListener('click', (e) => {
+  //
+  // WHY window, not document:
+  // Horizon's component.js also uses document.addEventListener('click', …, { capture: true })
+  // to handle on:click="/showDialog" attributes. It registers that listener at startup
+  // (before at-bulk-grid.js loads), so its document-capture handler fires first in
+  // registration order. Calling stopPropagation() in our document-capture handler is
+  // already too late — showDialog() has already been queued.
+  //
+  // window capture fires one step higher (window → document → … → target), so our
+  // listener runs before Horizon's document-capture listener. stopPropagation() here
+  // prevents the event from ever reaching document, keeping at-buy-buttons__bulk-dialog
+  // from opening.
+  window.addEventListener('click', (e) => {
     const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
     if (!trigger) return;
 
     const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
     if (!quickAddContent || !quickAddContent.contains(trigger)) return;
 
-    // This trigger is inside the quick-add modal — open the nested bulk grid dialog.
-    // stopPropagation() in capture phase prevents the event from reaching the
-    // dialog-component's bubble-phase handler, so the at-buy-buttons__bulk-dialog
-    // never opens.
+    // Prevent the event from reaching Horizon's document-level capture handler,
+    // which would call dialog-component.showDialog() and open the wrong dialog.
     e.stopPropagation();
 
     const configScript = quickAddContent.querySelector(BULK_GRID_SELECTORS.configScript);
@@ -927,7 +934,7 @@ function initQuickAddBulkGrid() {
     if (typeof bulkDialog.showModal === 'function') {
       bulkDialog.showModal();
     }
-  }, true); // capture phase – must precede dialog-component's bubble-phase handler
+  }, true); // capture phase on window – fires before Horizon's document-capture handler
 }
 
 function init() {
