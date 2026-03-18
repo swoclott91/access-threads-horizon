@@ -184,28 +184,17 @@
   color: var(--color-outofstock, red);
 }
 
-/* Footer: hidden until quantity > 0, then visible and sticky at bottom */
+/* Footer: always visible, sticky at bottom */
 .at-bulk-grid__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gap-sm);
   align-items: center;
   margin-top: var(--gap-md);
-  /* Fully hidden when no quantity so it doesn’t take space or show */
-  display: none;
-  pointer-events: none;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-.at-bulk-grid__actions[data-at-bulk-has-quantity="true"],
-.at-bulk-grid__actions.at-bulk-grid__actions--has-quantity {
-  display: flex;
-  pointer-events: auto;
 }
 
 @media screen and (min-width: 750px) {
-  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"],
-  .at-bulk-grid__actions.at-bulk-grid__actions--has-quantity {
+  .at-bulk-grid__actions {
     position: sticky;
     bottom: 0;
     z-index: 2;
@@ -271,8 +260,7 @@
   }
 
   /* Sticky footer sticks to bottom of .popup-link__inner (the scroll container) */
-  .at-bulk-grid__actions[data-at-bulk-has-quantity="true"],
-  .at-bulk-grid__actions.at-bulk-grid__actions--has-quantity {
+  .at-bulk-grid__actions {
     position: sticky;
     bottom: 0;
     z-index: 2;

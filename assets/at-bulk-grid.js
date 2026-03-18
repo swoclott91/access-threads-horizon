@@ -442,7 +442,7 @@ function renderDesktopGrid(container, config, sectionId) {
 
   html += '</tbody></table></div>';
   html +=
-    '<div class="at-bulk-grid__actions" data-at-bulk-has-quantity="false">' +
+    '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
     '<button type="button" class="button add-to-cart-button button-primary" data-at-bulk-add-to-cart>' +
     '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
@@ -464,13 +464,7 @@ function renderDesktopGrid(container, config, sectionId) {
     inputs.forEach((input) => {
       sum += parseInt(input.value, 10) || 0;
     });
-    const hasQuantity = sum > 0;
     if (totalEl) totalEl.textContent = 'Total: ' + sum;
-    const actionsEl = container.querySelector('.at-bulk-grid__actions');
-    if (actionsEl) {
-      actionsEl.setAttribute('data-at-bulk-has-quantity', hasQuantity ? 'true' : 'false');
-      actionsEl.classList.toggle('at-bulk-grid__actions--has-quantity', hasQuantity);
-    }
   };
 
   const getLineItems = () => {
@@ -664,7 +658,7 @@ function renderMobileGrid(container, config, sectionId) {
 
   html += '</div>';
   html +=
-    '<div class="at-bulk-grid__actions" data-at-bulk-has-quantity="false">' +
+    '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
     '<button type="button" class="button add-to-cart-button button-primary" data-at-bulk-add-to-cart>' +
     '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
@@ -689,13 +683,7 @@ function renderMobileGrid(container, config, sectionId) {
     inputs.forEach((input) => {
       sum += parseInt(input.value, 10) || 0;
     });
-    const hasQuantity = sum > 0;
     if (totalEl) totalEl.textContent = 'Total: ' + sum;
-    const actionsEl = container.querySelector('.at-bulk-grid__actions');
-    if (actionsEl) {
-      actionsEl.setAttribute('data-at-bulk-has-quantity', hasQuantity ? 'true' : 'false');
-      actionsEl.classList.toggle('at-bulk-grid__actions--has-quantity', hasQuantity);
-    }
   };
 
   container.addEventListener('input', (e) => {
