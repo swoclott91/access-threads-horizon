@@ -16,7 +16,7 @@
           "type": "text",
           "name": "t:names.heading",
           "settings": {
-            "text": "<p>{{ closest.product.vendor }} {{ closest.product.title }}</p>",
+            "text": "<p>{{ closest.product.title }}</p>",
             "width": "fit-content",
             "max_width": "normal",
             "alignment": "left",
@@ -83,7 +83,7 @@
       "custom_css": [
         "@media screen and (min-width: 750px) {{display: none !important; }}"
       ],
-      "name": "Mobile Header",
+      "name": "t:names.custom_section",
       "settings": {
         "content_direction": "column",
         "vertical_on_mobile": true,
@@ -122,7 +122,7 @@
             "media_presentation": "grid",
             "media_columns": "two",
             "image_gap": 4,
-            "large_first_image": false,
+            "large_first_image": true,
             "icons_style": "arrow",
             "slideshow_controls_style": "counter",
             "slideshow_mobile_controls_style": "dots",
@@ -215,7 +215,7 @@
                   "type": "text",
                   "name": "t:names.title",
                   "settings": {
-                    "text": "<h1>{{ closest.product.vendor }} {{ closest.product.title }}</h1>",
+                    "text": "<h1>{{ closest.product.title }}</h1>",
                     "width": "fit-content",
                     "max_width": "normal",
                     "alignment": "left",
@@ -290,16 +290,11 @@
               },
               "blocks": {}
             },
-            "at_buy_buttons_GVGM4b": {
-              "type": "at-buy-buttons",
-              "name": "AT Buy buttons",
+            "buy_buttons_eYQEYi": {
+              "type": "buy-buttons",
               "settings": {
-                "at_enable_bulk_popup": true,
-                "at_bulk_trigger_label": "Bulk Add to Cart",
-                "at_bulk_behavior": "default",
-                "at_enable_bulk_quantities": true,
-                "stacking": false,
-                "show_pickup_availability": true,
+                "stacking": true,
+                "show_pickup_availability": false,
                 "gift_card_form": true,
                 "padding-block-start": 0,
                 "padding-block-end": 0,
@@ -323,7 +318,6 @@
                 },
                 "accelerated-checkout": {
                   "type": "accelerated-checkout",
-                  "disabled": true,
                   "static": true,
                   "settings": {},
                   "blocks": {}
@@ -362,7 +356,7 @@
             "group_icgrde",
             "divider_VJhene",
             "variant_picker_R3rGDr",
-            "at_buy_buttons_GVGM4b",
+            "buy_buttons_eYQEYi",
             "text_aEtTtq"
           ]
         }
