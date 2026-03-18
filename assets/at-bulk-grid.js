@@ -296,9 +296,7 @@ function availabilityBand(qty, available, inventory, policy) {
   if (!available) return 'Out';
   if (policy !== 'deny' || inventory === null || inventory === undefined) return 'In stock';
   if (inventory <= 0) return 'Out';
-  if (inventory < 25) return 'Limited';
-  if (inventory < 100) return '25+';
-  if (inventory < 1000) return '100+';
+  if (inventory < 1000) return String(inventory);
   return '1000+';
 }
 
