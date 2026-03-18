@@ -263,7 +263,10 @@
       ],
       "name": "t:names.collections_carousel",
       "settings": {
-        "collection_list": [],
+        "collection_list": [
+          "bella-canvas",
+          "gildan"
+        ],
         "layout_type": "carousel",
         "carousel_on_mobile": false,
         "columns": 3,
