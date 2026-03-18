@@ -29,26 +29,23 @@
   width: 100%;
 }
 
-/* Nested bulk grid dialog – appears above the quick-add modal */
-/*
- * <dialog> in the browser top layer defaults to fit-content sizing.
- * We must set explicit width AND height (not just max-width/max-height)
- * so that the flex-column layout and flex:1 inner container actually get
- * the space they need to display the grid.
- */
+/* ─── Quick-add nested bulk grid dialog ─────────────────────────────────────
+ * Mirrors the product-page popup-link__content + at-bulk-grid rules so that
+ * sizing, scroll behaviour, and sticky footer feel identical across contexts.
+ *
+ * Desktop (≥750px): max-width/max-height only – table wrapper scrolls internally.
+ * Mobile (<750px):  explicit height:85dvh flex column – inner is the scroll container.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
 #at-bulk-grid-quick-add-dialog {
   box-shadow: var(--shadow-popover);
   border: var(--style-border-popover);
   border-radius: var(--style-border-radius-popover);
   background-color: var(--color-background);
   padding: var(--padding-4xl) var(--padding-xl) var(--padding-xl);
-
-  /* Explicit dimensions – flex children won't grow without these on the dialog */
-  width: min(var(--page-content-width, 72rem), calc(100vw - 2rem));
-  height: min(85dvh, 85vh);
-
-  display: flex;
-  flex-direction: column;
+  /* Wide enough for the table (mirrors .at-popup-link .popup-link__content:has(.at-bulk-grid)) */
+  max-width: min(72rem, calc(100vw - 2rem));
+  max-height: var(--modal-max-height);
 
   @media screen and (min-width: 750px) {
     padding: var(--padding-5xl);
@@ -60,8 +57,6 @@
 }
 
 #at-bulk-grid-quick-add-dialog[open] {
-  display: flex;
-  flex-direction: column;
   animation: modalSlideInTop var(--animation-speed) var(--animation-easing) forwards;
 }
 
@@ -69,13 +64,34 @@
   animation: modalSlideOutTop var(--animation-speed) var(--animation-easing) forwards;
 }
 
+/* Mobile: fill most of viewport and let inner scroll (mirrors mobile at-popup-link rules) */
+@media screen and (max-width: 749px) {
+  #at-bulk-grid-quick-add-dialog[open] {
+    height: 85dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #at-bulk-grid-quick-add-dialog[open] .at-bulk-grid-modal__inner {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #at-bulk-grid-quick-add-dialog[open] .at-bulk-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* Inner scroll container – mirrors .popup-link__inner */
 .at-bulk-grid-modal__inner {
   min-width: 0;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 0;
-  min-height: 0;
+  overflow-x: auto;
 }
 
 .at-bulk-grid-modal__close {
