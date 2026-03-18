@@ -194,7 +194,7 @@
         {%- endif -%}
       {%- endfor -%}
 
-      {%- if block_settings.at_enable_bulk_order and block_settings.at_show_bulk_cta != false -%}
+      {%- if block_settings.at_enable_bulk_order -%}
         <div class="at-variant-picker__bulk-cta">
           <button
             type="button"
@@ -212,99 +212,7 @@
     </form>
 
     {%- if block_settings.at_enable_bulk_order -%}
-      {%- liquid
-        assign at_bulk_product_img = product_resource.selected_or_first_available_variant.featured_media.preview_image
-        if at_bulk_product_img == blank
-          assign at_bulk_product_img = product_resource.featured_media.preview_image
-        endif
-      -%}
-      {%- comment -%} Options first so we can encode variants as [id,a,q,p,i1,i2[,i3]] and stay under section output limit {%- endcomment -%}
-      <script type="application/json" data-at-bulk-grid-config data-at-section-id="{{ section.id }}" data-at-product-id="{{ product_resource.id }}">
-        {
-          "productId": {{ product_resource.id | json }},
-          "productUrl": {{ product_resource.url | json }},
-          "sectionId": {{ section.id | json }},
-          "productFeaturedImage": {% if at_bulk_product_img == blank %}null{% else %}{{ at_bulk_product_img | image_url: width: 100 | json }}{% endif %},
-          "moneyFormat": {{ shop.money_format | json }},
-          "currency": {{ shop.currency | json }},
-          "options": [
-            {%- for opt in product_resource.options_with_values -%}
-            {
-              "name": {{ opt.name | json }},
-              "position": {{ opt.position }},
-              "values": [
-                {%- for val in opt.values -%}
-                {{ val.name | json }}{% unless forloop.last %},{% endunless %}
-                {%- endfor -%}
-              ]{%- if forloop.first -%},
-              "valueIds": [{%- for val in opt.values -%}{{ val.id }}{% unless forloop.last %},{% endunless %}{% endfor -%}],
-              "valueDetails": [
-                {%- for val in opt.values -%}
-                {%- liquid
-                  assign swatch_bg = null
-                  if val.swatch.color
-                    assign swatch_bg = 'rgb(' | append: val.swatch.color.rgb | append: ')'
-                  elsif val.swatch.image
-                    assign swatch_img_url = val.swatch.image | image_url: width: 80
-                    assign swatch_bg = 'url(' | append: swatch_img_url | append: ')'
-                  elsif settings.show_variant_image and val.variant.featured_media
-                    assign swatch_img_url = val.variant.featured_media | image_url: width: 80
-                    assign swatch_bg = 'url(' | append: swatch_img_url | append: ')'
-                  endif
-                -%}
-                {
-                  "name": {{ val.name | json }},
-                  "swatchBackground": {% if swatch_bg %}{{ swatch_bg | json }}{% else %}null{% endif %}
-                }{% unless forloop.last %},{% endunless %}
-                {%- endfor -%}
-              ]
-              {%- endif -%}
-            }{% unless forloop.last %},{% endunless %}
-            {%- endfor -%}
-          ],
-          "variants": [
-            {%- assign opts = product_resource.options_with_values -%}
-            {%- for v in product_resource.variants -%}
-            {%- assign idx1 = 0 -%}
-            {%- assign idx2 = 0 -%}
-            {%- assign idx3 = 0 -%}
-            {%- for val in opts[0].values -%}
-              {%- if val == v.option1 -%}{%- assign idx1 = forloop.index0 -%}{%- break -%}{%- endif -%}
-            {%- endfor -%}
-            {%- for val in opts[1].values -%}
-              {%- if val == v.option2 -%}{%- assign idx2 = forloop.index0 -%}{%- break -%}{%- endif -%}
-            {%- endfor -%}
-            {%- if opts.size == 3 -%}
-              {%- for val in opts[2].values -%}
-                {%- if val == v.option3 -%}{%- assign idx3 = forloop.index0 -%}{%- break -%}{%- endif -%}
-              {%- endfor -%}
-            {%- endif -%}
-            [{{ v.id }},{{ v.available }},{{ v.inventory_quantity | default: 0 }},{{ v.inventory_policy | json }},{{ idx1 }},{{ idx2 }}{% if opts.size == 3 %},{{ idx3 }}{% endif %},{{ v.price }},{{ v.compare_at_price | default: 0 }}]{% unless forloop.last %},{% endunless %}
-            {%- endfor -%}
-          ]
-        }
-      </script>
-      {%- comment -%} Variants for current first-option selection from option_value.variant (avoids product.variants 250 cap). When page is fetched with ?option_values=<id>, product has that option selected so we get 8 variants per request. {%- endcomment -%}
-      {%- assign opts = product_resource.options_with_values -%}
-      {%- assign selected_name_1 = '' -%}
-      {%- for val in opts[0].values -%}
-        {%- if val.selected -%}
-          {%- assign selected_name_1 = val.name -%}
-          {%- break -%}
-        {%- endif -%}
-      {%- endfor -%}
-      <script type="application/json" data-at-bulk-grid-variants-for-selection data-at-section-id="{{ section.id }}">
-        {"variants":[
-          {%- assign first_v = true -%}
-          {%- for option_value in opts[1].values -%}
-            {%- assign v = option_value.variant -%}
-            {%- if v -%}
-          {%- unless first_v -%},{%- endunless -%}{%- assign first_v = false -%}
-          {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ selected_name_1 | json }},"o2":{{ option_value.name | json }}{% if opts.size == 3 %},"o3":{{ v.option3 | json }}{% endif %},"pr":{{ v.price }},"cp":{{ v.compare_at_price | default: 0 }}}
-            {%- endif -%}
-          {%- endfor -%}
-        ]}
-      </script>
+      {%- render 'at-bulk-grid-config', product_resource: product_resource -%}
     {%- endif -%}
   </variant-picker>
 {% endunless %}
