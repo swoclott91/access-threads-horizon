@@ -1,0 +1,38 @@
+{%- comment -%}
+  Lightweight data-only section for at-bulk-grid.js deferred variant loading.
+  Returns minimal variant JSON for the current option_values selection state.
+
+  Fetched via Section Rendering API:
+    /products/<handle>?sections=at-bulk-grid-data&option_values=<option_value_id>
+
+  This avoids fetching full page HTML for each deferred variant batch,
+  reducing response size from ~50-200KB to ~1-5KB per request.
+{%- endcomment -%}
+{%- if product != blank -%}
+  {%- assign opts = product.options_with_values -%}
+  {%- assign selected_name_1 = '' -%}
+  {%- for val in opts[0].values -%}
+    {%- if val.selected -%}
+      {%- assign selected_name_1 = val.name -%}
+      {%- break -%}
+    {%- endif -%}
+  {%- endfor -%}
+  <script type="application/json" data-at-bulk-variants>
+    {"variants":[
+      {%- assign first_v = true -%}
+      {%- for option_value in opts[1].values -%}
+        {%- assign v = option_value.variant -%}
+        {%- if v -%}
+          {%- unless first_v -%},{%- endunless -%}{%- assign first_v = false -%}
+          {"id":{{ v.id }},"a":{{ v.available }},"q":{{ v.inventory_quantity | default: 0 }},"p":{{ v.inventory_policy | json }},"o1":{{ selected_name_1 | json }},"o2":{{ option_value.name | json }}{% if opts.size >= 3 %},"o3":{{ v.option3 | json }}{% endif %},"pr":{{ v.price }},"cp":{{ v.compare_at_price | default: 0 }}}
+        {%- endif -%}
+      {%- endfor -%}
+    ]}
+  </script>
+{%- endif -%}
+{% schema %}
+{
+  "name": "AT Bulk Grid Data",
+  "settings": []
+}
+{% endschema %}

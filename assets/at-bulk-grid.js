@@ -195,39 +195,78 @@ function runWithConcurrency(tasks, limit) {
   return Promise.all(workers);
 }
 
+const DEFERRED_FETCH_CONCURRENCY = 10;
+const BULK_DATA_SECTION = 'at-bulk-grid-data';
+
 /**
- * Load full variant set via product page + option_values when product has >250 variants.
- * Uses option_value.variant (selection script) per request; limited concurrency to avoid overloading.
+ * Determine which first-option value IDs still need fetching by checking
+ * which ones already have complete variant coverage in the initial data.
+ * This avoids redundant requests for option values fully represented in the first 250 variants.
+ */
+function filterNeededValueIds(config, allValueIds) {
+  const optionValues = config.options[0]?.values || [];
+  const secondOptionValues = config.options[1]?.values || [];
+  if (secondOptionValues.length === 0) return allValueIds;
+
+  const norm = (s) => (s == null ? '' : String(s).trim());
+  const pairsPresent = new Set();
+  (config.variants || []).forEach((v) => {
+    const o1 = norm(v.option1);
+    const o2 = norm(v.option2);
+    if (o1 && o2) pairsPresent.add(o1 + '|' + o2);
+  });
+
+  return allValueIds.filter((id, index) => {
+    const name = norm(optionValues[index]);
+    if (!name) return true;
+    return secondOptionValues.some((sv) => !pairsPresent.has(name + '|' + norm(sv)));
+  });
+}
+
+/**
+ * Load full variant set via Section Rendering API + option_values when product has >250 variants.
+ * Uses a lightweight data-only section (at-bulk-grid-data) to minimize response size (~1-5KB vs ~50-200KB for full page).
  * See https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products
  */
-const DEFERRED_FETCH_CONCURRENCY = 10;
-
 function fetchDeferredVariants(config) {
-  const valueIds = config?.options?.[0]?.valueIds;
-  if (!valueIds?.length || !config.sectionId) return Promise.resolve([]);
+  const allValueIds = config?.options?.[0]?.valueIds;
+  if (!allValueIds?.length) return Promise.resolve([]);
 
-  const baseUrl = config.productUrl
-    ? new URL(config.productUrl, window.location.origin).href
-    : window.location.href.split('?')[0];
-  const sectionId = config.sectionId;
-  const byId = new Map();
+  const productPath = config.productUrl
+    ? new URL(config.productUrl, window.location.origin).pathname
+    : window.location.pathname;
   const debug = window.atBulkGridDebugVerbose === true;
+  const byId = new Map();
+
+  (config.variants || []).forEach((v) => {
+    if (v && v.id != null) byId.set(v.id, v);
+  });
+
+  const valueIds = filterNeededValueIds(config, allValueIds);
+  if (valueIds.length === 0) {
+    if (debug) console.log('at-bulk-grid: all variants already present, no deferred fetch needed');
+    return Promise.resolve(Array.from(byId.values()));
+  }
 
   const tasks = valueIds.map((valueId) => () => {
-    const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}option_values=${encodeURIComponent(valueId)}`;
+    const url = `${productPath}?sections=${BULK_DATA_SECTION}&option_values=${encodeURIComponent(valueId)}`;
     return fetch(url)
       .then((res) => {
-        if (!res.ok && debug) console.warn('at-bulk-grid: fetch status', res.status, url);
-        return res.text();
+        if (!res.ok) {
+          if (debug) console.warn('at-bulk-grid: fetch status', res.status, url);
+          return null;
+        }
+        return res.json();
       })
-      .then((html) => {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const selectionScript = doc.querySelector('script[data-at-bulk-grid-variants-for-selection]');
-        const section = doc.getElementById(`shopify-section-${sectionId}`);
-        const mainScript = section?.querySelector(BULK_GRID_SELECTORS.configScript);
-        const script = selectionScript ?? mainScript;
+      .then((json) => {
+        if (!json?.[BULK_DATA_SECTION]) {
+          if (debug) console.warn('at-bulk-grid: no section data for option_values=' + valueId);
+          return;
+        }
+        const doc = new DOMParser().parseFromString(json[BULK_DATA_SECTION], 'text/html');
+        const script = doc.querySelector('script[data-at-bulk-variants]');
         if (!script?.textContent) {
-          if (debug) console.warn('at-bulk-grid: no config for option_values=' + valueId);
+          if (debug) console.warn('at-bulk-grid: no variant script for option_values=' + valueId);
           return;
         }
         const parsed = JSON.parse(script.textContent.trim());
@@ -241,7 +280,7 @@ function fetchDeferredVariants(config) {
 
   return runWithConcurrency(tasks, DEFERRED_FETCH_CONCURRENCY).then(() => {
     const list = Array.from(byId.values());
-    if (debug) console.log('at-bulk-grid: deferred load complete,', list.length, 'variants from', valueIds.length, 'requests');
+    if (debug) console.log('at-bulk-grid: deferred load complete,', list.length, 'variants from', valueIds.length, 'requests (skipped', allValueIds.length - valueIds.length, 'already-loaded)');
     return list;
   });
 }
@@ -759,6 +798,26 @@ function renderMobileGrid(container, config, sectionId) {
 /** Cache full config per section after deferred load so we don't re-fetch on reopen. */
 const bulkGridConfigCache = new Map();
 
+/** Cache for in-flight deferred variant load promises (from hover/focus preload). */
+const deferredLoadPromises = new Map();
+
+/**
+ * Start loading deferred variants before the modal opens (called on hover/focus of trigger).
+ * The promise is reused by renderGrid to avoid duplicate fetches.
+ */
+function preloadBulkGridVariants(sectionId) {
+  if (deferredLoadPromises.has(sectionId) || bulkGridConfigCache.has(sectionId)) return;
+
+  const config = getBulkConfig(sectionId);
+  if (!config) return;
+
+  const expected = expectedVariantCount(config);
+  const needDeferred = expected > 0 && config.variants.length < expected && (config.options?.[0]?.valueIds?.length ?? 0) > 0;
+  if (!needDeferred) return;
+
+  deferredLoadPromises.set(sectionId, fetchDeferredVariants(config));
+}
+
 function renderGrid(container) {
   const sectionId = container.dataset.atBulkGridSectionId;
   if (!sectionId) return;
@@ -772,7 +831,9 @@ function renderGrid(container) {
   if (needDeferred) {
     bulkGridConfigCache.delete(sectionId);
     container.innerHTML = '<p class="at-bulk-grid__loading" aria-live="polite">Loading variants…</p>';
-    fetchDeferredVariants(config)
+    const fetchPromise = deferredLoadPromises.get(sectionId) || fetchDeferredVariants(config);
+    deferredLoadPromises.delete(sectionId);
+    fetchPromise
       .then((variants) => {
         config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
         if (!config) return;
@@ -879,6 +940,15 @@ function initQuickAddBulkGrid() {
 
 function init() {
   document.querySelectorAll(BULK_GRID_SELECTORS.trigger).forEach((trigger) => {
+    const preload = () => {
+      const container = trigger.closest('.at-buy-buttons__bulk-popup-component')?.querySelector(BULK_GRID_SELECTORS.container)
+        || document.querySelector(BULK_GRID_SELECTORS.container);
+      const sectionId = container?.dataset?.atBulkGridSectionId;
+      if (sectionId) preloadBulkGridVariants(sectionId);
+    };
+    trigger.addEventListener('mouseenter', preload, { once: true });
+    trigger.addEventListener('focusin', preload, { once: true });
+
     trigger.addEventListener('click', (e) => {
       const container = document.querySelector(BULK_GRID_SELECTORS.container);
       if (!container) return;
