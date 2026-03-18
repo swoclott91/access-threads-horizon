@@ -882,7 +882,10 @@ function initQuickAddBulkGrid() {
     if (e.target === bulkDialog) bulkDialog.close();
   });
 
-  // Event delegation: intercept trigger clicks inside the quick-add modal content
+  // Event delegation: intercept trigger clicks inside the quick-add modal content.
+  // MUST use capture phase (true) so this fires before the dialog-component's
+  // bubble-phase showDialog handler — otherwise the dialog-component opens its
+  // own (empty) dialog first and we can't stop it.
   document.addEventListener('click', (e) => {
     const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
     if (!trigger) return;
@@ -890,9 +893,11 @@ function initQuickAddBulkGrid() {
     const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
     if (!quickAddContent || !quickAddContent.contains(trigger)) return;
 
-    // This trigger is inside the quick-add modal — open the nested bulk grid dialog
-    e.preventDefault();
-    e.stopImmediatePropagation();
+    // This trigger is inside the quick-add modal — open the nested bulk grid dialog.
+    // stopPropagation() in capture phase prevents the event from reaching the
+    // dialog-component's bubble-phase handler, so the at-buy-buttons__bulk-dialog
+    // never opens.
+    e.stopPropagation();
 
     const configScript = quickAddContent.querySelector(BULK_GRID_SELECTORS.configScript);
     if (!configScript?.textContent) return;
@@ -922,7 +927,7 @@ function initQuickAddBulkGrid() {
     if (typeof bulkDialog.showModal === 'function') {
       bulkDialog.showModal();
     }
-  });
+  }, true); // capture phase – must precede dialog-component's bubble-phase handler
 }
 
 function init() {

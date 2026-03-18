@@ -1,0 +1,43 @@
+{%- comment -%}
+  AT: Nested bulk grid dialog for the quick-add modal context (modal-in-modal).
+  Rendered inside quick-add-modal.liquid so it exists in the DOM on every page
+  that has the quick-add modal, ready for any product's bulk trigger.
+
+  JS: at-bulk-grid.js → initQuickAddBulkGrid() finds this via:
+    - #at-bulk-grid-quick-add-dialog  (the dialog element)
+    - #at-bulk-grid-quick-add-close   (the close button)
+    - [data-at-bulk-grid]             (the grid container)
+
+  The <dialog> is display:none until showModal() is called – nothing here
+  is visible while the dialog is closed.
+{%- endcomment -%}
+<dialog
+  id="at-bulk-grid-quick-add-dialog"
+  class="at-bulk-grid-modal__dialog color-{{ settings.popover_color_scheme }}"
+  aria-labelledby="at-bulk-grid-quick-add-heading"
+>
+  <h2
+    id="at-bulk-grid-quick-add-heading"
+    class="visually-hidden"
+  >
+    {{ 'actions.bulk_add_to_cart' | t | default: 'Bulk Add to Cart' }}
+  </h2>
+
+  <div class="at-bulk-grid-modal__inner">
+    <div
+      class="at-bulk-grid"
+      data-at-bulk-grid
+      data-at-bulk-add-to-cart-animation="{{ settings.add_to_cart_animation }}"
+      data-at-bulk-auto-open-cart="{{ settings.auto_open_cart_drawer }}"
+    ></div>
+  </div>
+
+  <button
+    id="at-bulk-grid-quick-add-close"
+    class="button button-unstyled close-button at-bulk-grid-modal__close"
+    aria-label="{{ 'accessibility.close_dialog' | t }}"
+    type="button"
+  >
+    {{- 'icon-close.svg' | inline_asset_content -}}
+  </button>
+</dialog>

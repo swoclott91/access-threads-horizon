@@ -12,8 +12,9 @@
 /* ─────────────────────────────────────────────────────────────────
    Quick-add context: bulk grid modal is a native <dialog> nested
    inside the quick-add modal (modal-in-modal via browser top layer).
-   Add a "Bulk Order" button affordance inside the quick-add content
-   that triggers the nested dialog.
+   The at-bulk-grid-modal.liquid snippet renders #at-bulk-grid-quick-add-dialog
+   inside the quick-add dialog; it is display:none until showModal() promotes
+   it to the browser top layer.
    ───────────────────────────────────────────────────────────────── */
 
 /*
@@ -26,6 +27,55 @@
 
 #quick-add-modal-content .at-variant-picker__bulk-cta .product-form__bulk-button {
   width: 100%;
+}
+
+/* Nested bulk grid dialog – appears above the quick-add modal */
+#at-bulk-grid-quick-add-dialog {
+  box-shadow: var(--shadow-popover);
+  border: var(--style-border-popover);
+  border-radius: var(--style-border-radius-popover);
+  background-color: var(--color-background);
+  padding: var(--padding-4xl) var(--padding-xl) var(--padding-xl);
+  max-width: min(var(--page-content-width, 72rem), calc(100vw - 2rem));
+  max-height: min(85dvh, 90svh);
+  display: flex;
+  flex-direction: column;
+
+  @media screen and (min-width: 750px) {
+    padding: var(--padding-5xl);
+  }
+}
+
+#at-bulk-grid-quick-add-dialog:not([open]) {
+  /* Ensure nothing leaks out while closed (UA display:none covers this,
+     but be explicit for safety with any override stylesheets). */
+  display: none;
+}
+
+#at-bulk-grid-quick-add-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideInTop var(--animation-speed) var(--animation-easing) forwards;
+}
+
+#at-bulk-grid-quick-add-dialog.dialog-closing {
+  animation: modalSlideOutTop var(--animation-speed) var(--animation-easing) forwards;
+}
+
+.at-bulk-grid-modal__inner {
+  min-width: 0;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+.at-bulk-grid-modal__close {
+  top: var(--margin-2xs);
+  right: var(--margin-2xs);
+  opacity: 0.8;
+  animation: none;
 }
 
 .at-bulk-grid {
