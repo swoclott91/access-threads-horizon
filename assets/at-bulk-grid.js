@@ -17,6 +17,13 @@ const BULK_GRID_SELECTORS = {
 
 const MOBILE_BREAKPOINT = 750;
 
+/** Quick-add context constants */
+const QUICK_ADD_MODAL_CONTENT_ID = 'quick-add-modal-content';
+const QUICK_ADD_BULK_DIALOG_ID = 'at-bulk-grid-quick-add-dialog';
+const QUICK_ADD_CLOSE_BTN_ID = 'at-bulk-grid-quick-add-close';
+/** Sentinel sectionId key used to store quick-add config in the cache */
+const QUICK_ADD_SECTION_KEY = '__at_quick_add__';
+
 const CART_ICON_SELECTOR = '.header-actions__cart-icon';
 
 /**
@@ -60,6 +67,17 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
   const dialogComponent = container.closest('dialog-component');
   if (dialogComponent && typeof dialogComponent.closeDialog === 'function') {
     dialogComponent.closeDialog();
+  } else {
+    // Quick-add context: close bulk grid native <dialog>
+    const nativeDialog = container.closest('dialog');
+    if (nativeDialog && typeof nativeDialog.close === 'function') {
+      nativeDialog.close();
+    }
+    // Also close the quick-add modal so the cart drawer isn't obscured
+    const quickAddDialog = document.getElementById('quick-add-dialog');
+    if (quickAddDialog && typeof quickAddDialog.closeDialog === 'function') {
+      quickAddDialog.closeDialog();
+    }
   }
 
   container.querySelectorAll('[data-at-bulk-qty]').forEach((input) => {
@@ -140,6 +158,10 @@ function normalizeBulkConfig(config) {
 }
 
 function getBulkConfig(sectionId) {
+  // Quick-add context: config lives in the cache, not in a section element
+  if (sectionId === QUICK_ADD_SECTION_KEY) {
+    return bulkGridConfigCache.get(QUICK_ADD_SECTION_KEY) || null;
+  }
   const section = document.getElementById(`shopify-section-${sectionId}`);
   if (!section) return null;
   const script = section.querySelector(BULK_GRID_SELECTORS.configScript);
@@ -785,6 +807,76 @@ function renderGrid(container) {
   }
 }
 
+/**
+ * Set up bulk grid support for the quick-add modal context (modal-in-modal).
+ * Uses event delegation so it works after AJAX content loads into #quick-add-modal-content.
+ * When a [data-at-bulk-grid-trigger] inside the quick-add content is clicked:
+ *   - Reads the config script from #quick-add-modal-content
+ *   - Caches it under QUICK_ADD_SECTION_KEY
+ *   - Renders the grid into #at-bulk-grid-quick-add-dialog's container
+ *   - Opens the native <dialog> as a modal above the quick-add modal
+ */
+function initQuickAddBulkGrid() {
+  const bulkDialog = document.getElementById(QUICK_ADD_BULK_DIALOG_ID);
+  const closeBtn = document.getElementById(QUICK_ADD_CLOSE_BTN_ID);
+
+  if (!bulkDialog) return;
+
+  // Close button
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      bulkDialog.close();
+    });
+  }
+
+  // Backdrop click closes the dialog
+  bulkDialog.addEventListener('click', (e) => {
+    if (e.target === bulkDialog) bulkDialog.close();
+  });
+
+  // Event delegation: intercept trigger clicks inside the quick-add modal content
+  document.addEventListener('click', (e) => {
+    const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
+    if (!trigger) return;
+
+    const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
+    if (!quickAddContent || !quickAddContent.contains(trigger)) return;
+
+    // This trigger is inside the quick-add modal — open the nested bulk grid dialog
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const configScript = quickAddContent.querySelector(BULK_GRID_SELECTORS.configScript);
+    if (!configScript?.textContent) return;
+
+    let config;
+    try {
+      config = JSON.parse(configScript.textContent.trim());
+      normalizeBulkConfig(config);
+    } catch {
+      return;
+    }
+
+    // Cache config under the quick-add sentinel key
+    bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
+
+    // Find the at-bulk-grid container inside the nested dialog
+    const container = bulkDialog.querySelector(BULK_GRID_SELECTORS.container);
+    if (!container) return;
+
+    // Point the container at the cached config via the sentinel key
+    container.dataset.atBulkGridSectionId = QUICK_ADD_SECTION_KEY;
+
+    // Render the grid (respects mobile/desktop breakpoint)
+    renderGrid(container);
+
+    // Open the nested dialog as a modal (enters browser top layer)
+    if (typeof bulkDialog.showModal === 'function') {
+      bulkDialog.showModal();
+    }
+  });
+}
+
 function init() {
   document.querySelectorAll(BULK_GRID_SELECTORS.trigger).forEach((trigger) => {
     trigger.addEventListener('click', (e) => {
@@ -816,6 +908,8 @@ function init() {
       }
     });
   });
+
+  initQuickAddBulkGrid();
 }
 
 if (document.readyState === 'loading') {

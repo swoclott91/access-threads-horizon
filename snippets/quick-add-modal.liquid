@@ -17,6 +17,10 @@
       id="quick-add-modal-content"
       class="quick-add-modal__content"
     ></div>
+
+    {%- comment -%} AT CUSTOM: bulk order modal for quick-add context (modal-in-modal) {%- endcomment -%}
+    {%- render 'at-bulk-grid-modal' -%}
+    {%- comment -%} /AT CUSTOM {%- endcomment -%}
   </dialog>
 </quick-add-dialog>
 

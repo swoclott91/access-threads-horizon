@@ -9,6 +9,25 @@
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   Quick-add context: bulk grid modal is a native <dialog> nested
+   inside the quick-add modal (modal-in-modal via browser top layer).
+   Add a "Bulk Order" button affordance inside the quick-add content
+   that triggers the nested dialog.
+   ───────────────────────────────────────────────────────────────── */
+
+/*
+ * When the AT variant picker bulk trigger exists inside the quick-add
+ * modal content, style it to stand out and be accessible.
+ */
+#quick-add-modal-content .at-variant-picker__bulk-cta {
+  margin-block-start: var(--gap-sm);
+}
+
+#quick-add-modal-content .at-variant-picker__bulk-cta .product-form__bulk-button {
+  width: 100%;
+}
+
 .at-bulk-grid {
   --at-bulk-grid-gap: var(--gap-sm, 0.75rem);
   display: flex;
