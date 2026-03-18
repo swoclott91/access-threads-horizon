@@ -63,6 +63,14 @@ These core Horizon files contain AT customizations and may need manual conflict 
 | File | AT Customization |
 |------|-----------------|
 | `blocks/_product-details.liquid` | Registers AT blocks (at-popup-link, at-variant-picker, at-buy-buttons) |
+
+### AT Block Capabilities
+
+| Block | Purpose |
+|-------|---------|
+| `blocks/at-buy-buttons.liquid` | Buy buttons with bulk form support. Enables a "Bulk Add to Cart" secondary button (`at_enable_bulk_popup`) that opens a `dialog-component` containing the AT bulk grid modal. Scripts (`dialog.js`, `at-bulk-grid.js`) and CSS are loaded conditionally. The form's `data-at-bulk-form` and `data-at-bulk-line-items` attributes are set whenever bulk popup OR bulk quantities are enabled. |
+| `blocks/at-popup-link.liquid` | Standalone popup/link block. Also supports bulk grid inside the popup. May be deprecated in favour of `at-buy-buttons` bulk popup once migrated. |
+| `blocks/at-variant-picker.liquid` | Variant picker that publishes bulk grid config (`script[data-at-bulk-grid-config]`) for `at-bulk-grid.js` to read. |
 | `snippets/product-media.liquid` | File reference support for variant metafield gallery images |
 | `snippets/product-media-gallery-content.liquid` | Variant metafield gallery logic (custom.variant_gallery_images) |
 | `snippets/slideshow-controls.liquid` | File reference support for thumbnail aspect ratios and image sources |

@@ -36,19 +36,81 @@
       assign add_to_cart_text = 'products.product.unavailable' | t
     endif
   endif
+
+  assign at_has_bulk = false
+  if block_settings.at_enable_bulk_quantities or block_settings.at_enable_bulk_popup
+    assign at_has_bulk = true
+  endif
 %}
+
+{%- if block_settings.at_enable_bulk_popup -%}
+  <script
+    src="{{ 'dialog.js' | asset_url }}"
+    type="module"
+  ></script>
+  {{ 'at-bulk-grid.css' | asset_url | stylesheet_tag }}
+  <script
+    src="{{ 'at-bulk-grid.js' | asset_url }}?v=2"
+    type="module"
+  ></script>
+{%- endif -%}
 
 <span
   class="buy-buttons-block at-buy-buttons-block buy-buttons-block--{{ block.id }}"
   {{ block.shopify_attributes }}
 >
+  {%- if block_settings.at_enable_bulk_popup and product != blank -%}
+    <dialog-component class="at-buy-buttons__bulk-popup-component">
+      <button
+        type="button"
+        on:click="/showDialog"
+        class="button button-secondary at-buy-buttons__bulk-trigger"
+        data-at-bulk-grid-trigger
+      >
+        {{ block_settings.at_bulk_trigger_label | default: 'Bulk Add to Cart' }}
+      </button>
+
+      <dialog
+        ref="dialog"
+        class="at-buy-buttons__bulk-dialog dialog-modal color-{{ settings.popover_color_scheme }}{% if block_settings.at_bulk_behavior == 'drawer' %} at-buy-buttons__bulk-dialog--drawer dialog-drawer{% endif %}"
+        scroll-lock
+        aria-labelledby="at-bulk-dialog-heading-{{ block.id }}"
+      >
+        <h2
+          id="at-bulk-dialog-heading-{{ block.id }}"
+          class="visually-hidden"
+        >
+          {{ block_settings.at_bulk_trigger_label | default: 'Bulk Add to Cart' }}
+        </h2>
+        <div class="at-buy-buttons__bulk-dialog-inner">
+          <div
+            class="at-bulk-grid"
+            data-at-bulk-grid
+            data-at-bulk-grid-section-id="{{ section.id }}"
+            data-at-bulk-grid-block-id="{{ block.id }}"
+            data-at-bulk-add-to-cart-animation="{{ settings.add_to_cart_animation }}"
+            data-at-bulk-auto-open-cart="{{ settings.auto_open_cart_drawer }}"
+          ></div>
+        </div>
+        <button
+          ref="closeButton"
+          on:click="/closeDialog"
+          class="button button-unstyled close-button at-buy-buttons__bulk-close"
+          aria-label="{{ 'accessibility.close_dialog' | t }}"
+        >
+          {{- 'icon-close.svg' | inline_asset_content -}}
+        </button>
+      </dialog>
+    </dialog-component>
+  {%- endif -%}
+
   {%- if product != blank -%}
     {%- assign product_form_id = 'ATBuyButtons-ProductForm-' | append: section.id -%}
     <product-form-component
       data-section-id="{{ section.id }}"
       data-product-id="{{ product.id }}"
       data-product-url="{{ product.url }}"
-      {% if block_settings.at_enable_bulk_quantities %}data-at-bulk-form{% endif %}
+      {% if at_has_bulk %}data-at-bulk-form{% endif %}
       on:submit="/handleSubmit"
       data-quantity-default="{% if product.selected_or_first_available_variant.quantity_rule.min %}{{ product.selected_or_first_available_variant.quantity_rule.min }}{% else %}1{% endif %}"
       data-quantity-error-max="{{ 'products.product.quantity_error_max' | t }}"
@@ -67,7 +129,7 @@
           ref="variantId"
           value="{{ product.selected_or_first_available_variant.id }}"
         >
-        {%- if block_settings.at_enable_bulk_quantities -%}
+        {%- if at_has_bulk -%}
           <input type="hidden" name="properties[at_bulk_line_items]" data-at-bulk-line-items value="">
         {%- endif -%}
         {%- if block_settings.gift_card_form and product.gift_card? -%}
@@ -368,6 +430,67 @@
 {% endif %}
 
 {% stylesheet %}
+  .at-buy-buttons__bulk-popup-component {
+    display: block;
+    width: 100%;
+    margin-block-end: var(--gap-sm);
+  }
+
+  .at-buy-buttons__bulk-trigger {
+    width: 100%;
+    height: var(--height-buy-buttons);
+    padding-block: var(--padding-lg);
+    text-transform: var(--button-text-case-secondary);
+  }
+
+  .at-buy-buttons__bulk-dialog {
+    box-shadow: var(--shadow-popover);
+    border: var(--style-border-popover);
+    border-radius: var(--style-border-radius-popover);
+    background-color: var(--color-background);
+    padding: var(--padding-4xl) var(--padding-xl) var(--padding-xl);
+    max-width: var(--normal-content-width);
+    max-height: var(--modal-max-height);
+
+    @media screen and (min-width: 750px) {
+      padding: var(--padding-5xl);
+      max-width: min(var(--normal-content-width), calc(100vw - 2rem));
+    }
+  }
+
+  .at-buy-buttons__bulk-dialog[open] {
+    animation: modalSlideInTop var(--animation-speed) var(--animation-easing) forwards;
+  }
+
+  .at-buy-buttons__bulk-dialog.dialog-closing {
+    animation: modalSlideOutTop var(--animation-speed) var(--animation-easing) forwards;
+  }
+
+  .at-buy-buttons__bulk-dialog--drawer {
+    position: fixed;
+    border-radius: 0;
+    width: var(--sidebar-width);
+    max-width: 95vw;
+    height: 100%;
+    margin: 0 0 0 auto;
+  }
+
+  .at-buy-buttons__bulk-dialog--drawer:modal {
+    max-height: 100dvh;
+  }
+
+  .at-buy-buttons__bulk-dialog-inner {
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .at-buy-buttons__bulk-close {
+    top: var(--margin-2xs);
+    right: var(--margin-2xs);
+    opacity: 0.8;
+    animation: none;
+  }
+
   .buy-buttons-block {
     --buy-button-preferred-width: 185px;
 
@@ -683,6 +806,38 @@
     {
       "type": "paragraph",
       "content": "t:content.resource_reference_product"
+    },
+    {
+      "type": "header",
+      "content": "Bulk Add to Cart (Access Threads)"
+    },
+    {
+      "type": "checkbox",
+      "id": "at_enable_bulk_popup",
+      "label": "Show Bulk Add to Cart button",
+      "default": false
+    },
+    {
+      "type": "text",
+      "id": "at_bulk_trigger_label",
+      "label": "Button label",
+      "default": "Bulk Add to Cart"
+    },
+    {
+      "type": "select",
+      "id": "at_bulk_behavior",
+      "label": "Modal style",
+      "options": [
+        {
+          "value": "default",
+          "label": "Modal"
+        },
+        {
+          "value": "drawer",
+          "label": "Drawer"
+        }
+      ],
+      "default": "default"
     },
     {
       "type": "checkbox",
