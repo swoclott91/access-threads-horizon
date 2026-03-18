@@ -194,7 +194,7 @@
         {%- endif -%}
       {%- endfor -%}
 
-      {%- if block_settings.at_enable_bulk_order -%}
+      {%- if block_settings.at_enable_bulk_order and block_settings.at_show_bulk_cta != false -%}
         <div class="at-variant-picker__bulk-cta">
           <button
             type="button"
