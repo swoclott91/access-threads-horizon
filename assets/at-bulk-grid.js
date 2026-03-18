@@ -298,7 +298,8 @@ function availabilityBand(qty, available, inventory, policy) {
   if (inventory <= 0) return 'Out';
   if (inventory < 25) return 'Limited';
   if (inventory < 100) return '25+';
-  return '100+';
+  if (inventory < 1000) return '100+';
+  return '1000+';
 }
 
 /**
@@ -415,9 +416,9 @@ function renderDesktopGrid(container, config, sectionId) {
       const bandClass =
         band === 'Out'
           ? 'at-bulk-grid__availability--out'
-          : band === 'Limited'
-            ? 'at-bulk-grid__availability--low'
-            : 'at-bulk-grid__availability--in-stock';
+          : band === '1000+' || band === 'In stock'
+            ? 'at-bulk-grid__availability--in-stock'
+            : 'at-bulk-grid__availability--low';
       const priceHtml = formatVariantPriceHtml(v, config);
       html +=
         '<td data-at-bulk-cell data-variant-id="' +
@@ -627,9 +628,9 @@ function renderMobileGrid(container, config, sectionId) {
       const bandClass =
         band === 'Out'
           ? 'at-bulk-grid__availability--out'
-          : band === 'Limited'
-            ? 'at-bulk-grid__availability--low'
-            : 'at-bulk-grid__availability--in-stock';
+          : band === '1000+' || band === 'In stock'
+            ? 'at-bulk-grid__availability--in-stock'
+            : 'at-bulk-grid__availability--low';
       const priceHtmlMobile = formatVariantPriceHtml(v, config);
       html +=
         '<div class="at-bulk-grid__mobile-size-row">' +
