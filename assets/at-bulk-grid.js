@@ -250,7 +250,7 @@ function fetchDeferredVariants(config) {
 
   const tasks = valueIds.map((valueId) => () => {
     const url = `${productPath}?sections=${BULK_DATA_SECTION}&option_values=${encodeURIComponent(valueId)}`;
-    return fetch(url)
+    return fetch(url, { headers: { Accept: 'application/json' } })
       .then((res) => {
         if (!res.ok) {
           if (debug) console.warn('at-bulk-grid: fetch status', res.status, url);
@@ -830,7 +830,11 @@ function renderGrid(container) {
     deferredLoadPromises.delete(sectionId);
     fetchPromise
       .then((variants) => {
-        config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
+        // For QUICK_ADD_SECTION_KEY the cache was just cleared above and there is no
+        // shopify-section-{id} DOM element to fall back to, so use the closure-captured
+        // config as a last resort.  This is the primary fix for the quick-add context
+        // where the grid was stuck at "Loading variants…" forever.
+        config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId) || config;
         if (!config) return;
         if (variants.length >= expected) {
           config.variants = variants;
@@ -945,12 +949,19 @@ function initQuickAddBulkGrid() {
             (config.options?.[0]?.valueIds?.length ?? 0) > 0;
 
           if (needDeferred) {
-            // Store promise keyed by productPath; tryPreloadQuickAdd reuses it
-            quickAddHoverPreloads.set(productPath, fetchDeferredVariants(config));
-          }
-          // Also pre-warm the config cache by productId so tryPreloadQuickAdd
-          // can pick up the hover-started promise when the modal content morphs in.
-          if (config.productId != null) {
+            // Guard: tryPreloadQuickAdd may have already registered a deferred promise
+            // for this productId (happens when cached content makes the observer fire
+            // before this product-page fetch completes).  Reuse that promise to avoid
+            // doubling the number of Section Rendering API requests.
+            const existingByProductId =
+              config.productId != null ? quickAddHoverPreloads.get(String(config.productId)) : null;
+            const deferred = existingByProductId ?? fetchDeferredVariants(config);
+            quickAddHoverPreloads.set(productPath, deferred);
+            if (config.productId != null) {
+              quickAddHoverPreloads.set(String(config.productId), deferred);
+            }
+          } else if (config.productId != null) {
+            // No deferred fetch needed; update the productId key to be consistent.
             quickAddHoverPreloads.set(String(config.productId), quickAddHoverPreloads.get(productPath) ?? null);
           }
         })
@@ -1003,10 +1014,15 @@ function initQuickAddBulkGrid() {
     const hoverPromise =
       config.productId != null ? quickAddHoverPreloads.get(String(config.productId)) : null;
 
-    deferredLoadPromises.set(
-      QUICK_ADD_SECTION_KEY,
-      hoverPromise ?? fetchDeferredVariants(config)
-    );
+    const deferred = hoverPromise ?? fetchDeferredVariants(config);
+
+    // Register by productId immediately so the hover preload (still in-flight for cached
+    // content) sees this promise and does NOT start a second fetchDeferredVariants.
+    if (!hoverPromise && config.productId != null) {
+      quickAddHoverPreloads.set(String(config.productId), deferred);
+    }
+
+    deferredLoadPromises.set(QUICK_ADD_SECTION_KEY, deferred);
   }
 
   if (quickAddContent) {
