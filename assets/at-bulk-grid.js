@@ -195,92 +195,103 @@ function runWithConcurrency(tasks, limit) {
   return Promise.all(workers);
 }
 
-const DEFERRED_FETCH_CONCURRENCY = 10;
-const BULK_DATA_SECTION = 'at-bulk-grid-data';
-
 /**
- * Determine which first-option value IDs still need fetching by checking
- * which ones already have complete variant coverage in the initial data.
- * This avoids redundant requests for option values fully represented in the first 250 variants.
+ * Check whether the initial config already covers every option1/option2 combination.
+ * Returns true when we need to defer-load more variants.
  */
-function filterNeededValueIds(config, allValueIds) {
-  const optionValues = config.options[0]?.values || [];
-  const secondOptionValues = config.options[1]?.values || [];
-  if (secondOptionValues.length === 0) return allValueIds;
-
-  const norm = (s) => (s == null ? '' : String(s).trim());
-  const pairsPresent = new Set();
-  (config.variants || []).forEach((v) => {
-    const o1 = norm(v.option1);
-    const o2 = norm(v.option2);
-    if (o1 && o2) pairsPresent.add(o1 + '|' + o2);
-  });
-
-  return allValueIds.filter((id, index) => {
-    const name = norm(optionValues[index]);
-    if (!name) return true;
-    return secondOptionValues.some((sv) => !pairsPresent.has(name + '|' + norm(sv)));
-  });
+function needsDeferredLoad(config) {
+  const expected = expectedVariantCount(config);
+  return (
+    expected > 0 &&
+    (config.variants?.length ?? 0) < expected &&
+    (config.options?.[0]?.valueIds?.length ?? 0) > 0
+  );
 }
 
 /**
- * Load full variant set via Section Rendering API + option_values when product has >250 variants.
- * Uses a lightweight data-only section (at-bulk-grid-data) to minimize response size (~1-5KB vs ~50-200KB for full page).
- * See https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products
+ * Load full variant set via the Shopify AJAX product JSON endpoint.
+ *
+ * /products/{handle}.json returns ALL variants with no 250-variant cap, making it
+ * far more reliable than the Section Rendering API + option_values approach (which
+ * requires option_value.variant to work in a standalone section context – it doesn't).
+ *
+ * A hover-prefetch promise stored in quickAddHoverPreloads (keyed by the JSON URL)
+ * is reused when available so the network request is already in-flight before the
+ * user opens the bulk grid.
+ *
+ * Trade-off: the product JSON endpoint does not expose inventory_quantity, so deferred
+ * variants show "In" / "Out" availability without a "Low" stock indicator.  The initial
+ * 250 variants (from the Liquid config script) retain full inventory data.
  */
 function fetchDeferredVariants(config) {
   const allValueIds = config?.options?.[0]?.valueIds;
   if (!allValueIds?.length) return Promise.resolve([]);
 
-  const productPath = config.productUrl
-    ? new URL(config.productUrl, window.location.origin).pathname
-    : window.location.pathname;
   const debug = window.atBulkGridDebugVerbose === true;
-  const byId = new Map();
 
+  // Seed byId with the initial variants (which include inventory_quantity from Liquid).
+  // We only add NEW variant IDs from the JSON fetch so this data is preserved.
+  const byId = new Map();
   (config.variants || []).forEach((v) => {
     if (v && v.id != null) byId.set(v.id, v);
   });
 
-  const valueIds = filterNeededValueIds(config, allValueIds);
-  if (valueIds.length === 0) {
-    if (debug) console.log('at-bulk-grid: all variants already present, no deferred fetch needed');
+  if (!needsDeferredLoad(config)) {
+    if (debug) console.log('at-bulk-grid: all variants already present, skipping deferred fetch');
     return Promise.resolve(Array.from(byId.values()));
   }
 
-  const tasks = valueIds.map((valueId) => () => {
-    const url = `${productPath}?sections=${BULK_DATA_SECTION}&option_values=${encodeURIComponent(valueId)}`;
-    return fetch(url, { headers: { Accept: 'application/json' } })
-      .then((res) => {
-        if (!res.ok) {
-          if (debug) console.warn('at-bulk-grid: fetch status', res.status, url);
-          return null;
-        }
-        return res.json();
-      })
-      .then((json) => {
-        if (!json?.[BULK_DATA_SECTION]) {
-          if (debug) console.warn('at-bulk-grid: no section data for option_values=' + valueId);
-          return;
-        }
-        const doc = new DOMParser().parseFromString(json[BULK_DATA_SECTION], 'text/html');
-        const script = doc.querySelector('script[data-at-bulk-variants]');
-        if (!script?.textContent) {
-          if (debug) console.warn('at-bulk-grid: no variant script for option_values=' + valueId);
-          return;
-        }
-        const parsed = JSON.parse(script.textContent.trim());
-        normalizeBulkConfig(parsed);
-        (parsed.variants || []).forEach((v) => {
-          if (v && v.id != null) byId.set(v.id, v);
-        });
-      })
-      .catch((err) => console.warn('at-bulk-grid: deferred fetch failed for option_values=' + valueId, err));
-  });
+  if (!config.productUrl) {
+    if (debug) console.warn('at-bulk-grid: fetchDeferredVariants – no productUrl in config');
+    return Promise.resolve(Array.from(byId.values()));
+  }
 
-  return runWithConcurrency(tasks, DEFERRED_FETCH_CONCURRENCY).then(() => {
+  const productPath = new URL(config.productUrl, window.location.origin).pathname;
+  const jsonUrl = productPath.replace(/\/$/, '') + '.json';
+
+  // Reuse an in-flight hover-prefetch (keyed by JSON URL) if one already exists.
+  // If not, start our own and register it so concurrent callers share the same fetch.
+  let dataPromise = quickAddHoverPreloads.get(jsonUrl);
+  if (!dataPromise) {
+    dataPromise = fetch(jsonUrl, { headers: { Accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+    quickAddHoverPreloads.set(jsonUrl, dataPromise);
+  }
+
+  return dataPromise.then((data) => {
+    if (!data?.product?.variants?.length) {
+      if (debug) console.warn('at-bulk-grid: no variants in product.json response', jsonUrl);
+      return Array.from(byId.values());
+    }
+
+    const opts = config.options || [];
+    const hasThirdOption = opts.length >= 3;
+
+    data.product.variants.forEach((v) => {
+      if (v?.id == null) return;
+      if (byId.has(v.id)) return; // Preserve initial variant data (includes inventory_quantity)
+
+      // product.json prices are decimal strings (e.g. "10.66" for USD).
+      // Convert to the cents-integer format that Liquid's {{ v.price }} outputs.
+      const price = v.price ? Math.round(parseFloat(v.price) * 100) : 0;
+      const compareAtPrice = v.compare_at_price ? Math.round(parseFloat(v.compare_at_price) * 100) : 0;
+
+      byId.set(v.id, {
+        id: v.id,
+        available: !!v.available,
+        inventory_quantity: undefined, // not exposed by product.json
+        inventory_policy: v.inventory_policy || 'deny',
+        option1: v.option1 ?? null,
+        option2: v.option2 ?? null,
+        option3: hasThirdOption ? (v.option3 ?? null) : null,
+        price,
+        compare_at_price: compareAtPrice,
+      });
+    });
+
     const list = Array.from(byId.values());
-    if (debug) console.log('at-bulk-grid: deferred load complete,', list.length, 'variants from', valueIds.length, 'requests (skipped', allValueIds.length - valueIds.length, 'already-loaded)');
+    if (debug) console.log('at-bulk-grid: deferred load complete –', list.length, 'total variants');
     return list;
   });
 }
@@ -895,15 +906,11 @@ function initQuickAddBulkGrid() {
   });
 
   // ── Hover preload on "Choose" buttons ───────────────────────────────────
-  // Mirrors the product-page mouseenter preload: fetch the product page HTML
-  // the moment the user hovers a "Choose" button, extract the config, and
-  // start the deferred variant fetch IN PARALLEL with the quick-add AJAX
-  // request that fires on click.  By the time the modal opens and the user
-  // finds the bulk trigger, the fetches are already largely complete.
-  //
-  // quick-add.js makes the identical product-page request on click; the
-  // browser serves that second request from the HTTP cache (the response from
-  // our hover fetch is already cached), so no extra network cost is incurred.
+  // On hover over a product card's "Choose" button, immediately prefetch
+  // /products/{handle}.json so the data is already in the browser's HTTP cache
+  // (or fully resolved) by the time the user opens the bulk grid modal.
+  // fetchDeferredVariants reuses the same promise (keyed by JSON URL) so there
+  // is never more than one in-flight request per product per page load.
   document.addEventListener(
     'mouseover',
     (e) => {
@@ -911,61 +918,26 @@ function initQuickAddBulkGrid() {
       const btn = e.target.closest('.quick-add__button--choose');
       if (!btn) return;
 
-      // Derive product URL the same way QuickAddComponent does:
-      // walk up to product-card and use its primary product link.
       const card = btn.closest('product-card') || btn.closest('[data-product-id]');
       if (!card) return;
       const productLink = /** @type {HTMLAnchorElement | null} */ (card.querySelector('a[href*="/products/"]'));
       if (!productLink?.href) return;
 
       const url = new URL(productLink.href, window.location.origin);
-      const productPath = url.pathname;
+      // Extract the handle, handling both /products/handle and /collections/x/products/handle
+      const match = url.pathname.match(/\/products\/([^/?#]+)/);
+      if (!match) return;
+      const jsonUrl = `/products/${match[1]}.json`;
 
-      // One preload per unique product path per page load
-      if (quickAddHoverPreloads.has(productPath)) return;
-      // Use path as placeholder so concurrent hovers don't fire duplicate fetches
-      quickAddHoverPreloads.set(productPath, null);
+      if (quickAddHoverPreloads.has(jsonUrl)) return;
 
-      fetch(url.toString())
-        .then((r) => (r.ok ? r.text() : null))
-        .then((html) => {
-          if (!html) return;
-          const doc = new DOMParser().parseFromString(html, 'text/html');
-          const configScript = doc.querySelector(BULK_GRID_SELECTORS.configScript);
-          if (!configScript?.textContent) return;
-
-          let config;
-          try {
-            config = JSON.parse(configScript.textContent.trim());
-            normalizeBulkConfig(config);
-          } catch {
-            return;
-          }
-
-          const expected = expectedVariantCount(config);
-          const needDeferred =
-            expected > 0 &&
-            config.variants.length < expected &&
-            (config.options?.[0]?.valueIds?.length ?? 0) > 0;
-
-          if (needDeferred) {
-            // Guard: tryPreloadQuickAdd may have already registered a deferred promise
-            // for this productId (happens when cached content makes the observer fire
-            // before this product-page fetch completes).  Reuse that promise to avoid
-            // doubling the number of Section Rendering API requests.
-            const existingByProductId =
-              config.productId != null ? quickAddHoverPreloads.get(String(config.productId)) : null;
-            const deferred = existingByProductId ?? fetchDeferredVariants(config);
-            quickAddHoverPreloads.set(productPath, deferred);
-            if (config.productId != null) {
-              quickAddHoverPreloads.set(String(config.productId), deferred);
-            }
-          } else if (config.productId != null) {
-            // No deferred fetch needed; update the productId key to be consistent.
-            quickAddHoverPreloads.set(String(config.productId), quickAddHoverPreloads.get(productPath) ?? null);
-          }
-        })
-        .catch(() => {});
+      // Start the fetch and register it immediately to prevent duplicate requests
+      quickAddHoverPreloads.set(
+        jsonUrl,
+        fetch(jsonUrl, { headers: { Accept: 'application/json' } })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)
+      );
     },
     { passive: true }
   );
@@ -978,8 +950,9 @@ function initQuickAddBulkGrid() {
   let lastPreloadedProductId = null;
 
   /**
-   * Called on every MutationObserver tick.  Parses the config, reuses any
-   * in-flight hover promise, otherwise starts a fresh deferred fetch.
+   * Called on every MutationObserver tick.  Parses the config and kicks off
+   * fetchDeferredVariants, which internally reuses any in-flight hover-prefetch
+   * promise (keyed by product JSON URL) so there is never more than one request.
    */
   function tryPreloadQuickAdd() {
     const configScript = quickAddContent?.querySelector(BULK_GRID_SELECTORS.configScript);
@@ -1002,27 +975,11 @@ function initQuickAddBulkGrid() {
     deferredLoadPromises.delete(QUICK_ADD_SECTION_KEY);
     bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
 
-    const expected = expectedVariantCount(config);
-    const needDeferred =
-      expected > 0 &&
-      config.variants.length < expected &&
-      (config.options?.[0]?.valueIds?.length ?? 0) > 0;
+    if (!needsDeferredLoad(config)) return;
 
-    if (!needDeferred) return;
-
-    // Reuse hover-preload promise if available (already in-flight since hover)
-    const hoverPromise =
-      config.productId != null ? quickAddHoverPreloads.get(String(config.productId)) : null;
-
-    const deferred = hoverPromise ?? fetchDeferredVariants(config);
-
-    // Register by productId immediately so the hover preload (still in-flight for cached
-    // content) sees this promise and does NOT start a second fetchDeferredVariants.
-    if (!hoverPromise && config.productId != null) {
-      quickAddHoverPreloads.set(String(config.productId), deferred);
-    }
-
-    deferredLoadPromises.set(QUICK_ADD_SECTION_KEY, deferred);
+    // fetchDeferredVariants automatically reuses any hover-prefetch promise
+    // for this product's .json URL, so no explicit coordination is needed here.
+    deferredLoadPromises.set(QUICK_ADD_SECTION_KEY, fetchDeferredVariants(config));
   }
 
   if (quickAddContent) {
