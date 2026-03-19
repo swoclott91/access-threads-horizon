@@ -195,103 +195,92 @@ function runWithConcurrency(tasks, limit) {
   return Promise.all(workers);
 }
 
+const DEFERRED_FETCH_CONCURRENCY = 10;
+const BULK_DATA_SECTION = 'at-bulk-grid-data';
+
 /**
- * Check whether the initial config already covers every option1/option2 combination.
- * Returns true when we need to defer-load more variants.
+ * Determine which first-option value IDs still need fetching by checking
+ * which ones already have complete variant coverage in the initial data.
+ * This avoids redundant requests for option values fully represented in the first 250 variants.
  */
-function needsDeferredLoad(config) {
-  const expected = expectedVariantCount(config);
-  return (
-    expected > 0 &&
-    (config.variants?.length ?? 0) < expected &&
-    (config.options?.[0]?.valueIds?.length ?? 0) > 0
-  );
+function filterNeededValueIds(config, allValueIds) {
+  const optionValues = config.options[0]?.values || [];
+  const secondOptionValues = config.options[1]?.values || [];
+  if (secondOptionValues.length === 0) return allValueIds;
+
+  const norm = (s) => (s == null ? '' : String(s).trim());
+  const pairsPresent = new Set();
+  (config.variants || []).forEach((v) => {
+    const o1 = norm(v.option1);
+    const o2 = norm(v.option2);
+    if (o1 && o2) pairsPresent.add(o1 + '|' + o2);
+  });
+
+  return allValueIds.filter((id, index) => {
+    const name = norm(optionValues[index]);
+    if (!name) return true;
+    return secondOptionValues.some((sv) => !pairsPresent.has(name + '|' + norm(sv)));
+  });
 }
 
 /**
- * Load full variant set via the Shopify AJAX product JSON endpoint.
- *
- * /products/{handle}.json returns ALL variants with no 250-variant cap, making it
- * far more reliable than the Section Rendering API + option_values approach (which
- * requires option_value.variant to work in a standalone section context – it doesn't).
- *
- * A hover-prefetch promise stored in quickAddHoverPreloads (keyed by the JSON URL)
- * is reused when available so the network request is already in-flight before the
- * user opens the bulk grid.
- *
- * Trade-off: the product JSON endpoint does not expose inventory_quantity, so deferred
- * variants show "In" / "Out" availability without a "Low" stock indicator.  The initial
- * 250 variants (from the Liquid config script) retain full inventory data.
+ * Load full variant set via Section Rendering API + option_values when product has >250 variants.
+ * Uses a lightweight data-only section (at-bulk-grid-data) to minimize response size (~1-5KB vs ~50-200KB for full page).
+ * See https://shopify.dev/docs/storefronts/themes/product-merchandising/variants/support-high-variant-products
  */
 function fetchDeferredVariants(config) {
   const allValueIds = config?.options?.[0]?.valueIds;
   if (!allValueIds?.length) return Promise.resolve([]);
 
+  const productPath = config.productUrl
+    ? new URL(config.productUrl, window.location.origin).pathname
+    : window.location.pathname;
   const debug = window.atBulkGridDebugVerbose === true;
-
-  // Seed byId with the initial variants (which include inventory_quantity from Liquid).
-  // We only add NEW variant IDs from the JSON fetch so this data is preserved.
   const byId = new Map();
+
   (config.variants || []).forEach((v) => {
     if (v && v.id != null) byId.set(v.id, v);
   });
 
-  if (!needsDeferredLoad(config)) {
-    if (debug) console.log('at-bulk-grid: all variants already present, skipping deferred fetch');
+  const valueIds = filterNeededValueIds(config, allValueIds);
+  if (valueIds.length === 0) {
+    if (debug) console.log('at-bulk-grid: all variants already present, no deferred fetch needed');
     return Promise.resolve(Array.from(byId.values()));
   }
 
-  if (!config.productUrl) {
-    if (debug) console.warn('at-bulk-grid: fetchDeferredVariants – no productUrl in config');
-    return Promise.resolve(Array.from(byId.values()));
-  }
+  const tasks = valueIds.map((valueId) => () => {
+    const url = `${productPath}?sections=${BULK_DATA_SECTION}&option_values=${encodeURIComponent(valueId)}`;
+    return fetch(url)
+      .then((res) => {
+        if (!res.ok) {
+          if (debug) console.warn('at-bulk-grid: fetch status', res.status, url);
+          return null;
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (!json?.[BULK_DATA_SECTION]) {
+          if (debug) console.warn('at-bulk-grid: no section data for option_values=' + valueId);
+          return;
+        }
+        const doc = new DOMParser().parseFromString(json[BULK_DATA_SECTION], 'text/html');
+        const script = doc.querySelector('script[data-at-bulk-variants]');
+        if (!script?.textContent) {
+          if (debug) console.warn('at-bulk-grid: no variant script for option_values=' + valueId);
+          return;
+        }
+        const parsed = JSON.parse(script.textContent.trim());
+        normalizeBulkConfig(parsed);
+        (parsed.variants || []).forEach((v) => {
+          if (v && v.id != null) byId.set(v.id, v);
+        });
+      })
+      .catch((err) => console.warn('at-bulk-grid: deferred fetch failed for option_values=' + valueId, err));
+  });
 
-  const productPath = new URL(config.productUrl, window.location.origin).pathname;
-  const jsonUrl = productPath.replace(/\/$/, '') + '.json';
-
-  // Reuse an in-flight hover-prefetch (keyed by JSON URL) if one already exists.
-  // If not, start our own and register it so concurrent callers share the same fetch.
-  let dataPromise = quickAddHoverPreloads.get(jsonUrl);
-  if (!dataPromise) {
-    dataPromise = fetch(jsonUrl, { headers: { Accept: 'application/json' } })
-      .then((r) => (r.ok ? r.json() : null))
-      .catch(() => null);
-    quickAddHoverPreloads.set(jsonUrl, dataPromise);
-  }
-
-  return dataPromise.then((data) => {
-    if (!data?.product?.variants?.length) {
-      if (debug) console.warn('at-bulk-grid: no variants in product.json response', jsonUrl);
-      return Array.from(byId.values());
-    }
-
-    const opts = config.options || [];
-    const hasThirdOption = opts.length >= 3;
-
-    data.product.variants.forEach((v) => {
-      if (v?.id == null) return;
-      if (byId.has(v.id)) return; // Preserve initial variant data (includes inventory_quantity)
-
-      // product.json prices are decimal strings (e.g. "10.66" for USD).
-      // Convert to the cents-integer format that Liquid's {{ v.price }} outputs.
-      const price = v.price ? Math.round(parseFloat(v.price) * 100) : 0;
-      const compareAtPrice = v.compare_at_price ? Math.round(parseFloat(v.compare_at_price) * 100) : 0;
-
-      byId.set(v.id, {
-        id: v.id,
-        available: !!v.available,
-        inventory_quantity: undefined, // not exposed by product.json
-        inventory_policy: v.inventory_policy || 'deny',
-        option1: v.option1 ?? null,
-        option2: v.option2 ?? null,
-        option3: hasThirdOption ? (v.option3 ?? null) : null,
-        price,
-        compare_at_price: compareAtPrice,
-      });
-    });
-
+  return runWithConcurrency(tasks, DEFERRED_FETCH_CONCURRENCY).then(() => {
     const list = Array.from(byId.values());
-    if (debug) console.log('at-bulk-grid: deferred load complete –', list.length, 'total variants');
+    if (debug) console.log('at-bulk-grid: deferred load complete,', list.length, 'variants from', valueIds.length, 'requests (skipped', allValueIds.length - valueIds.length, 'already-loaded)');
     return list;
   });
 }
@@ -800,14 +789,6 @@ const bulkGridConfigCache = new Map();
 const deferredLoadPromises = new Map();
 
 /**
- * Per-product hover preloads for the quick-add context, keyed by productId.
- * Populated when the user hovers a "Choose" button on a collection/home page,
- * before they click it and before the quick-add AJAX request completes.
- * @type {Map<number|string, Promise<any[]> | null>}
- */
-const quickAddHoverPreloads = new Map();
-
-/**
  * Start loading deferred variants before the modal opens (called on hover/focus of trigger).
  * The promise is reused by renderGrid to avoid duplicate fetches.
  */
@@ -841,11 +822,7 @@ function renderGrid(container) {
     deferredLoadPromises.delete(sectionId);
     fetchPromise
       .then((variants) => {
-        // For QUICK_ADD_SECTION_KEY the cache was just cleared above and there is no
-        // shopify-section-{id} DOM element to fall back to, so use the closure-captured
-        // config as a last resort.  This is the primary fix for the quick-add context
-        // where the grid was stuck at "Loading variants…" forever.
-        config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId) || config;
+        config = bulkGridConfigCache.get(sectionId) || getBulkConfig(sectionId);
         if (!config) return;
         if (variants.length >= expected) {
           config.variants = variants;
@@ -880,15 +857,12 @@ function renderGrid(container) {
 
 /**
  * Set up bulk grid support for the quick-add modal context (modal-in-modal).
- *
- * Optimized loading mirrors the product-page path:
- *   1. A MutationObserver watches #quick-add-modal-content and starts the deferred
- *      variant fetch the moment the config script appears in the DOM — before the
- *      user touches the bulk trigger.  This reuses deferredLoadPromises exactly like
- *      the hover/focusin preload does on the product page.
- *   2. A window-capture click interceptor (fires before Horizon's document-capture
- *      handler) calls renderGrid(), which picks up the already-in-flight promise
- *      instead of starting a cold fetch on click.
+ * Uses event delegation so it works after AJAX content loads into #quick-add-modal-content.
+ * When a [data-at-bulk-grid-trigger] inside the quick-add content is clicked:
+ *   - Reads the config script from #quick-add-modal-content
+ *   - Caches it under QUICK_ADD_SECTION_KEY
+ *   - Renders the grid into #at-bulk-grid-quick-add-dialog's container
+ *   - Opens the native <dialog> as a modal above the quick-add modal
  */
 function initQuickAddBulkGrid() {
   const bulkDialog = document.getElementById(QUICK_ADD_BULK_DIALOG_ID);
@@ -896,8 +870,11 @@ function initQuickAddBulkGrid() {
 
   if (!bulkDialog) return;
 
+  // Close button
   if (closeBtn) {
-    closeBtn.addEventListener('click', () => bulkDialog.close());
+    closeBtn.addEventListener('click', () => {
+      bulkDialog.close();
+    });
   }
 
   // Backdrop click closes the dialog
@@ -905,57 +882,31 @@ function initQuickAddBulkGrid() {
     if (e.target === bulkDialog) bulkDialog.close();
   });
 
-  // ── Hover preload on "Choose" buttons ───────────────────────────────────
-  // On hover over a product card's "Choose" button, immediately prefetch
-  // /products/{handle}.json so the data is already in the browser's HTTP cache
-  // (or fully resolved) by the time the user opens the bulk grid modal.
-  // fetchDeferredVariants reuses the same promise (keyed by JSON URL) so there
-  // is never more than one in-flight request per product per page load.
-  document.addEventListener(
-    'mouseover',
-    (e) => {
-      if (!(e.target instanceof Element)) return;
-      const btn = e.target.closest('.quick-add__button--choose');
-      if (!btn) return;
+  // Event delegation: intercept trigger clicks inside the quick-add modal content.
+  //
+  // WHY window, not document:
+  // Horizon's component.js also uses document.addEventListener('click', …, { capture: true })
+  // to handle on:click="/showDialog" attributes. It registers that listener at startup
+  // (before at-bulk-grid.js loads), so its document-capture handler fires first in
+  // registration order. Calling stopPropagation() in our document-capture handler is
+  // already too late — showDialog() has already been queued.
+  //
+  // window capture fires one step higher (window → document → … → target), so our
+  // listener runs before Horizon's document-capture listener. stopPropagation() here
+  // prevents the event from ever reaching document, keeping at-buy-buttons__bulk-dialog
+  // from opening.
+  window.addEventListener('click', (e) => {
+    const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
+    if (!trigger) return;
 
-      const card = btn.closest('product-card') || btn.closest('[data-product-id]');
-      if (!card) return;
-      const productLink = /** @type {HTMLAnchorElement | null} */ (card.querySelector('a[href*="/products/"]'));
-      if (!productLink?.href) return;
+    const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
+    if (!quickAddContent || !quickAddContent.contains(trigger)) return;
 
-      const url = new URL(productLink.href, window.location.origin);
-      // Extract the handle, handling both /products/handle and /collections/x/products/handle
-      const match = url.pathname.match(/\/products\/([^/?#]+)/);
-      if (!match) return;
-      const jsonUrl = `/products/${match[1]}.json`;
+    // Prevent the event from reaching Horizon's document-level capture handler,
+    // which would call dialog-component.showDialog() and open the wrong dialog.
+    e.stopPropagation();
 
-      if (quickAddHoverPreloads.has(jsonUrl)) return;
-
-      // Start the fetch and register it immediately to prevent duplicate requests
-      quickAddHoverPreloads.set(
-        jsonUrl,
-        fetch(jsonUrl, { headers: { Accept: 'application/json' } })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null)
-      );
-    },
-    { passive: true }
-  );
-
-  // ── Deferred-variant preload via MutationObserver ────────────────────────
-  // Second line of defence: fires when quick-add.js morphs content into
-  // #quick-add-modal-content.  Reuses the hover-preload promise when one
-  // exists; otherwise starts a fresh deferred fetch.
-  const quickAddContent = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
-  let lastPreloadedProductId = null;
-
-  /**
-   * Called on every MutationObserver tick.  Parses the config and kicks off
-   * fetchDeferredVariants, which internally reuses any in-flight hover-prefetch
-   * promise (keyed by product JSON URL) so there is never more than one request.
-   */
-  function tryPreloadQuickAdd() {
-    const configScript = quickAddContent?.querySelector(BULK_GRID_SELECTORS.configScript);
+    const configScript = quickAddContent.querySelector(BULK_GRID_SELECTORS.configScript);
     if (!configScript?.textContent) return;
 
     let config;
@@ -966,70 +917,20 @@ function initQuickAddBulkGrid() {
       return;
     }
 
-    // Guard: don't re-preload when the same product is still showing
-    if (config.productId != null && config.productId === lastPreloadedProductId) return;
-    lastPreloadedProductId = config.productId ?? null;
-
-    // Clear stale state from the previous product
-    bulkGridConfigCache.delete(QUICK_ADD_SECTION_KEY);
-    deferredLoadPromises.delete(QUICK_ADD_SECTION_KEY);
+    // Cache config under the quick-add sentinel key
     bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
 
-    if (!needsDeferredLoad(config)) return;
-
-    // fetchDeferredVariants automatically reuses any hover-prefetch promise
-    // for this product's .json URL, so no explicit coordination is needed here.
-    deferredLoadPromises.set(QUICK_ADD_SECTION_KEY, fetchDeferredVariants(config));
-  }
-
-  if (quickAddContent) {
-    new MutationObserver(tryPreloadQuickAdd).observe(quickAddContent, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  // ── Window-capture click interceptor ────────────────────────────────────
-  // WHY window, not document:
-  // Horizon's component.js registers document.addEventListener('click', …, { capture: true })
-  // at startup (before at-bulk-grid.js loads), so its document-capture handler fires
-  // first in registration order and calls showDialog() before ours could stop it.
-  // window capture fires one step higher (window → document → … → target), so our
-  // listener runs before Horizon's, and stopPropagation() here prevents the event
-  // from ever reaching document, keeping at-buy-buttons__bulk-dialog closed.
-  window.addEventListener('click', (e) => {
-    const trigger = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest(BULK_GRID_SELECTORS.trigger) : null);
-    if (!trigger) return;
-
-    const qac = document.getElementById(QUICK_ADD_MODAL_CONTENT_ID);
-    if (!qac || !qac.contains(trigger)) return;
-
-    // Stop Horizon's document-capture handler from opening the wrong dialog
-    e.stopPropagation();
-
-    // Config should already be cached from the MutationObserver preload.
-    // Fall back to parsing from the DOM if the observer hasn't fired yet.
-    if (!bulkGridConfigCache.has(QUICK_ADD_SECTION_KEY)) {
-      const configScript = qac.querySelector(BULK_GRID_SELECTORS.configScript);
-      if (!configScript?.textContent) return;
-      try {
-        const config = JSON.parse(configScript.textContent.trim());
-        normalizeBulkConfig(config);
-        bulkGridConfigCache.set(QUICK_ADD_SECTION_KEY, config);
-      } catch {
-        return;
-      }
-    }
-
+    // Find the at-bulk-grid container inside the nested dialog
     const container = bulkDialog.querySelector(BULK_GRID_SELECTORS.container);
     if (!container) return;
 
+    // Point the container at the cached config via the sentinel key
     container.dataset.atBulkGridSectionId = QUICK_ADD_SECTION_KEY;
 
-    // renderGrid picks up the already-in-flight deferredLoadPromises entry
-    // instead of starting a cold fetch, matching the product-page experience.
+    // Render the grid (respects mobile/desktop breakpoint)
     renderGrid(container);
 
+    // Open the nested dialog as a modal (enters browser top layer)
     if (typeof bulkDialog.showModal === 'function') {
       bulkDialog.showModal();
     }
