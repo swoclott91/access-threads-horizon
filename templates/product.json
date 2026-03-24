@@ -216,7 +216,7 @@
                   "name": "t:names.image",
                   "settings": {
                     "image": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
-                    "link": "",
+                    "link": "{{ closest.product.metafields.custom.brand.value.collection.value }}",
                     "image_ratio": "adapt",
                     "width": "fit-content",
                     "custom_width": 100,
