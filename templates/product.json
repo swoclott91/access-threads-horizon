@@ -9,10 +9,10 @@
  */
 {
   "sections": {
-    "section_9r4fBK": {
+    "section_RcFbtd": {
       "type": "section",
       "blocks": {
-        "text_UjDbN7": {
+        "text_YWfKMf": {
           "type": "text",
           "name": "t:names.heading",
           "settings": {
@@ -38,12 +38,12 @@
           },
           "blocks": {}
         },
-        "price_jciNMp": {
+        "price_4y7a3f": {
           "type": "price",
           "name": "t:names.product_price",
           "settings": {
             "show_sale_price_first": true,
-            "show_installments": false,
+            "show_installments": true,
             "show_tax_info": false,
             "type_preset": "",
             "width": "100%",
@@ -61,7 +61,7 @@
           },
           "blocks": {}
         },
-        "review_F7DUyt": {
+        "review_FMHKM8": {
           "type": "review",
           "name": "t:names.product_review_stars",
           "settings": {
@@ -76,9 +76,9 @@
         }
       },
       "block_order": [
-        "text_UjDbN7",
-        "price_jciNMp",
-        "review_F7DUyt"
+        "text_YWfKMf",
+        "price_4y7a3f",
+        "review_FMHKM8"
       ],
       "custom_css": [
         "@media screen and (min-width: 750px) {{display: none !important; }}"
@@ -92,7 +92,7 @@
         "align_baseline": false,
         "horizontal_alignment_flex_direction_column": "flex-start",
         "vertical_alignment_flex_direction_column": "center",
-        "gap": 0,
+        "gap": 12,
         "section_width": "page-width",
         "section_height": "",
         "section_height_custom": 50,
@@ -133,9 +133,9 @@
             "constrain_to_viewport": true,
             "media_fit": "contain",
             "media_radius": 0,
-            "extend_media": true,
+            "extend_media": false,
             "zoom": true,
-            "video_loop": true,
+            "video_loop": false,
             "hide_variants": true,
             "padding-block-start": 0,
             "padding-block-end": 0,
@@ -155,7 +155,7 @@
             "height": "fit",
             "details_position": "flex-start",
             "gap": 28,
-            "sticky_details_desktop": false,
+            "sticky_details_desktop": true,
             "inherit_color_scheme": true,
             "color_scheme": "scheme-1",
             "background_media": "none",
@@ -211,34 +211,11 @@
                 "padding-inline-end": 0
               },
               "blocks": {
-                "image_KKgPKG": {
-                  "type": "image",
-                  "name": "t:names.image",
-                  "settings": {
-                    "image": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
-                    "link": "{{ closest.product.metafields.custom.brand.value.collection.value }}",
-                    "image_ratio": "adapt",
-                    "width": "fit-content",
-                    "custom_width": 100,
-                    "width_mobile": "fit-content",
-                    "custom_width_mobile": 100,
-                    "height": "fit",
-                    "border": "none",
-                    "border_width": 1,
-                    "border_opacity": 100,
-                    "border_radius": 0,
-                    "padding-block-start": 0,
-                    "padding-block-end": 0,
-                    "padding-inline-start": 0,
-                    "padding-inline-end": 0
-                  },
-                  "blocks": {}
-                },
                 "text_xpVMaM": {
                   "type": "text",
                   "name": "t:names.title",
                   "settings": {
-                    "text": "<h1>{{ closest.product.vendor }} {{ closest.product.title }}</h1>",
+                    "text": "<h1>{{ closest.product.title }}</h1>",
                     "width": "fit-content",
                     "max_width": "normal",
                     "alignment": "left",
@@ -284,7 +261,6 @@
                 }
               },
               "block_order": [
-                "image_KKgPKG",
                 "text_xpVMaM",
                 "price_tVjtKg"
               ]
@@ -305,7 +281,7 @@
               "type": "variant-picker",
               "settings": {
                 "variant_style": "buttons",
-                "show_swatches": true,
+                "show_swatches": false,
                 "alignment": "left",
                 "padding-block-start": 0,
                 "padding-block-end": 0,
@@ -314,17 +290,12 @@
               },
               "blocks": {}
             },
-            "at_buy_buttons_GVGM4b": {
-              "type": "at-buy-buttons",
-              "name": "AT Buy buttons",
+            "buy_buttons_eYQEYi": {
+              "type": "buy-buttons",
               "settings": {
-                "at_enable_bulk_popup": true,
-                "at_bulk_trigger_label": "Bulk Add to Cart",
-                "at_bulk_behavior": "default",
-                "at_enable_bulk_quantities": true,
-                "stacking": false,
+                "stacking": true,
                 "show_pickup_availability": false,
-                "gift_card_form": false,
+                "gift_card_form": true,
                 "padding-block-start": 0,
                 "padding-block-end": 0,
                 "padding-inline-start": 0,
@@ -347,7 +318,6 @@
                 },
                 "accelerated-checkout": {
                   "type": "accelerated-checkout",
-                  "disabled": true,
                   "static": true,
                   "settings": {},
                   "blocks": {}
@@ -386,14 +356,11 @@
             "group_icgrde",
             "divider_VJhene",
             "variant_picker_R3rGDr",
-            "at_buy_buttons_GVGM4b",
+            "buy_buttons_eYQEYi",
             "text_aEtTtq"
           ]
         }
       },
-      "custom_css": [
-        "@media screen and (max-width: 749px) {.group-block-content .group-block.group-block--height-fit.group-block--width-fill {display: none !important; }}"
-      ],
       "settings": {
         "content_width": "content-center-aligned",
         "desktop_media_position": "left",
@@ -549,7 +516,7 @@
     }
   },
   "order": [
-    "section_9r4fBK",
+    "section_RcFbtd",
     "main",
     "product_recommendations_qggXJq"
   ]
