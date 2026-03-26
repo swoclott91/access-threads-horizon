@@ -19,7 +19,7 @@
             "icon": "price_tag",
             "image_upload": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
             "width": 80,
-            "link": "",
+            "link": "{{ closest.product.metafields.custom.brand.value.collection_url.value }}",
             "open_in_new_tab": false
           },
           "blocks": {}
