@@ -197,7 +197,7 @@
           "static": true,
           "settings": {
             "placement": "below_image",
-            "horizontal_alignment": "center",
+            "horizontal_alignment": "flex-start",
             "vertical_alignment": "center",
             "collection_card_gap": 8,
             "inherit_color_scheme": true,
@@ -218,7 +218,7 @@
                 "style_class": "button",
                 "width": "fit-content",
                 "custom_width": 100,
-                "width_mobile": "fit-content",
+                "width_mobile": "custom",
                 "custom_width_mobile": 100
               },
               "blocks": {}
@@ -258,7 +258,7 @@
         ],
         "layout_type": "carousel",
         "carousel_on_mobile": false,
-        "columns": 3,
+        "columns": 8,
         "mobile_columns": "2",
         "mobile_card_size": "60cqw",
         "columns_gap": 8,
