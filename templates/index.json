@@ -197,7 +197,7 @@
           "static": true,
           "settings": {
             "placement": "below_image",
-            "horizontal_alignment": "flex-start",
+            "horizontal_alignment": "center",
             "vertical_alignment": "center",
             "collection_card_gap": 8,
             "inherit_color_scheme": true,
@@ -208,28 +208,18 @@
             "border_radius": 0
           },
           "blocks": {
-            "collection_title_qDMRRT": {
-              "type": "collection-title",
-              "name": "t:names.collection_title",
+            "button_ePFVF6": {
+              "type": "button",
+              "name": "t:names.button",
               "settings": {
+                "label": "Shop",
+                "link": "{{ closest.collection.url }}",
+                "open_in_new_tab": false,
+                "style_class": "button",
                 "width": "fit-content",
-                "max_width": "normal",
-                "alignment": "left",
-                "type_preset": "rte",
-                "font": "var(--font-body--family)",
-                "font_size": "1rem",
-                "line_height": "normal",
-                "letter_spacing": "normal",
-                "case": "none",
-                "wrap": "pretty",
-                "color": "var(--color-foreground)",
-                "background": false,
-                "background_color": "#00000026",
-                "corner_radius": 0,
-                "padding-block-start": 0,
-                "padding-block-end": 0,
-                "padding-inline-start": 0,
-                "padding-inline-end": 0
+                "custom_width": 100,
+                "width_mobile": "fit-content",
+                "custom_width_mobile": 100
               },
               "blocks": {}
             },
@@ -252,7 +242,7 @@
             }
           },
           "block_order": [
-            "collection_title_qDMRRT"
+            "button_ePFVF6"
           ]
         }
       },
