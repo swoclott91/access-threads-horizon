@@ -19,6 +19,7 @@
             "icon": "price_tag",
             "image_upload": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
             "width": 80,
+            "link_collection": "",
             "link": "",
             "open_in_new_tab": false
           },
@@ -231,6 +232,7 @@
                     "icon": "price_tag",
                     "image_upload": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
                     "width": 80,
+                    "link_collection": "{{ closest.product.metafields.custom.brand.value.collection.value }}",
                     "link": "",
                     "open_in_new_tab": false
                   },
