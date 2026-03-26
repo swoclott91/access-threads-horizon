@@ -253,8 +253,8 @@
       "name": "t:names.collections_carousel",
       "settings": {
         "collection_list": [
-          "bella-canvas",
           "gildan",
+          "bella-canvas",
           "next-level-apparel"
         ],
         "layout_type": "carousel",
