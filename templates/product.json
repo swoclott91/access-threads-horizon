@@ -12,6 +12,18 @@
     "section_RcFbtd": {
       "type": "section",
       "blocks": {
+        "icon_i3aF9j": {
+          "type": "icon",
+          "name": "t:names.icon",
+          "settings": {
+            "icon": "price_tag",
+            "image_upload": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
+            "width": 132,
+            "link": "",
+            "open_in_new_tab": false
+          },
+          "blocks": {}
+        },
         "text_YWfKMf": {
           "type": "text",
           "name": "t:names.heading",
@@ -76,6 +88,7 @@
         }
       },
       "block_order": [
+        "icon_i3aF9j",
         "text_YWfKMf",
         "price_4y7a3f",
         "review_FMHKM8"
@@ -211,6 +224,18 @@
                 "padding-inline-end": 0
               },
               "blocks": {
+                "icon_KLB7ij": {
+                  "type": "icon",
+                  "name": "t:names.icon",
+                  "settings": {
+                    "icon": "price_tag",
+                    "image_upload": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
+                    "width": 200,
+                    "link": "",
+                    "open_in_new_tab": false
+                  },
+                  "blocks": {}
+                },
                 "text_xpVMaM": {
                   "type": "text",
                   "name": "t:names.title",
@@ -219,7 +244,7 @@
                     "width": "fit-content",
                     "max_width": "normal",
                     "alignment": "left",
-                    "type_preset": "h3",
+                    "type_preset": "h4",
                     "font": "var(--font-body--family)",
                     "font_size": "1rem",
                     "line_height": "normal",
@@ -261,6 +286,7 @@
                 }
               },
               "block_order": [
+                "icon_KLB7ij",
                 "text_xpVMaM",
                 "price_tVjtKg"
               ]
