@@ -1097,6 +1097,7 @@
     "pills_usage": "Wird für angewendete Filter, Rabattcodes und Suchvorschläge verwendet",
     "hide_logo_on_home_page_help": "Das Logo bleibt sichtbar, wenn der fixierte Header aktiv ist",
     "media_type_info": "Die Funktionen werden aus deinen Menü-Links übernommen",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Betrifft nur das Header-Logo",
     "actions_display_style": "Auf Mobilgeräten werden immer Symbole verwendet"
   },

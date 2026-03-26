@@ -1097,6 +1097,7 @@
     "pills_usage": "Używane w przypadku zastosowanych filtrów, kodów rabatowych i sugestii wyszukiwania",
     "hide_logo_on_home_page_help": "Logo pozostanie widoczne, gdy aktywny jest lepki nagłówek",
     "media_type_info": "Funkcje są pobierane z linków menu",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Dotyczy tylko logo w nagłówku",
     "actions_display_style": "Na urządzeniach mobilnych zawsze używane są ikony"
   },

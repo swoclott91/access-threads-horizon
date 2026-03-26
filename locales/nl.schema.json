@@ -1097,6 +1097,7 @@
     "hover_effects": "Van toepassing op product- en collectiekaarten",
     "hide_logo_on_home_page_help": "Logo blijft zichtbaar wanneer de vaste koptekst actief is",
     "media_type_info": "Functies worden gevuld vanuit je menulinks",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Alleen van invloed op het koptekstlogo",
     "actions_display_style": "Op mobiel worden altijd pictogrammen gebruikt"
   },

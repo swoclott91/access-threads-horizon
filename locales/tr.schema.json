@@ -1097,6 +1097,7 @@
     "pills_usage": "Uygulanan filtreler, indirim kodları ve arama önerileri için kullanılır",
     "hide_logo_on_home_page_help": "Yapışkan üstbilgi etkinken logo görünür kalır",
     "media_type_info": "Özellikler, menü bağlantılarınız kullanılarak oluşturulur",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Yalnızca üstbilgi logosunu etkiler",
     "actions_display_style": "Mobilde her zaman simgeler kullanılır"
   },

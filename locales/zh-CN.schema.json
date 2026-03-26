@@ -1097,6 +1097,7 @@
     "applies_on_image_only": "仅适用于图片",
     "hide_logo_on_home_page_help": "当粘性标头处于活动状态时，logo 将保持可见",
     "media_type_info": "功能内容来自您的菜单链接",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "仅影响标头 logo",
     "actions_display_style": "在移动设备上始终使用图标"
   },

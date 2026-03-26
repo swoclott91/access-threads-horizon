@@ -1097,6 +1097,7 @@
     "hover_effects": "Aplica-se a cartões de produto e de coleção",
     "hide_logo_on_home_page_help": "O logo permanecerá visível quando o cabeçalho fixo estiver ativo",
     "media_type_info": "Os recursos são preenchidos com base nos links do menu",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Afeta apenas o logo do cabeçalho",
     "actions_display_style": "Os ícones são sempre usados em dispositivos móveis"
   },

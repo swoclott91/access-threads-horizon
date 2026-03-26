@@ -1097,6 +1097,7 @@
     "pills_usage": "適用された絞り込み、ディスカウントコード、検索候補に使用されます",
     "hide_logo_on_home_page_help": "ロゴは、固定ヘッダーが有効な場合は表示されたままになります",
     "media_type_info": "機能はメニューのリンクを元に表示されます。",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "ヘッダーのロゴにのみ適用されます。",
     "actions_display_style": "モバイルでは常にアイコンが表示されます"
   },

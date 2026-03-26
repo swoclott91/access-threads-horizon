@@ -1097,6 +1097,7 @@
     "hover_effects": "Si applica alle schede di prodotto e di collezione",
     "hide_logo_on_home_page_help": "Il logo rimarrà visibile quando l'header permanente è attivo",
     "media_type_info": "Le funzionalità vengono popolate dai link del menu",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Riguarda solo il logo dell’header",
     "actions_display_style": "Le icone vengono sempre usate sui dispositivi mobili"
   },

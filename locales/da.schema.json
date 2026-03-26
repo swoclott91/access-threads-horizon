@@ -1097,6 +1097,7 @@
     "hover_effects": "Gælder for produkt- og kollektionskort",
     "hide_logo_on_home_page_help": "Logoet vil forblive synligt, når fastgjort sidehoved er aktivt",
     "media_type_info": "Funktioner hentes fra linksene i menuen",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Påvirker kun logoet i sidehovedet",
     "actions_display_style": "Ikoner bruges altid på mobil"
   },

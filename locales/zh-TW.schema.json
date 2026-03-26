@@ -1097,6 +1097,7 @@
     "hover_effects": "適用於產品卡片與商品系列卡片",
     "hide_logo_on_home_page_help": "啟用固定頁首時，標誌仍會顯示",
     "media_type_info": "功能會根據您的選單連結自動帶入",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "僅影響頁首標誌",
     "actions_display_style": "在行動裝置上一律使用圖示"
   },

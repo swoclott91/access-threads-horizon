@@ -1097,6 +1097,7 @@
     "pills_usage": "적용된 필터, 할인 코드, 검색 제안에 사용됩니다",
     "hide_logo_on_home_page_help": "고정 머리글이 활성화되면 로고가 계속 표시됩니다",
     "media_type_info": "기능은 메뉴 링크에서 가져옵니다.",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "머리글 로고에만 적용됩니다.",
     "actions_display_style": "모바일에서는 항상 아이콘이 사용됩니다."
   },

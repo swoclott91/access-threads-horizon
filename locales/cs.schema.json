@@ -1097,6 +1097,7 @@
     "pills_usage": "Používá se pro aktivní filtry, slevové kódy a návrhy vyhledávání",
     "hide_logo_on_home_page_help": "Logo zůstane viditelné, když je aktivní přilepené záhlaví",
     "media_type_info": "Funkce se načítají z odkazů v nabídce",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Týká se pouze loga v záhlaví",
     "actions_display_style": "Na mobilních zařízeních se vždy používají ikony"
   },

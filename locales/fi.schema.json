@@ -1097,6 +1097,7 @@
     "hover_effects": "Koskee tuote- ja kokoelmakortteja",
     "hide_logo_on_home_page_help": "Logo pysyy näkyvissä, kun kiinteä ylätunniste on aktiivinen",
     "media_type_info": "Ominaisuudet noudetaan valikkolinkeistäsi",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Vaikuttaa vain ylätunnisteen logoon",
     "actions_display_style": "Kuvakkeet ovat aina käytössä mobiililaitteilla"
   },

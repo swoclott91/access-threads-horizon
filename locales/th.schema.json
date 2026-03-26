@@ -1097,6 +1097,7 @@
     "hover_effects": "ใช้กับการ์ดสินค้าและคอลเลกชัน",
     "hide_logo_on_home_page_help": "โลโก้จะยังคงแสดงอยู่เมื่อส่วนหัวแบบติดหนึบทำงาน",
     "media_type_info": "ฟีเจอร์มาจากลิงก์ในเมนูของคุณ",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "มีผลกับโลโก้ส่วนหัวเท่านั้น",
     "actions_display_style": "ใช้ไอคอนเสมอบนมือถือ"
   },

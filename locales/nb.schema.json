@@ -1097,6 +1097,7 @@
     "hover_effects": "Gjelder for produkt- og samlingskort",
     "hide_logo_on_home_page_help": "Logoen forblir synlig når klebrig topptekst er aktiv",
     "media_type_info": "Funksjonene hentes fra menykoblingene",
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
     "logo_height": "Påvirker kun logoen i toppteksten",
     "actions_display_style": "Ikoner brukes alltid på mobil"
   },

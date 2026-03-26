@@ -1,4 +1,13 @@
 {% assign block_settings = block.settings %}
+{%- comment -%} AT CUSTOM: collection picker for metaobject collection refs; url fallback {%- endcomment -%}
+{% liquid
+  assign icon_link_href = blank
+  if block_settings.link_collection != blank and block_settings.link_collection.url != blank
+    assign icon_link_href = block_settings.link_collection.url
+  elsif block_settings.link != blank
+    assign icon_link_href = block_settings.link
+  endif
+%}
 {% assign icon_block_class = 'icon-block__media icon-block-' | append: block.id %}
 
 {% capture icon %}
@@ -11,9 +20,9 @@
   %}
 {% endcapture %}
 
-{%- if block_settings.link != blank -%}
+{%- if icon_link_href != blank -%}
   <a
-    href="{{ block_settings.link }}"
+    href="{{ icon_link_href }}"
     class="text-inherit"
     {% if block_settings.open_in_new_tab %}
       target="_blank" rel="noopener"
@@ -299,6 +308,15 @@
       "step": 2,
       "unit": "px",
       "default": 24
+    },
+    {
+      "type": "collection",
+      "id": "link_collection",
+      "label": "t:settings.collection"
+    },
+    {
+      "type": "paragraph",
+      "content": "t:info.icon_link_collection_or_url"
     },
     {
       "type": "url",
