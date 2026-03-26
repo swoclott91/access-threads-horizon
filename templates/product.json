@@ -18,7 +18,7 @@
           "settings": {
             "icon": "price_tag",
             "image_upload": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
-            "width": 132,
+            "width": 80,
             "link": "",
             "open_in_new_tab": false
           },
