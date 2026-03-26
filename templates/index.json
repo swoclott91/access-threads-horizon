@@ -16,7 +16,7 @@
           "type": "text",
           "name": "t:names.heading",
           "settings": {
-            "text": "<p>We Have Blank Apparel</p>",
+            "text": "<p>We Sell Blank Apparel...</p>",
             "width": "fit-content",
             "max_width": "normal",
             "alignment": "left",
