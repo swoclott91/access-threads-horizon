@@ -127,7 +127,7 @@
         "color_scheme": "scheme-1",
         "background_media": "image",
         "video_position": "cover",
-        "background_image": "shopify://shop_images/Group_1_1.jpg",
+        "background_image": "{{ collection.metafields.custom.brand.value.cover.value }}",
         "background_image_position": "cover",
         "border": "none",
         "border_width": 1,
