@@ -42,6 +42,7 @@
       "block_order": [
         "text_xBipb7"
       ],
+      "disabled": true,
       "name": "t:names.custom_section",
       "settings": {
         "content_direction": "row",
