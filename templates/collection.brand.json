@@ -199,6 +199,29 @@
               },
               "blocks": {}
             },
+            "image_HtQVpC": {
+              "type": "image",
+              "name": "t:names.image",
+              "settings": {
+                "image": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
+                "link": "{{ closest.product.url }}",
+                "image_ratio": "adapt",
+                "width": "custom",
+                "custom_width": 30,
+                "width_mobile": "custom",
+                "custom_width_mobile": 30,
+                "height": "fit",
+                "border": "none",
+                "border_width": 1,
+                "border_opacity": 100,
+                "border_radius": 0,
+                "padding-block-start": 0,
+                "padding-block-end": 0,
+                "padding-inline-start": 0,
+                "padding-inline-end": 0
+              },
+              "blocks": {}
+            },
             "product_title_4nY4eT": {
               "type": "product-title",
               "name": "t:names.product_title",
@@ -263,6 +286,7 @@
           },
           "block_order": [
             "card-gallery",
+            "image_HtQVpC",
             "product_title_4nY4eT",
             "price_EzJzMm",
             "swatches"
