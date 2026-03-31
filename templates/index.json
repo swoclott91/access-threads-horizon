@@ -210,22 +210,6 @@
             "border_radius": 0
           },
           "blocks": {
-            "button_ePFVF6": {
-              "type": "button",
-              "name": "t:names.button",
-              "disabled": true,
-              "settings": {
-                "label": "Shop",
-                "link": "{{ closest.collection.url }}",
-                "open_in_new_tab": false,
-                "style_class": "link",
-                "width": "fit-content",
-                "custom_width": 100,
-                "width_mobile": "custom",
-                "custom_width_mobile": 100
-              },
-              "blocks": {}
-            },
             "collection-card-image": {
               "type": "_collection-card-image",
               "name": "t:names.collection_card_image",
@@ -244,9 +228,7 @@
               "blocks": {}
             }
           },
-          "block_order": [
-            "button_ePFVF6"
-          ]
+          "block_order": []
         }
       },
       "block_order": [
