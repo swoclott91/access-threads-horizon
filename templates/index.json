@@ -541,25 +541,15 @@
             "padding-inline-end": 0
           },
           "blocks": {
-            "text_Fk3UHj": {
-              "type": "text",
-              "name": "t:names.text",
+            "product_card_gallery_677WP3": {
+              "type": "_product-card-gallery",
+              "name": "t:names.product_card_media",
               "settings": {
-                "text": "<p>{{ closest.product.vendor }} </p>",
-                "width": "fit-content",
-                "max_width": "normal",
-                "alignment": "left",
-                "type_preset": "rte",
-                "font": "var(--font-body--family)",
-                "font_size": "1rem",
-                "line_height": "normal",
-                "letter_spacing": "normal",
-                "case": "none",
-                "wrap": "pretty",
-                "color": "var(--color-foreground)",
-                "background": false,
-                "background_color": "#00000026",
-                "corner_radius": 0,
+                "image_ratio": "adapt",
+                "border": "none",
+                "border_width": 1,
+                "border_opacity": 100,
+                "border_radius": 0,
                 "padding-block-start": 0,
                 "padding-block-end": 0,
                 "padding-inline-start": 0,
@@ -567,11 +557,18 @@
               },
               "blocks": {}
             },
-            "product_card_gallery_677WP3": {
-              "type": "_product-card-gallery",
-              "name": "t:names.product_card_media",
+            "image_6A9JMQ": {
+              "type": "image",
+              "name": "t:names.image",
               "settings": {
+                "image": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
+                "link": "{{ closest.product.url }}",
                 "image_ratio": "adapt",
+                "width": "custom",
+                "custom_width": 25,
+                "width_mobile": "custom",
+                "custom_width_mobile": 25,
+                "height": "fit",
                 "border": "none",
                 "border_width": 1,
                 "border_opacity": 100,
@@ -647,8 +644,8 @@
             }
           },
           "block_order": [
-            "text_Fk3UHj",
             "product_card_gallery_677WP3",
+            "image_6A9JMQ",
             "product_title_YXxMTj",
             "price_JQzVV4",
             "swatches_qmiqpe"
