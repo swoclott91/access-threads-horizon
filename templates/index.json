@@ -204,9 +204,9 @@
             "collection_card_gap": 0,
             "inherit_color_scheme": true,
             "color_scheme": "",
-            "border": "none",
-            "border_width": 1,
-            "border_opacity": 100,
+            "border": "solid",
+            "border_width": 2,
+            "border_opacity": 11,
             "border_radius": 0
           },
           "blocks": {
