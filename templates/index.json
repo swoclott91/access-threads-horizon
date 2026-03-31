@@ -198,7 +198,7 @@
           "name": "t:names.collection_card",
           "static": true,
           "settings": {
-            "placement": "on_image",
+            "placement": "below_image",
             "horizontal_alignment": "flex-start",
             "vertical_alignment": "center",
             "collection_card_gap": 0,
@@ -239,8 +239,7 @@
         "collection_list": [
           "gildan",
           "bella-canvas",
-          "next-level-apparel",
-          "port-co"
+          "next-level-apparel"
         ],
         "layout_type": "carousel",
         "carousel_on_mobile": false,
