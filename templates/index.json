@@ -421,7 +421,9 @@
       ],
       "name": "t:names.collections_bento",
       "settings": {
-        "collection_list": [],
+        "collection_list": [
+          "t-shirts"
+        ],
         "layout_type": "bento",
         "carousel_on_mobile": false,
         "columns": 4,
