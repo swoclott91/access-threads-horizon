@@ -202,7 +202,7 @@
             "horizontal_alignment": "flex-start",
             "vertical_alignment": "center",
             "collection_card_gap": 0,
-            "inherit_color_scheme": true,
+            "inherit_color_scheme": false,
             "color_scheme": "",
             "border": "solid",
             "border_width": 2,
@@ -221,7 +221,7 @@
                 "overlay_style": "solid",
                 "gradient_direction": "to top",
                 "border": "none",
-                "border_width": 1,
+                "border_width": 2,
                 "border_opacity": 100,
                 "border_radius": 0
               },
