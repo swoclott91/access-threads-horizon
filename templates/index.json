@@ -654,7 +654,7 @@
       },
       "name": "t:names.featured_collection",
       "settings": {
-        "collection": "all",
+        "collection": "t-shirts",
         "layout_type": "grid",
         "carousel_on_mobile": false,
         "max_products": 8,
