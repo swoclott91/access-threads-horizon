@@ -424,7 +424,11 @@
         "collection_list": [
           "t-shirts",
           "sweatshirts",
-          "hats"
+          "hats",
+          "polos",
+          "unisex",
+          "male",
+          "female"
         ],
         "layout_type": "bento",
         "carousel_on_mobile": false,
