@@ -1,13 +1,10 @@
 {%- comment -%}
   AT CUSTOM — AT-Menu Private Block
-  Renders the Access Threads branded mega-menu as a header block so it sits in the
-  same row as the logo.  Handles three variants injected via content_for 'block':
-    – default (desktop nav bar with mega panel)
-    – mobile  (slide-in drawer injected into header drawer slot)
-    – navigation_bar (optional swipe-bar for small screens)
-
-  This is a private block (_at-menu) so it appears in the Header section's editor
-  panel alongside Logo and Menu, exactly like _header-logo and _header-menu.
+  Renders the Access Threads branded mega-menu as a header block sitting in the
+  same row as the logo.  Three variants (via content_for 'block'):
+    – default        : desktop horizontal nav bar (hidden on mobile via CSS)
+    – mobile         : header-drawer with hamburger trigger + AT mobile drawer
+    – navigation_bar : optional swipe-bar for small screens
 {%- endcomment -%}
 
 {%- liquid
@@ -24,27 +21,67 @@
       assign brands_link = link
     endif
   endfor
+
+  # Conditional color-scheme class — only apply when different from the parent row
+  # (mirrors _header-menu behaviour so transparency settings are inherited)
+  assign color_scheme_classes = ''
+  assign color_scheme_setting_id = 'color_scheme_' | append: section.settings.menu_row
+  assign current_color_scheme = block_settings.color_scheme
+  assign parent_color_scheme = section.settings[color_scheme_setting_id]
+  if current_color_scheme != blank and parent_color_scheme.id != current_color_scheme.id
+    assign color_scheme_classes = ' color-' | append: current_color_scheme
+  endif
 -%}
 
 {% case variant %}
 
   {%- comment -%} ══════════════════════════════════════════════════
-    MOBILE variant — slide-in drawer rendered in the header drawer slot
+    MOBILE variant — rendered as `first` in the header row, providing
+    the hamburger trigger and the slide-in AT drawer.
+    Uses <header-drawer> so the toggle lives in the exact same place
+    and behaves identically to the built-in _header-menu block.
   ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {% when 'mobile' %}
     <div
-      class="header__drawer at-menu-drawer-container"
+      class="header__drawer"
       ref="headerDrawerContainer"
       {{ block.shopify_attributes }}
     >
-      {%- render 'at-menu-mobile-drawer',
-        section: block,
-        menu_links: menu_links,
-        brands_link: brands_link,
-        brands_item_handle: brands_handle,
-        highlight_handle: highlight_handle,
-        mobile_drawer_label: block_settings.at_mobile_drawer_label
-      -%}
+      <script src="{{ 'header-drawer.js' | asset_url }}" type="module" fetchpriority="low"></script>
+      <header-drawer class="header-drawer">
+        <details
+          id="at-menu-drawer-container"
+          class="menu-drawer-container"
+          ref="details"
+          scroll-lock
+        >
+          <summary
+            class="header__icon header__icon--menu header__icon--summary"
+            aria-label="{{ 'accessibility.menu' | t }}"
+            on:click="/toggle"
+          >
+            <span class="svg-wrapper header-drawer-icon header-drawer-icon--open">
+              {{- 'icon-menu.svg' | inline_asset_content -}}
+            </span>
+            <span class="svg-wrapper header-drawer-icon header-drawer-icon--close">
+              {{- 'icon-close.svg' | inline_asset_content -}}
+            </span>
+          </summary>
+
+          <div
+            ref="menuDrawer"
+            class="menu-drawer color-{{ block_settings.color_scheme }}"
+          >
+            {%- render 'at-menu-mobile-drawer',
+              section: block,
+              menu_links: menu_links,
+              brands_link: brands_link,
+              brands_item_handle: brands_handle,
+              highlight_handle: highlight_handle
+            -%}
+          </div>
+        </details>
+      </header-drawer>
     </div>
 
   {%- comment -%} ══════════════════════════════════════════════════
@@ -53,7 +90,7 @@
   {% when 'navigation_bar' %}
     {%- if block_settings.at_mobile_navigation_bar -%}
       <div
-        class="menu-list menu-list--mobile"
+        class="menu-list menu-list--mobile{% if transparent == blank %} color-{{ block_settings.color_scheme_navigation_bar }}{% endif %}"
         style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;"
         {{ block.shopify_attributes }}
       >
@@ -76,170 +113,96 @@
     {%- endif -%}
 
   {%- comment -%} ══════════════════════════════════════════════════
-    DEFAULT variant — desktop horizontal mega-menu nav bar
-    Rendered inline in the header's menu column (same row as logo).
+    DEFAULT variant — desktop horizontal nav bar.
+    Wrapped in .header-menu so the theme's existing CSS
+    (#header-component[data-menu-style='menu'] .header-menu) correctly
+    shows/hides this block at the right breakpoint, matching the
+    built-in _header-menu block.
   ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {% else %}
 
-    <at-menu-component
-      class="at-menu color-{{ block_settings.color_scheme }}"
-      style="
-        --at-brand-avatar-size: 1.5rem;
-        {%- render 'menu-font-styles', settings: block_settings -%}
-      "
+    <div
+      class="header-menu{{ color_scheme_classes }}"
       {{ block.shopify_attributes }}
     >
-      {%- comment -%} ── Desktop nav bar ── {%- endcomment -%}
-      <nav
-        class="at-menu__nav"
-        aria-label="{{ 'accessibility.header_navigation_label' | t }}"
-      >
-        {%- for link in menu_links -%}
-          {%- liquid
-            assign is_brands = false
-            if link.handle == brands_handle
-              assign is_brands = true
-            endif
-            assign is_highlight = false
-            if link.handle == highlight_handle
-              assign is_highlight = true
-            endif
-          -%}
-
-          {%- if is_brands and brands_link != blank -%}
-            {%- render 'at-menu-brands-panel',
-              brands_link: brands_link,
-              categories_linklist: cats_ll,
-              section: block
+      <div class="header-menu__inner">
+        <nav
+          class="at-menu__nav"
+          aria-label="{{ 'accessibility.header_navigation_label' | t }}"
+          style="{%- render 'menu-font-styles', settings: block_settings -%}"
+        >
+          {%- for link in menu_links -%}
+            {%- liquid
+              assign is_brands = false
+              if link.handle == brands_handle
+                assign is_brands = true
+              endif
+              assign is_highlight = false
+              if link.handle == highlight_handle
+                assign is_highlight = true
+              endif
             -%}
 
-          {%- elsif link.links != blank -%}
-            {%- assign submenu_id = 'at-submenu-' | append: link.handle -%}
-            <div class="at-menu__nav-item">
-              <button
-                class="at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
-                aria-expanded="false"
-                aria-controls="{{ submenu_id }}"
-                aria-haspopup="true"
+            {%- if is_brands and brands_link != blank -%}
+              {%- render 'at-menu-brands-panel',
+                brands_link: brands_link,
+                categories_linklist: cats_ll,
+                section: block
+              -%}
+
+            {%- elsif link.links != blank -%}
+              {%- assign submenu_id = 'at-submenu-' | append: link.handle -%}
+              <div
+                class="menu-list__list-item at-menu__nav-item"
+                on:pointerenter="/activate"
+                on:pointerleave="/deactivate"
+                on:focus="/activate"
+                on:blur="/deactivate"
               >
-                {{- link.title -}}
-                <span class="at-menu__nav-link-chevron" aria-hidden="true">
-                  {%- render 'icon', icon: 'chevron-down', size: '0.75rem' -%}
-                </span>
-              </button>
-              <div id="{{ submenu_id }}" class="at-menu__submenu" hidden>
-                <ul class="at-menu__submenu-list" role="list">
-                  {%- for sub in link.links -%}
-                    <li>
-                      <a
-                        href="{{ sub.url }}"
-                        class="at-menu__submenu-link"
-                        {% if sub.current %}aria-current="page"{% endif %}
-                      >
-                        {{- sub.title -}}
-                      </a>
-                    </li>
-                  {%- endfor -%}
-                </ul>
+                <a
+                  href="{{ link.url }}"
+                  class="menu-list__link at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
+                  aria-expanded="false"
+                  aria-controls="{{ submenu_id }}"
+                  aria-haspopup="true"
+                  {% if link.current %}aria-current="page"{% endif %}
+                >
+                  <span class="menu-list__link-title">{{- link.title -}}</span>
+                </a>
+                <div class="menu-list__submenu{{ color_scheme_classes }}" ref="submenu[]">
+                  <div id="{{ submenu_id }}" class="menu-list__submenu-inner"
+                    style="{%- render 'submenu-font-styles', settings: block_settings -%}">
+                    <div class="mega-menu section section--full-width-margin section--{{ section.settings.section_width }}">
+                      <div class="mega-menu__grid">
+                        {%- render 'mega-menu-list',
+                          parent_link: link,
+                          id: submenu_id,
+                          section: section,
+                          grid_columns_count: 6,
+                          grid_columns_count_tablet: 4,
+                          grid_columns_count_collection_images: 8,
+                          menu_content_type: 'text',
+                          image_border_radius: block_settings.at_brand_image_border_radius
+                        -%}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
 
-          {%- else -%}
-            <a
-              href="{{ link.url }}"
-              class="at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
-              {% if link.current %}aria-current="page"{% endif %}
-            >
-              {{- link.title -}}
-            </a>
-          {%- endif -%}
-        {%- endfor -%}
-      </nav>
-
-      {%- comment -%} ── Mobile hamburger trigger ── {%- endcomment -%}
-      <div class="at-menu__mobile-bar">
-        <button
-          ref="toggleBtn"
-          type="button"
-          class="at-menu__mobile-toggle"
-          aria-label="{{ 'accessibility.menu' | t | default: 'Open navigation' }}"
-          aria-expanded="false"
-          aria-controls="at-drawer-block"
-          on:click="/toggleDrawer"
-        >
-          <span class="svg-wrapper at-menu__mobile-icon--open">
-            {{- 'icon-menu.svg' | inline_asset_content -}}
-          </span>
-          <span class="svg-wrapper at-menu__mobile-icon--close" style="display:none;">
-            {{- 'icon-close.svg' | inline_asset_content -}}
-          </span>
-        </button>
-        {%- if block_settings.at_mobile_drawer_label != blank -%}
-          <span class="at-menu__mobile-label" aria-hidden="true">
-            {{- block_settings.at_mobile_drawer_label -}}
-          </span>
-        {%- endif -%}
-      </div>
-
-      {%- comment -%} Screen overlay {%- endcomment -%}
-      <div
-        ref="overlay"
-        class="at-drawer-overlay"
-        aria-hidden="true"
-        on:click="/closeDrawer"
-      ></div>
-
-      {%- comment -%} Mobile drawer — rendered inline in the desktop block to share the component scope {%- endcomment -%}
-      <div
-        ref="drawer"
-        id="at-drawer-block"
-        class="drawer"
-        data-open="false"
-        style="z-index: var(--layer-menu-drawer);"
-      >
-        {%- if brands_link != nil -%}
-          {%- render 'at-menu-mobile-drawer',
-            section: block,
-            menu_links: menu_links,
-            brands_link: brands_link,
-            brands_item_handle: brands_handle,
-            highlight_handle: highlight_handle,
-            mobile_drawer_label: block_settings.at_mobile_drawer_label
-          -%}
-        {%- else -%}
-          <nav
-            class="at-drawer at-drawer--plain"
-            aria-label="{{ 'accessibility.header_navigation_label' | t }}"
-          >
-            <div class="at-drawer__header">
-              <h2 class="at-drawer__title">{{- block_settings.at_mobile_drawer_label | default: 'Menu' -}}</h2>
-              <button
-                type="button"
-                class="at-drawer__close-btn"
-                aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
-                on:click="/closeDrawer"
+            {%- else -%}
+              <a
+                href="{{ link.url }}"
+                class="menu-list__link at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
+                {% if link.current %}aria-current="page"{% endif %}
               >
-                <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
-              </button>
-            </div>
-            <ul class="at-drawer__cat-list" role="list">
-              {%- for link in menu_links -%}
-                <li>
-                  <a
-                    href="{{ link.url }}"
-                    class="at-drawer__cat-item{% if link.handle == highlight_handle %} at-drawer__cat-item--highlight{% endif %}"
-                    {% if link.current %}aria-current="page"{% endif %}
-                  >
-                    {{- link.title -}}
-                  </a>
-                </li>
-              {%- endfor -%}
-            </ul>
-          </nav>
-        {%- endif -%}
+                <span class="menu-list__link-title">{{- link.title -}}</span>
+              </a>
+            {%- endif -%}
+          {%- endfor -%}
+        </nav>
       </div>
-
-    </at-menu-component>
+    </div>
 
 {% endcase %}
 
@@ -367,12 +330,6 @@
     {
       "type": "header",
       "content": "t:content.mobile_layout"
-    },
-    {
-      "type": "text",
-      "id": "at_mobile_drawer_label",
-      "label": "t:settings.at_mobile_drawer_label",
-      "default": "Shop"
     },
     {
       "type": "checkbox",

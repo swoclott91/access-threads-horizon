@@ -1,45 +1,39 @@
 {%- doc -%}
-  Renders the desktop Brands mega-menu panel for the AT Menu section.
+  Renders the desktop Brands mega-menu panel for the AT Menu block.
 
-  This snippet is called from sections/at-menu.liquid for the navigation item
-  whose handle matches section.settings.at_brands_item_handle.
+  When a dedicated `categories_linklist` is configured the panel shows a left
+  category sidebar + right brand grid.  When no categories menu is set the
+  sidebar is hidden and the panel renders a clean full-width brand grid.
 
-  Renders an <at-brands-panel> custom element containing:
-    - A trigger button (nav link)
-    - A full-width dropdown with a left category rail and a right brand grid
-
-  Brand icon resolution order (controlled by section.settings.at_brand_icon_source):
-    1. "auto"                — metafield custom.brand.icon → collection featured_image → initials
-    2. "collection_image_only" — collection featured_image → initials
-    3. "initials_only"         — initials only
-
-  @param {object} brands_link        - The Shopify link object for the Brands nav item.
-  @param {object} categories_linklist - Optional linklist for the category sidebar. If blank, falls back to brands_link.links.
-  @param {object} section             - The section object.
+  @param {object} brands_link          - The Shopify link object for the Brands nav item.
+  @param {object} [categories_linklist] - Optional linklist for the category sidebar.
+  @param {object} section               - The block object (used for settings).
 
   @example
   {% render 'at-menu-brands-panel',
-    brands_link: link,
-    categories_linklist: linklists[section.settings.at_categories_menu],
-    section: section
+    brands_link: brands_link,
+    categories_linklist: linklists[block_settings.at_categories_menu],
+    section: block
   %}
 {%- enddoc -%}
 
 {%- liquid
-  assign icon_source = section.settings.at_brand_icon_source | default: 'auto'
-  assign show_search = section.settings.at_show_brand_search
-  assign cols        = section.settings.at_brands_panel_columns | default: 4
-  assign img_radius  = section.settings.at_brand_image_border_radius | default: 4
-  assign brand_total = brands_link.links.size | default: 0
+  assign block_settings = section.settings
+  assign icon_source    = block_settings.at_brand_icon_source | default: 'auto'
+  assign show_search    = block_settings.at_show_brand_search
+  assign cols           = block_settings.at_brands_panel_columns | default: 4
+  assign img_radius     = block_settings.at_brand_image_border_radius | default: 4
+  assign brand_total    = brands_link.links.size | default: 0
 
-  # Use the dedicated categories menu if set, otherwise fall back to brands sub-items
+  # Only use the categories sidebar when a dedicated linklist is provided.
+  # Falling back to brands sub-items causes every brand to appear as a
+  # sidebar category — which breaks the grid layout.
+  assign has_categories = false
   if categories_linklist != blank and categories_linklist.links.size > 0
     assign category_links = categories_linklist.links
-  else
-    assign category_links = brands_link.links
+    assign has_categories = true
   endif
 
-  # The panel id needs to be unique per nav item
   assign panel_id = 'at-brands-dropdown-' | append: brands_link.handle
 -%}
 
@@ -47,16 +41,16 @@
   class="at-brands-panel"
   on:pointerenter="/open"
 >
-  {%- comment -%} ── Trigger button ── {%- endcomment -%}
+  {%- comment -%} ── Trigger ── {%- endcomment -%}
   <button
     ref="trigger"
-    class="at-menu__nav-link"
+    class="menu-list__link at-menu__nav-link"
     aria-expanded="false"
     aria-controls="{{ panel_id }}"
     aria-haspopup="true"
     on:click="/open"
   >
-    <span>{{- brands_link.title -}}</span>
+    <span class="menu-list__link-title">{{- brands_link.title -}}</span>
     <span class="at-menu__nav-link-chevron svg-wrapper" aria-hidden="true">
       {{- 'icon-chevron-right.svg' | inline_asset_content -}}
     </span>
@@ -69,54 +63,42 @@
     class="at-brands-panel__dropdown"
     hidden
   >
-    {%- comment -%} ── Left: category sidebar ── {%- endcomment -%}
-    <div class="at-brands-panel__sidebar" role="navigation" aria-label="{{ 'accessibility.header_navigation_label' | t }}">
-      <ul class="list-unstyled" role="list">
-        {%- for cat_link in category_links -%}
-          {%- liquid
-            assign is_brands_cat = false
-            if cat_link.type == 'collection_link' or cat_link.handle == section.settings.at_brands_item_handle
-              assign is_brands_cat = true
-            endif
-            assign cat_key = cat_link.handle
-          -%}
-          <li>
-            <button
-              class="at-brands-panel__cat-btn{% if forloop.first %} at-brands-panel__cat-btn--active{% endif %}"
-              data-cat="{{ cat_key }}"
-              on:click="/switchCategory"
-              on:mouseenter="/switchCategory"
-              aria-pressed="{{ forloop.first }}"
-              type="button"
-            >
-              <span>{{- cat_link.title -}}</span>
-              {%- unless is_brands_cat or cat_link.links == blank -%}
-                <span class="at-brands-panel__cat-chevron svg-wrapper" aria-hidden="true">
-                  {{- 'icon-chevron-right.svg' | inline_asset_content -}}
-                </span>
-              {%- endunless -%}
-            </button>
-          </li>
-        {%- endfor -%}
-      </ul>
-    </div>
+    {%- if has_categories -%}
+      {%- comment -%} ── Left: category sidebar (only when a categories menu is set) ── {%- endcomment -%}
+      <div class="at-brands-panel__sidebar" role="navigation" aria-label="{{ 'accessibility.header_navigation_label' | t }}">
+        <ul class="list-unstyled" role="list">
+          {%- for cat_link in category_links -%}
+            <li>
+              <button
+                class="at-brands-panel__cat-btn{% if forloop.first %} at-brands-panel__cat-btn--active{% endif %}"
+                data-cat="{{ cat_link.handle }}"
+                on:click="/switchCategory"
+                on:mouseenter="/switchCategory"
+                aria-pressed="{{ forloop.first }}"
+                type="button"
+              >
+                <span>{{- cat_link.title -}}</span>
+                {%- unless cat_link.links == blank -%}
+                  <span class="at-brands-panel__cat-chevron svg-wrapper" aria-hidden="true">
+                    {{- 'icon-chevron-right.svg' | inline_asset_content -}}
+                  </span>
+                {%- endunless -%}
+              </button>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    {%- endif -%}
 
     {%- comment -%} ── Right: content area ── {%- endcomment -%}
-    <div class="at-brands-panel__content">
+    <div class="at-brands-panel__content{% unless has_categories %} at-brands-panel__content--full{% endunless %}">
 
-      {%- comment -%}
-        Content panel for each category.
-        The first one (Brands) is shown; others are hidden by default.
-        JS switches visibility when a category button is activated.
-      {%- endcomment -%}
-
-      {%- comment -%} ── Brands content panel ── {%- endcomment -%}
+      {%- comment -%} ── Brands content panel (always visible when no sidebar) ── {%- endcomment -%}
       <div
         class="at-brands-panel__cat-content"
         data-cat="{{ brands_link.handle }}"
-        style="display:contents;"
       >
-        {%- comment -%} Panel header with heading + optional search {%- endcomment -%}
+        {%- comment -%} Header row: heading + optional search + count {%- endcomment -%}
         <div class="at-brands-panel__content-header">
           <h2 class="at-brands-panel__heading">{{ brands_link.title }}</h2>
 
@@ -169,18 +151,13 @@
           role="list"
           aria-label="{{ brands_link.title }}"
         >
-          <div
-            class="at-brands-panel__grid"
-            style="--at-brands-cols: {{ cols }};"
-          >
+          <div class="at-brands-panel__grid" style="--at-brands-cols: {{ cols }};">
             {%- for brand_link in brands_link.links -%}
               {%- liquid
-                # ── Icon resolution ──────────────────────────────────────────
                 assign brand_icon = blank
 
                 unless icon_source == 'initials_only'
                   if icon_source == 'auto'
-                    # Try metafield custom.brand → .icon first
                     assign brand_mobj = brand_link.object.metafields.custom.brand.value
                     if brand_mobj != blank
                       assign raw_icon = brand_mobj.icon
@@ -190,7 +167,6 @@
                     endif
                   endif
 
-                  # Fall back to collection featured image
                   if brand_icon == blank
                     assign coll_img = brand_link.object.featured_image
                     if coll_img != blank
@@ -206,7 +182,6 @@
                 role="listitem"
                 {% if brand_link.current %}aria-current="page"{% endif %}
               >
-                {%- comment -%} Avatar {%- endcomment -%}
                 <span
                   class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
                   style="--at-brand-avatar-radius: {{ img_radius }}px;"
@@ -223,7 +198,6 @@
                     {{- brand_link.title | slice: 0, 2 | upcase -}}
                   {%- endif -%}
                 </span>
-
                 <span class="at-brands-panel__brand-name">{{- brand_link.title -}}</span>
               </a>
             {%- else -%}
@@ -236,19 +210,17 @@
         {%- if brands_link.url != blank -%}
           <div class="at-brands-panel__footer">
             <a href="{{ brands_link.url }}" class="at-brands-panel__view-all">
-              View all {{ brand_total }} brand{{ brand_total | minus: 1 | abs | ceil | at_most: 1 | times: 0 | prepend: 's' }} &rarr;
+              View all {{ brand_total }} brands &rarr;
             </a>
           </div>
         {%- endif -%}
       </div>
 
       {%- comment -%}
-        Placeholder panels for non-brand categories.
-        These are rendered server-side but kept hidden; JS shows them on category click.
+        Placeholder panels for each category (only rendered when sidebar is present).
       {%- endcomment -%}
-
-      {%- for cat_link in category_links -%}
-        {%- unless cat_link.handle == brands_link.handle -%}
+      {%- if has_categories -%}
+        {%- for cat_link in category_links -%}
           <div
             class="at-brands-panel__cat-content at-brands-panel__placeholder"
             data-cat="{{ cat_link.handle }}"
@@ -262,9 +234,9 @@
               View {{ cat_link.title }}
             </a>
           </div>
-        {%- endunless -%}
-      {%- endfor -%}
+        {%- endfor -%}
+      {%- endif -%}
 
-    </div>{%- comment -%} /.at-brands-panel__content {%- endcomment -%}
-  </div>{%- comment -%} /.at-brands-panel__dropdown {%- endcomment -%}
+    </div>
+  </div>
 </at-brands-panel>

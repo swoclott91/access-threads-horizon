@@ -20,41 +20,6 @@
   position: relative;
 }
 
-/* Mobile-only bar that holds the hamburger trigger */
-.at-menu__mobile-bar {
-  display: flex;
-  align-items: center;
-  min-height: var(--minimum-touch-target);
-  padding-inline: var(--padding-sm);
-
-  @media screen and (min-width: 750px) {
-    display: none;
-  }
-}
-
-.at-menu__mobile-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--minimum-touch-target);
-  height: var(--minimum-touch-target);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: currentcolor;
-  padding: 0;
-
-  svg {
-    display: block;
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-}
-
-.at-menu__mobile-icon--close {
-  display: none;
-}
-
 /* =============================================================================
    Desktop nav bar
    ============================================================================= */
@@ -197,6 +162,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* Full-width variant: no sidebar present */
+.at-brands-panel__content--full {
+  flex: 1;
 }
 
 .at-brands-panel__content-header {
@@ -672,22 +642,6 @@
   text-align: center;
   font-size: var(--font-size--small);
   opacity: 0.55;
-}
-
-/* Screen-overlay when drawer is open */
-.at-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 0.4);
-  z-index: calc(var(--layer-menu-drawer) - 1);
-  opacity: 0;
-  transition: opacity var(--animation-speed) var(--animation-easing);
-  pointer-events: none;
-}
-
-.at-drawer-overlay[data-open] {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 /* =============================================================================
