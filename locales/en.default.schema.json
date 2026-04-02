@@ -96,6 +96,8 @@
     "mobile_media_2": "Mobile media 2",
     // Section header for navigation menu settings in theme editor
     "menu": "Menu",
+    "at_brands_panel": "Brands panel",
+    "at_navigation": "Navigation",
     "mobile_column_optimization": "Columns will automatically optimize for mobile",
     "mobile_layout": "Mobile layout",
     "mobile_size": "Mobile size",
@@ -234,7 +236,10 @@
     "video_external": "Use a YouTube or Vimeo URL",
     "pills_usage": "Used for applied filters, discount codes, and search suggestions",
     "media_type_info": "Features are populated from your menu links",
-    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set."
+    "icon_link_collection_or_url": "Connect a collection (including from a metaobject) here, or use Link for a custom URL. Collection is used when both are set.",
+    "at_brands_item_handle": "The handle of the top-level navigation link that triggers the brands mega menu (e.g., \"brands\")",
+    "at_categories_menu": "Optional separate navigation menu for the left sidebar. If blank, the brands link's sub-items are used.",
+    "at_highlight_handle": "The handle of the navigation link to display in the accent color (e.g., \"sale\")"
   },
   "names": {
     "column": "Column",
@@ -249,6 +254,8 @@
     "animations": "Animations",
     "announcement": "Announcement",
     "announcement_bar": "Announcement bar",
+    // AT custom section name for the brands mega-menu navigation
+    "at_menu": "AT Menu",
     "badges": "Badges",
     "blog": "Blog",
     "blog_card": "Blog card",
@@ -607,6 +614,9 @@
     "next_to_carousel": "Next to carousel",
     "none": "None",
     "normal": "Normal",
+    "at_brand_icon_auto": "Auto (metafield → image → initials)",
+    "at_collection_image_only": "Collection image only",
+    "at_initials_only": "Initials only",
     "nowrap": "No wrap",
     "numbers": "Numbers",
     "nut_free": "Nut free",
@@ -1175,7 +1185,17 @@
     "cs_slider_inner_color": "Slider inner color",
     "text_on_images": "Text on images",
     "x_position": "Horizontal position",
-    "y_position": "Vertical position"
+    "y_position": "Vertical position",
+    "at_brands_item_handle": "Brands item handle",
+    "at_categories_menu": "Categories sidebar menu",
+    "at_highlight_handle": "Highlighted link handle",
+    "at_brand_icon_source": "Brand icon source",
+    "at_show_brand_search": "Show brand search",
+    "at_brands_panel_columns": "Desktop columns",
+    "at_brands_mobile_columns": "Mobile columns",
+    "at_brand_image_border_radius": "Icon border radius",
+    "at_mobile_drawer_label": "Drawer heading",
+    "at_mobile_navigation_bar": "Show mobile navigation bar"
   },
   "text_defaults": {
     "accordion_heading": "Accordion heading",

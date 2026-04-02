@@ -1,0 +1,327 @@
+{%- doc -%}
+  Renders the mobile slide-in drawer for the AT Menu section.
+
+  The drawer has two views controlled by the <at-menu-drawer> custom element:
+    1. "categories" — flat list of top-level nav links. Tapping the brands item
+       drills into the brands view.
+    2. "brands"     — back button + search + A-Z grouped brand grid + alphabet bar.
+
+  Extends .drawer from base.css (transform, position, z-index already handled there).
+
+  @param {object}  section                 - The section object.
+  @param {object}  menu_links              - Array of top-level navigation links.
+  @param {object}  brands_link             - The specific link object for the Brands item.
+  @param {string}  brands_item_handle      - Handle used to identify the brands nav item.
+  @param {string}  highlight_handle        - Handle of the link to display in accent color.
+  @param {string}  mobile_drawer_label     - Heading shown in the categories view.
+
+  @example
+  {% render 'at-menu-mobile-drawer',
+    section: section,
+    menu_links: linklists[section.settings.menu].links,
+    brands_link: brands_link,
+    brands_item_handle: section.settings.at_brands_item_handle,
+    highlight_handle: section.settings.at_highlight_handle,
+    mobile_drawer_label: section.settings.at_mobile_drawer_label
+  %}
+{%- enddoc -%}
+
+{%- liquid
+  assign icon_source    = section.settings.at_brand_icon_source | default: 'auto'
+  assign show_search    = section.settings.at_show_brand_search
+  assign mobile_cols    = section.settings.at_brands_mobile_columns | default: 2
+  assign img_radius     = section.settings.at_brand_image_border_radius | default: 4
+  assign drawer_heading = mobile_drawer_label | default: 'Shop'
+  assign brand_total    = brands_link.links.size | default: 0
+
+  # Build alphabet array from brand links (unique first-letters that exist)
+  assign all_letters = ''
+  for brand_link in brands_link.links
+    assign letter = brand_link.title | upcase | slice: 0, 1
+    unless all_letters contains letter
+      assign all_letters = all_letters | append: letter | append: ','
+    endunless
+  endfor
+  assign alpha_letters = all_letters | split: ','
+-%}
+
+<at-menu-drawer class="at-drawer drawer" role="dialog" aria-modal="true" aria-label="{{ drawer_heading | escape }}" tabindex="-1">
+
+  {%- comment -%} ═══════════════════════════════════════════════════════════
+    VIEW 1 — Categories
+  ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
+  <div ref="categoriesView" class="at-drawer__view at-drawer__view--categories">
+
+    <div class="at-drawer__header">
+      <h2 class="at-drawer__title">{{- drawer_heading | escape -}}</h2>
+      <button
+        type="button"
+        class="at-drawer__close-btn"
+        aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
+        on:click="at-menu-component/closeDrawer"
+      >
+        {%- render 'icon', icon: 'close', size: '1.25rem' -%}
+      </button>
+    </div>
+
+    <nav class="at-drawer__body" aria-label="{{ drawer_heading | escape }}">
+      <ul class="at-drawer__cat-list" role="list">
+        {%- for link in menu_links -%}
+          {%- liquid
+            assign is_brands = false
+            if link.handle == brands_item_handle
+              assign is_brands = true
+            endif
+            assign is_highlight = false
+            if link.handle == highlight_handle
+              assign is_highlight = true
+            endif
+          -%}
+          <li>
+            {%- if is_brands -%}
+              {%- comment -%} Brands — shows drill-down view on tap {%- endcomment -%}
+              <button
+                type="button"
+                class="at-drawer__cat-item{% if is_highlight %} at-drawer__cat-item--highlight{% endif %}"
+                on:click="/showBrands"
+                aria-controls="at-drawer-brands-view"
+              >
+                <span class="at-drawer__cat-icon" aria-hidden="true">
+                  {%- render 'icon', icon: 'tag', size: '1rem' -%}
+                </span>
+                <span>{{- link.title -}}</span>
+                <span class="at-drawer__cat-chevron" aria-hidden="true">
+                  {%- render 'icon', icon: 'chevron-right', size: '0.875rem' -%}
+                </span>
+              </button>
+
+            {%- elsif link.links != blank -%}
+              {%- comment -%} Standard link with sub-items — plain details/summary accordion {%- endcomment -%}
+              <details class="at-drawer__accordion">
+                <summary
+                  class="at-drawer__cat-item{% if is_highlight %} at-drawer__cat-item--highlight{% endif %}"
+                >
+                  {%- if link.type == 'collection_link' or link.type == 'catalog_link' -%}
+                    <span class="at-drawer__cat-icon" aria-hidden="true">
+                      {%- render 'icon', icon: 'collection', size: '1rem' -%}
+                    </span>
+                  {%- endif -%}
+                  <span>{{- link.title -}}</span>
+                  <span class="at-drawer__cat-chevron at-drawer__accordion-chevron" aria-hidden="true">
+                    {%- render 'icon', icon: 'chevron-right', size: '0.875rem' -%}
+                  </span>
+                </summary>
+                <ul class="at-drawer__sub-list" role="list">
+                  {%- for sub_link in link.links -%}
+                    <li>
+                      <a
+                        href="{{ sub_link.url }}"
+                        class="at-drawer__sub-item"
+                        {% if sub_link.current %}aria-current="page"{% endif %}
+                      >
+                        {{- sub_link.title -}}
+                      </a>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              </details>
+
+            {%- else -%}
+              {%- comment -%} Plain link {%- endcomment -%}
+              <a
+                href="{{ link.url }}"
+                class="at-drawer__cat-item{% if is_highlight %} at-drawer__cat-item--highlight{% endif %}"
+                {% if link.current %}aria-current="page"{% endif %}
+              >
+                <span>{{- link.title -}}</span>
+              </a>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+      </ul>
+    </nav>
+
+  </div>
+
+  {%- comment -%} ═══════════════════════════════════════════════════════════
+    VIEW 2 — Brands drill-down
+  ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
+  <div
+    id="at-drawer-brands-view"
+    ref="brandsView"
+    class="at-drawer__view at-drawer__view--brands"
+    hidden
+  >
+
+    <div class="at-drawer__header">
+      <button
+        type="button"
+        class="at-drawer__back-btn"
+        aria-label="{{ 'actions.back' | t | default: 'Back' }}"
+        on:click="/showCategories"
+      >
+        {%- render 'icon', icon: 'chevron-left', size: '1.25rem' -%}
+      </button>
+      <h2 class="at-drawer__title">{{- brands_link.title -}}</h2>
+      <button
+        type="button"
+        class="at-drawer__close-btn"
+        aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
+        on:click="at-menu-component/closeDrawer"
+      >
+        {%- render 'icon', icon: 'close', size: '1.25rem' -%}
+      </button>
+    </div>
+
+    {%- if show_search -%}
+      <div class="at-drawer__search-wrapper" role="search">
+        <span class="at-drawer__search-icon" aria-hidden="true">
+          {%- render 'icon', icon: 'search', size: '0.875rem' -%}
+        </span>
+        <label for="at-drawer-search" class="visually-hidden">
+          {{ 'content.search' | t | default: 'Search brands' }}
+          </label>
+          <input
+            ref="searchInput"
+            id="at-drawer-search"
+            type="search"
+            class="at-drawer__search"
+            placeholder="{{ 'placeholders.search' | t | default: 'Search brands…' }}"
+            autocomplete="off"
+            on:input="/filterBrands"
+            aria-controls="at-drawer-brands-list"
+            aria-label="{{ 'content.search' | t | default: 'Search brands' }}"
+        >
+        <button
+          ref="searchClear"
+          type="button"
+          class="at-drawer__search-clear"
+          aria-label="{{ 'actions.clear' | t | default: 'Clear' }}"
+          on:click="/clearSearch"
+          hidden
+        >
+          {%- render 'icon', icon: 'close', size: '0.75rem' -%}
+        </button>
+      </div>
+    {%- endif -%}
+
+    <span
+      ref="countBadge"
+      class="at-drawer__brand-count"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      {{- brand_total -}}
+    </span>
+
+    {%- comment -%} ── A-Z grouped brand list ── {%- endcomment -%}
+    <div
+      class="at-drawer__body"
+      id="at-drawer-brands-list"
+      role="list"
+      aria-label="{{ brands_link.title }}"
+      style="--at-brands-mobile-cols: {{ mobile_cols }};"
+    >
+
+      {%- comment -%}
+        Two-pass render: loop letters first, then brands per letter.
+        This keeps opening/closing HTML tags within the same Liquid branch.
+      {%- endcomment -%}
+
+      {%- if brands_link.links == blank -%}
+        <p class="at-drawer__empty">No brands found.</p>
+      {%- else -%}
+        {%- for letter in alpha_letters -%}
+          {%- if letter != blank -%}
+            <div
+              class="at-drawer__letter-section"
+              id="at-letter-{{ letter }}"
+              role="listitem"
+            >
+              <div class="at-drawer__letter-header" aria-hidden="true">{{- letter -}}</div>
+              <div class="at-drawer__brand-grid">
+                {%- for brand_link in brands_link.links -%}
+                  {%- assign brand_first_letter = brand_link.title | upcase | slice: 0, 1 -%}
+                  {%- if brand_first_letter == letter -%}
+                    {%- liquid
+                      assign brand_icon = blank
+
+                      unless icon_source == 'initials_only'
+                        if icon_source == 'auto'
+                          assign brand_mobj = brand_link.object.metafields.custom.brand.value
+                          if brand_mobj != blank
+                            assign raw_icon = brand_mobj.icon
+                            if raw_icon != blank
+                              assign brand_icon = raw_icon
+                            endif
+                          endif
+                        endif
+
+                        if brand_icon == blank
+                          assign coll_img = brand_link.object.featured_image
+                          if coll_img != blank
+                            assign brand_icon = coll_img
+                          endif
+                        endif
+                      endunless
+                    -%}
+                    <a
+                      href="{{ brand_link.url }}"
+                      class="at-drawer__brand-item"
+                      data-brand-name="{{ brand_link.title | escape }}"
+                      {% if brand_link.current %}aria-current="page"{% endif %}
+                    >
+                      <span
+                        class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
+                        style="--at-brand-avatar-radius: {{ img_radius }}px;"
+                        aria-hidden="true"
+                        data-brand-name="{{ brand_link.title | escape }}"
+                      >
+                        {%- if brand_icon != blank -%}
+                          {{-
+                            brand_icon
+                            | image_url: width: 48, height: 48, crop: 'center'
+                            | image_tag: alt: '', loading: 'lazy', width: 24, height: 24
+                          -}}
+                        {%- else -%}
+                          {{- brand_link.title | slice: 0, 2 | upcase -}}
+                        {%- endif -%}
+                      </span>
+                      <span class="at-drawer__brand-name">{{- brand_link.title -}}</span>
+                    </a>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+            </div>
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+
+    </div>{%- comment -%} /.at-drawer__body {%- endcomment -%}
+
+    {%- comment -%} ── Pinned alphabet quick-jump bar ── {%- endcomment -%}
+    {%- if alpha_letters.size > 0 -%}
+      <nav
+        ref="alphaBar"
+        class="at-drawer__alpha-bar"
+        aria-label="{{ 'accessibility.skip_to_results_list' | t | default: 'Jump to letter' }}"
+      >
+        {%- for letter in alpha_letters -%}
+          {%- if letter != blank -%}
+            <button
+              type="button"
+              class="at-drawer__alpha-btn"
+              data-letter="{{ letter }}"
+              aria-label="{{ letter }}"
+              on:click="/scrollToLetter"
+            >
+              {{- letter -}}
+            </button>
+          {%- endif -%}
+        {%- endfor -%}
+      </nav>
+    {%- endif -%}
+
+  </div>{%- comment -%} /.at-drawer__view--brands {%- endcomment -%}
+
+</at-menu-drawer>
