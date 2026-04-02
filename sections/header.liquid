@@ -57,6 +57,21 @@
     content_for 'block', type: '_header-menu', id: 'header-menu', variant: 'navigation_bar', transparent: transparent
   endcapture
 
+  {%- comment -%} AT CUSTOM: If an at-menu block is present, use it in place of _header-menu {%- endcomment -%}
+  capture at_menu_capture
+    content_for 'block', type: 'at-menu', id: 'at-menu'
+  endcapture
+  if at_menu_capture != blank
+    assign menu = at_menu_capture
+    capture drawer_menu
+      content_for 'block', type: 'at-menu', id: 'at-menu', variant: 'mobile'
+    endcapture
+    capture navigation_bar
+      content_for 'block', type: 'at-menu', id: 'at-menu', variant: 'navigation_bar', transparent: transparent
+    endcapture
+  endif
+  {%- comment -%} /AT CUSTOM {%- endcomment -%}
+
   capture actions
     render 'header-actions', customer_account_menu: section.settings.customer_account_menu, display_style: section.settings.actions_display_style, section: section
   endcapture
@@ -1641,6 +1656,14 @@
       "visible_if": "{{ section.settings.enable_transparent_header_collection }}"
     }
   ],
-  "presets": []
+  "presets": [],
+  "blocks": [
+    { "type": "_header-logo" },
+    { "type": "_header-menu" },
+    {
+      "type": "at-menu",
+      "name": "AT Menu"
+    }
+  ]
 }
 {% endschema %}

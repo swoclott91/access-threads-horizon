@@ -60,7 +60,7 @@
         aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
         on:click="at-menu-component/closeDrawer"
       >
-        {%- render 'icon', icon: 'close', size: '1.25rem' -%}
+        <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
       </button>
     </div>
 
@@ -86,12 +86,9 @@
                 on:click="/showBrands"
                 aria-controls="at-drawer-brands-view"
               >
-                <span class="at-drawer__cat-icon" aria-hidden="true">
-                  {%- render 'icon', icon: 'tag', size: '1rem' -%}
-                </span>
                 <span>{{- link.title -}}</span>
-                <span class="at-drawer__cat-chevron" aria-hidden="true">
-                  {%- render 'icon', icon: 'chevron-right', size: '0.875rem' -%}
+                <span class="at-drawer__cat-chevron svg-wrapper" aria-hidden="true">
+                  {{- 'icon-chevron-right.svg' | inline_asset_content -}}
                 </span>
               </button>
 
@@ -101,14 +98,9 @@
                 <summary
                   class="at-drawer__cat-item{% if is_highlight %} at-drawer__cat-item--highlight{% endif %}"
                 >
-                  {%- if link.type == 'collection_link' or link.type == 'catalog_link' -%}
-                    <span class="at-drawer__cat-icon" aria-hidden="true">
-                      {%- render 'icon', icon: 'collection', size: '1rem' -%}
-                    </span>
-                  {%- endif -%}
                   <span>{{- link.title -}}</span>
-                  <span class="at-drawer__cat-chevron at-drawer__accordion-chevron" aria-hidden="true">
-                    {%- render 'icon', icon: 'chevron-right', size: '0.875rem' -%}
+                  <span class="at-drawer__cat-chevron at-drawer__accordion-chevron svg-wrapper" aria-hidden="true">
+                    {{- 'icon-chevron-right.svg' | inline_asset_content -}}
                   </span>
                 </summary>
                 <ul class="at-drawer__sub-list" role="list">
@@ -160,7 +152,7 @@
         aria-label="{{ 'actions.back' | t | default: 'Back' }}"
         on:click="/showCategories"
       >
-        {%- render 'icon', icon: 'chevron-left', size: '1.25rem' -%}
+        <span class="svg-wrapper">{{- 'icon-chevron-left.svg' | inline_asset_content -}}</span>
       </button>
       <h2 class="at-drawer__title">{{- brands_link.title -}}</h2>
       <button
@@ -169,14 +161,14 @@
         aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
         on:click="at-menu-component/closeDrawer"
       >
-        {%- render 'icon', icon: 'close', size: '1.25rem' -%}
+        <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
       </button>
     </div>
 
     {%- if show_search -%}
       <div class="at-drawer__search-wrapper" role="search">
-        <span class="at-drawer__search-icon" aria-hidden="true">
-          {%- render 'icon', icon: 'search', size: '0.875rem' -%}
+        <span class="at-drawer__search-icon svg-wrapper" aria-hidden="true">
+          {{- 'icon-search.svg' | inline_asset_content -}}
         </span>
         <label for="at-drawer-search" class="visually-hidden">
           {{ 'content.search' | t | default: 'Search brands' }}
@@ -200,7 +192,7 @@
           on:click="/clearSearch"
           hidden
         >
-          {%- render 'icon', icon: 'close', size: '0.75rem' -%}
+          <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
         </button>
       </div>
     {%- endif -%}

@@ -1,10 +1,12 @@
 {%- comment -%}
-  AT CUSTOM — AT-Menu Section
-  Custom branded navigation section for Access Threads.
-  Provides a full-width desktop mega-menu with a Brands panel and a
-  slide-in mobile drawer. Adds no modifications to any upstream Horizon files.
+  AT CUSTOM — AT-Menu Section (legacy / standalone fallback)
+  ──────────────────────────────────────────────────────────
+  PREFERRED USAGE: Add the "AT Menu" BLOCK (blocks/at-menu.liquid, type: at-menu)
+  to the Header section so the nav renders in the same row as the logo.
 
-  Add this section to the Header group in the Shopify theme editor.
+  This standalone section renders the nav as a separate full-width section
+  below the header. It still works when added to the Header group, but the
+  block approach is required for logo-row integration.
 {%- endcomment -%}
 
 {%- liquid
@@ -130,7 +132,12 @@
       aria-controls="at-drawer-{{ section.id }}"
       on:click="/toggleDrawer"
     >
-      {%- render 'icon', icon: 'hamburger', size: '1.5rem' -%}
+      <span class="svg-wrapper at-menu__mobile-icon--open">
+        {{- 'icon-menu.svg' | inline_asset_content -}}
+      </span>
+      <span class="svg-wrapper at-menu__mobile-icon--close" style="display:none;">
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </span>
     </button>
     {%- if section.settings.at_mobile_drawer_label != blank -%}
       <span class="at-menu__mobile-label" aria-hidden="true">
@@ -178,7 +185,7 @@
             aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
             on:click="/closeDrawer"
           >
-            {%- render 'icon', icon: 'close', size: '1.25rem' -%}
+            <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
           </button>
         </div>
         <ul class="at-drawer__cat-list" role="list">

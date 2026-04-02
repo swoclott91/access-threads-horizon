@@ -53,11 +53,13 @@ class AtMenuComponent extends Component {
    * Open the mobile menu drawer.
    */
   openDrawer() {
-    const { drawer, overlay } = this.refs;
+    const { drawer, overlay, toggleBtn } = this.refs;
     if (!drawer) return;
 
     drawer.dataset.open = 'true';
     document.documentElement.setAttribute('scroll-lock', '');
+    toggleBtn?.setAttribute('aria-expanded', 'true');
+    this.#setToggleIcon(true);
 
     if (overlay) {
       overlay.dataset.open = '';
@@ -83,12 +85,25 @@ class AtMenuComponent extends Component {
 
     drawer.dataset.open = 'false';
     document.documentElement.removeAttribute('scroll-lock');
+    toggleBtn?.setAttribute('aria-expanded', 'false');
+    this.#setToggleIcon(false);
 
     if (overlay) {
       delete overlay.dataset.open;
     }
 
     toggleBtn?.focus();
+  }
+
+  /**
+   * Swap between the hamburger (open) and close icons on the toggle button.
+   * @param {boolean} isOpen
+   */
+  #setToggleIcon(isOpen) {
+    const openIcon = this.querySelector('.at-menu__mobile-icon--open');
+    const closeIcon = this.querySelector('.at-menu__mobile-icon--close');
+    if (openIcon instanceof HTMLElement) openIcon.style.display = isOpen ? 'none' : '';
+    if (closeIcon instanceof HTMLElement) closeIcon.style.display = isOpen ? '' : 'none';
   }
 
   /**
@@ -162,6 +177,9 @@ class AtBrandsPanel extends Component {
     const { trigger, panel } = this.refs;
     if (!panel || panel.hidden === false) return;
 
+    // Position the fixed-position panel below the header
+    this.#updatePanelTop();
+
     panel.removeAttribute('hidden');
     this.dataset.open = '';
     trigger?.setAttribute('aria-expanded', 'true');
@@ -211,6 +229,26 @@ class AtBrandsPanel extends Component {
     if (this.#closeTimer !== null) {
       clearTimeout(this.#closeTimer);
       this.#closeTimer = null;
+    }
+  }
+
+  /**
+   * Sets the --at-brands-panel-top CSS variable on the panel element
+   * to match the bottom edge of the nearest header element, so the
+   * fixed-position dropdown always sits directly below the header.
+   */
+  #updatePanelTop() {
+    const { panel } = this.refs;
+    if (!panel) return;
+    const header = document.querySelector('#header-component')
+      ?? document.querySelector('.header-section')
+      ?? document.querySelector('header');
+    if (header instanceof HTMLElement) {
+      const bottom = header.getBoundingClientRect().bottom;
+      const topPx = `${bottom}px`;
+      panel.style.setProperty('--at-brands-panel-top', topPx);
+      panel.style.top = topPx;
+      panel.style.maxHeight = `calc(80vh - ${topPx})`;
     }
   }
 

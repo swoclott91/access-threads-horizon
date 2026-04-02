@@ -57,8 +57,8 @@
     on:click="/open"
   >
     <span>{{- brands_link.title -}}</span>
-    <span class="at-menu__nav-link-chevron" aria-hidden="true">
-      {%- render 'icon', icon: 'chevron-right', size: '0.75rem' -%}
+    <span class="at-menu__nav-link-chevron svg-wrapper" aria-hidden="true">
+      {{- 'icon-chevron-right.svg' | inline_asset_content -}}
     </span>
   </button>
 
@@ -89,13 +89,10 @@
               aria-pressed="{{ forloop.first }}"
               type="button"
             >
-              <span class="at-brands-panel__cat-icon" aria-hidden="true">
-                {%- render 'icon', icon: 'tag', size: '1rem' -%}
-              </span>
               <span>{{- cat_link.title -}}</span>
               {%- unless is_brands_cat or cat_link.links == blank -%}
-                <span class="at-brands-panel__cat-chevron" aria-hidden="true">
-                  {%- render 'icon', icon: 'chevron-right', size: '0.75rem' -%}
+                <span class="at-brands-panel__cat-chevron svg-wrapper" aria-hidden="true">
+                  {{- 'icon-chevron-right.svg' | inline_asset_content -}}
                 </span>
               {%- endunless -%}
             </button>
@@ -125,8 +122,8 @@
 
           {%- if show_search -%}
             <div class="at-brands-panel__search-wrapper" role="search">
-              <span class="at-brands-panel__search-icon" aria-hidden="true">
-                {%- render 'icon', icon: 'search', size: '0.875rem' -%}
+              <span class="at-brands-panel__search-icon svg-wrapper" aria-hidden="true">
+                {{- 'icon-search.svg' | inline_asset_content -}}
               </span>
               <label for="at-brands-search" class="visually-hidden">
                 {{ 'content.search' | t | default: 'Search brands' }}
@@ -150,7 +147,7 @@
                 on:click="/clearSearch"
                 hidden
               >
-                {%- render 'icon', icon: 'close', size: '0.75rem' -%}
+                <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
               </button>
             </div>
           {%- endif -%}
@@ -257,8 +254,8 @@
             data-cat="{{ cat_link.handle }}"
             hidden
           >
-            <span class="at-brands-panel__placeholder-icon" aria-hidden="true">
-              {%- render 'icon', icon: 'tag', size: '2.5rem' -%}
+            <span class="at-brands-panel__placeholder-icon svg-wrapper" aria-hidden="true">
+              {{- 'icon-chevron-right.svg' | inline_asset_content -}}
             </span>
             <p>{{ cat_link.title }}</p>
             <a href="{{ cat_link.url }}" class="button button--secondary button--small">

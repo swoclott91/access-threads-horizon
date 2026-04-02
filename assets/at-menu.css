@@ -46,7 +46,13 @@
 
   svg {
     display: block;
+    width: 1.25rem;
+    height: 1.25rem;
   }
+}
+
+.at-menu__mobile-icon--close {
+  display: none;
 }
 
 /* =============================================================================
@@ -110,17 +116,22 @@
 }
 
 .at-brands-panel__dropdown {
-  --at-brands-panel-top: 100%;
-
-  position: absolute;
+  /*
+   * Use position:fixed so the panel always spans the full viewport width and
+   * is never clipped by a positioned ancestor inside the header.
+   * The `top` value is set in JS (AtBrandsPanel.open) to the header's bottom edge.
+   * Falls back to --at-brands-panel-top (a CSS var updated by JS) so the panel
+   * moves with a sticky header.
+   */
+  position: fixed;
   inset-inline: 0;
-  top: var(--at-brands-panel-top);
+  top: var(--at-brands-panel-top, 60px);
   z-index: var(--layer-header-menu);
   display: flex;
   background-color: var(--color-background);
   border-block-start: 2px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
   box-shadow: var(--shadow-popover, 0 4px 16px rgb(0 0 0 / 0.12));
-  max-height: calc(80vh - 2.5rem);
+  max-height: calc(80vh - var(--at-brands-panel-top, 60px));
   overflow: hidden;
 }
 
@@ -694,4 +705,40 @@
   .at-drawer-overlay {
     transition: none;
   }
+}
+
+/* =============================================================================
+   Inline SVG icon sizing
+   ============================================================================= */
+
+/* Standardise inline SVG icons used throughout the AT-Menu */
+.at-menu .svg-wrapper svg,
+.at-drawer .svg-wrapper svg,
+.at-brands-panel .svg-wrapper svg {
+  display: block;
+}
+
+.at-drawer__close-btn svg,
+.at-drawer__back-btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.at-drawer__cat-chevron svg,
+.at-brands-panel__cat-chevron svg,
+.at-menu__nav-link-chevron svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.at-drawer__search-icon svg,
+.at-brands-panel__search-icon svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.at-drawer__search-clear svg,
+.at-brands-panel__search-clear svg {
+  width: 0.75rem;
+  height: 0.75rem;
 }

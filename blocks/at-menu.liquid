@@ -1,0 +1,385 @@
+{%- comment -%}
+  AT CUSTOM — AT-Menu Block
+  Renders the Access Threads branded mega-menu as a header block so it sits in the
+  same row as the logo.  Handles three variants injected via content_for 'block':
+    – default (desktop nav bar with mega panel)
+    – mobile  (slide-in drawer injected into header drawer slot)
+    – navigation_bar (optional swipe-bar for small screens)
+
+  Usage: add this block to the Header section (type: at-menu, id: at-menu).
+  Then remove or leave the _header-menu block — the header section will prefer
+  this block's output when it is present.
+{%- endcomment -%}
+
+{%- liquid
+  assign block_settings    = block.settings
+  assign menu              = block_settings.menu
+  assign menu_links        = menu.links
+  assign brands_handle     = block_settings.at_brands_item_handle | default: 'brands'
+  assign highlight_handle  = block_settings.at_highlight_handle   | default: 'sale'
+  assign cats_ll           = linklists[block_settings.at_categories_menu]
+
+  assign brands_link = nil
+  for link in menu_links
+    if link.handle == brands_handle
+      assign brands_link = link
+    endif
+  endfor
+-%}
+
+{% case variant %}
+
+  {%- comment -%} ══════════════════════════════════════════════════
+    MOBILE variant — slide-in drawer rendered in the header drawer slot
+  ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+  {% when 'mobile' %}
+    <div
+      class="header__drawer at-menu-drawer-container"
+      ref="headerDrawerContainer"
+      {{ block.shopify_attributes }}
+    >
+      {%- render 'at-menu-mobile-drawer',
+        section: block,
+        menu_links: menu_links,
+        brands_link: brands_link,
+        brands_item_handle: brands_handle,
+        highlight_handle: highlight_handle,
+        mobile_drawer_label: block_settings.at_mobile_drawer_label
+      -%}
+    </div>
+
+  {%- comment -%} ══════════════════════════════════════════════════
+    NAVIGATION BAR variant — simple scroll-bar for small screens
+  ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+  {% when 'navigation_bar' %}
+    {%- if block_settings.at_mobile_navigation_bar -%}
+      <div
+        class="menu-list menu-list--mobile"
+        style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;"
+        {{ block.shopify_attributes }}
+      >
+        <div class="menu-list__scroll-container">
+          <ul class="menu-list__list list-unstyled" role="list">
+            {%- for link in menu_links -%}
+              <li>
+                <a
+                  href="{{ link.url }}"
+                  class="menu-list__item{% if link.handle == highlight_handle %} menu-list__item--highlight{% endif %}"
+                  {% if link.current %}aria-current="page"{% endif %}
+                >
+                  {{- link.title -}}
+                </a>
+              </li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      </div>
+    {%- endif -%}
+
+  {%- comment -%} ══════════════════════════════════════════════════
+    DEFAULT variant — desktop horizontal mega-menu nav bar
+    Rendered inline in the header's menu column (same row as logo).
+  ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+  {% else %}
+
+    <at-menu-component
+      class="at-menu color-{{ block_settings.color_scheme }}"
+      style="
+        --at-brand-avatar-size: 1.5rem;
+        {%- render 'menu-font-styles', settings: block_settings -%}
+      "
+      {{ block.shopify_attributes }}
+    >
+      {%- comment -%} ── Desktop nav bar ── {%- endcomment -%}
+      <nav
+        class="at-menu__nav"
+        aria-label="{{ 'accessibility.header_navigation_label' | t }}"
+      >
+        {%- for link in menu_links -%}
+          {%- liquid
+            assign is_brands = false
+            if link.handle == brands_handle
+              assign is_brands = true
+            endif
+            assign is_highlight = false
+            if link.handle == highlight_handle
+              assign is_highlight = true
+            endif
+          -%}
+
+          {%- if is_brands and brands_link != blank -%}
+            {%- render 'at-menu-brands-panel',
+              brands_link: brands_link,
+              categories_linklist: cats_ll,
+              section: block
+            -%}
+
+          {%- elsif link.links != blank -%}
+            {%- assign submenu_id = 'at-submenu-' | append: link.handle -%}
+            <div class="at-menu__nav-item">
+              <button
+                class="at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
+                aria-expanded="false"
+                aria-controls="{{ submenu_id }}"
+                aria-haspopup="true"
+              >
+                {{- link.title -}}
+                <span class="at-menu__nav-link-chevron" aria-hidden="true">
+                  {%- render 'icon', icon: 'chevron-down', size: '0.75rem' -%}
+                </span>
+              </button>
+              <div id="{{ submenu_id }}" class="at-menu__submenu" hidden>
+                <ul class="at-menu__submenu-list" role="list">
+                  {%- for sub in link.links -%}
+                    <li>
+                      <a
+                        href="{{ sub.url }}"
+                        class="at-menu__submenu-link"
+                        {% if sub.current %}aria-current="page"{% endif %}
+                      >
+                        {{- sub.title -}}
+                      </a>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              </div>
+            </div>
+
+          {%- else -%}
+            <a
+              href="{{ link.url }}"
+              class="at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
+              {% if link.current %}aria-current="page"{% endif %}
+            >
+              {{- link.title -}}
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </nav>
+
+      {%- comment -%} ── Mobile hamburger trigger ── {%- endcomment -%}
+      <div class="at-menu__mobile-bar">
+        <button
+          ref="toggleBtn"
+          type="button"
+          class="at-menu__mobile-toggle"
+          aria-label="{{ 'accessibility.menu' | t | default: 'Open navigation' }}"
+          aria-expanded="false"
+          aria-controls="at-drawer-block"
+          on:click="/toggleDrawer"
+        >
+          <span class="svg-wrapper at-menu__mobile-icon--open">
+            {{- 'icon-menu.svg' | inline_asset_content -}}
+          </span>
+          <span class="svg-wrapper at-menu__mobile-icon--close" style="display:none;">
+            {{- 'icon-close.svg' | inline_asset_content -}}
+          </span>
+        </button>
+        {%- if block_settings.at_mobile_drawer_label != blank -%}
+          <span class="at-menu__mobile-label" aria-hidden="true">
+            {{- block_settings.at_mobile_drawer_label -}}
+          </span>
+        {%- endif -%}
+      </div>
+
+      {%- comment -%} Screen overlay {%- endcomment -%}
+      <div
+        ref="overlay"
+        class="at-drawer-overlay"
+        aria-hidden="true"
+        on:click="/closeDrawer"
+      ></div>
+
+      {%- comment -%} Mobile drawer — rendered inline in the desktop block to share the component scope {%- endcomment -%}
+      <div
+        ref="drawer"
+        id="at-drawer-block"
+        class="drawer"
+        data-open="false"
+        style="z-index: var(--layer-menu-drawer);"
+      >
+        {%- if brands_link != nil -%}
+          {%- render 'at-menu-mobile-drawer',
+            section: block,
+            menu_links: menu_links,
+            brands_link: brands_link,
+            brands_item_handle: brands_handle,
+            highlight_handle: highlight_handle,
+            mobile_drawer_label: block_settings.at_mobile_drawer_label
+          -%}
+        {%- else -%}
+          <nav
+            class="at-drawer at-drawer--plain"
+            aria-label="{{ 'accessibility.header_navigation_label' | t }}"
+          >
+            <div class="at-drawer__header">
+              <h2 class="at-drawer__title">{{- block_settings.at_mobile_drawer_label | default: 'Menu' -}}</h2>
+              <button
+                type="button"
+                class="at-drawer__close-btn"
+                aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
+                on:click="/closeDrawer"
+              >
+                <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
+              </button>
+            </div>
+            <ul class="at-drawer__cat-list" role="list">
+              {%- for link in menu_links -%}
+                <li>
+                  <a
+                    href="{{ link.url }}"
+                    class="at-drawer__cat-item{% if link.handle == highlight_handle %} at-drawer__cat-item--highlight{% endif %}"
+                    {% if link.current %}aria-current="page"{% endif %}
+                  >
+                    {{- link.title -}}
+                  </a>
+                </li>
+              {%- endfor -%}
+            </ul>
+          </nav>
+        {%- endif -%}
+      </div>
+
+    </at-menu-component>
+
+{% endcase %}
+
+<script src="{{ 'at-menu.js' | asset_url }}" type="module"></script>
+{{ 'at-menu.css' | asset_url | stylesheet_tag }}
+
+{% schema %}
+{
+  "name": "AT Menu",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Navigation"
+    },
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:settings.menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "text",
+      "id": "at_brands_item_handle",
+      "label": "t:settings.at_brands_item_handle",
+      "info": "t:info.at_brands_item_handle",
+      "default": "brands"
+    },
+    {
+      "type": "link_list",
+      "id": "at_categories_menu",
+      "label": "t:settings.at_categories_menu",
+      "info": "t:info.at_categories_menu"
+    },
+    {
+      "type": "text",
+      "id": "at_highlight_handle",
+      "label": "t:settings.at_highlight_handle",
+      "info": "t:info.at_highlight_handle",
+      "default": "sale"
+    },
+    {
+      "type": "header",
+      "content": "t:content.at_brands_panel"
+    },
+    {
+      "type": "select",
+      "id": "at_brand_icon_source",
+      "label": "t:settings.at_brand_icon_source",
+      "options": [
+        { "value": "auto",                 "label": "t:options.at_brand_icon_auto" },
+        { "value": "collection_image_only","label": "t:options.at_collection_image_only" },
+        { "value": "initials_only",        "label": "t:options.at_initials_only" }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "checkbox",
+      "id": "at_show_brand_search",
+      "label": "t:settings.at_show_brand_search",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "at_brands_panel_columns",
+      "label": "t:settings.at_brands_panel_columns",
+      "min": 3, "max": 6, "step": 1, "default": 4
+    },
+    {
+      "type": "range",
+      "id": "at_brands_mobile_columns",
+      "label": "t:settings.at_brands_mobile_columns",
+      "min": 1, "max": 3, "step": 1, "default": 2
+    },
+    {
+      "type": "range",
+      "id": "at_brand_image_border_radius",
+      "label": "t:settings.at_brand_image_border_radius",
+      "min": 0, "max": 32, "step": 1, "unit": "px", "default": 4
+    },
+    {
+      "type": "header",
+      "content": "t:content.appearance"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "primary"
+    },
+    {
+      "type": "select",
+      "id": "type_font_primary_size",
+      "label": "t:settings.top_level_size",
+      "options": [
+        { "value": "0.75rem",  "label": "12px" },
+        { "value": "0.875rem", "label": "14px" },
+        { "value": "1rem",     "label": "16px" },
+        { "value": "1.125rem", "label": "18px" }
+      ],
+      "default": "1rem"
+    },
+    {
+      "type": "select",
+      "id": "type_font_primary_link",
+      "label": "t:settings.font",
+      "options": [
+        { "value": "body",       "label": "t:options.body" },
+        { "value": "subheading", "label": "t:options.subheading" },
+        { "value": "heading",    "label": "t:options.heading" },
+        { "value": "accent",     "label": "t:options.accent" }
+      ],
+      "default": "heading"
+    },
+    {
+      "type": "select",
+      "id": "type_case_primary_link",
+      "label": "t:settings.text_case",
+      "options": [
+        { "value": "none",      "label": "t:options.default" },
+        { "value": "uppercase", "label": "t:options.uppercase" }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "header",
+      "content": "t:content.mobile_layout"
+    },
+    {
+      "type": "text",
+      "id": "at_mobile_drawer_label",
+      "label": "t:settings.at_mobile_drawer_label",
+      "default": "Shop"
+    },
+    {
+      "type": "checkbox",
+      "id": "at_mobile_navigation_bar",
+      "label": "t:settings.at_mobile_navigation_bar",
+      "default": false
+    }
+  ]
+}
+{% endschema %}
