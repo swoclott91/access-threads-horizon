@@ -5,24 +5,35 @@
     – default        : desktop horizontal nav bar (hidden on mobile via CSS)
     – mobile         : header-drawer with hamburger trigger + AT mobile drawer
     – navigation_bar : optional swipe-bar for small screens
+
+  The mega-panel is triggered by the nav item whose handle matches
+  at_panel_item_handle (default "products").  It shows:
+    • A left category sidebar from at_categories_menu
+    • When the sidebar item matching at_brands_item_handle is active:
+        a full brand grid sourced from at_brands_menu
+    • For any other sidebar category: a sub-navigation grid of that
+        category's links
 {%- endcomment -%}
 
 {%- liquid
-  assign block_settings    = block.settings
-  assign menu              = block_settings.menu
-  assign menu_links        = menu.links
-  assign brands_handle     = block_settings.at_brands_item_handle | default: 'brands'
-  assign highlight_handle  = block_settings.at_highlight_handle   | default: 'sale'
-  assign cats_ll           = linklists[block_settings.at_categories_menu]
+  assign block_settings   = block.settings
+  assign menu             = block_settings.menu
+  assign menu_links       = menu.links
+  assign panel_handle     = block_settings.at_panel_item_handle   | default: 'products'
+  assign brands_handle    = block_settings.at_brands_item_handle  | default: 'brands'
+  assign highlight_handle = block_settings.at_highlight_handle    | default: 'sale'
+  assign cats_ll          = linklists[block_settings.at_categories_menu]
+  assign brands_ll        = linklists[block_settings.at_brands_menu]
 
-  assign brands_link = nil
+  # Find the panel trigger link in the main menu
+  assign panel_link = nil
   for link in menu_links
-    if link.handle == brands_handle
-      assign brands_link = link
+    if link.handle == panel_handle
+      assign panel_link = link
     endif
   endfor
 
-  # Conditional color-scheme class — only apply when different from the parent row
+  # Conditional color-scheme class — only apply when different from parent row
   # (mirrors _header-menu behaviour so transparency settings are inherited)
   assign color_scheme_classes = ''
   assign color_scheme_setting_id = 'color_scheme_' | append: section.settings.menu_row
@@ -75,7 +86,7 @@
             {%- render 'at-menu-mobile-drawer',
               section: block,
               menu_links: menu_links,
-              brands_link: brands_link,
+              brands_link: nil,
               brands_item_handle: brands_handle,
               highlight_handle: highlight_handle
             -%}
@@ -133,27 +144,31 @@
         >
           {%- for link in menu_links -%}
             {%- liquid
-              assign is_brands = false
-              if link.handle == brands_handle
-                assign is_brands = true
-              endif
+              assign is_panel   = false
               assign is_highlight = false
+              if link.handle == panel_handle and panel_link != nil and cats_ll != blank
+                assign is_panel = true
+              endif
               if link.handle == highlight_handle
                 assign is_highlight = true
               endif
             -%}
 
-            {%- if is_brands and brands_link != blank -%}
+            {%- if is_panel -%}
+              {%- comment -%} ── Products mega-panel ── {%- endcomment -%}
               {%- render 'at-menu-brands-panel',
-                brands_link: brands_link,
+                panel_link: panel_link,
+                brands_linklist: brands_ll,
                 categories_linklist: cats_ll,
+                brands_handle: brands_handle,
                 section: block
               -%}
 
             {%- elsif link.links != blank -%}
+              {%- comment -%} ── Regular dropdown with sub-links ── {%- endcomment -%}
               {%- assign submenu_id = 'at-submenu-' | append: link.handle -%}
               <div
-                class="menu-list__list-item at-menu__nav-item"
+                class="menu-list__list-item"
                 on:pointerenter="/activate"
                 on:pointerleave="/deactivate"
                 on:focus="/activate"
@@ -169,7 +184,7 @@
                 >
                   <span class="menu-list__link-title">{{- link.title -}}</span>
                 </a>
-                <div class="menu-list__submenu{{ color_scheme_classes }}" ref="submenu[]">
+                <div class="menu-list__submenu{{ color_scheme_classes }}">
                   <div id="{{ submenu_id }}" class="menu-list__submenu-inner"
                     style="{%- render 'submenu-font-styles', settings: block_settings -%}">
                     <div class="mega-menu section section--full-width-margin section--{{ section.settings.section_width }}">
@@ -191,6 +206,7 @@
               </div>
 
             {%- else -%}
+              {%- comment -%} ── Plain link ── {%- endcomment -%}
               <a
                 href="{{ link.url }}"
                 class="menu-list__link at-menu__nav-link{% if is_highlight %} at-menu__nav-link--highlight{% endif %}"
@@ -225,17 +241,34 @@
       "default": "main-menu"
     },
     {
+      "type": "header",
+      "content": "Mega-Panel"
+    },
+    {
       "type": "text",
-      "id": "at_brands_item_handle",
-      "label": "t:settings.at_brands_item_handle",
-      "info": "t:info.at_brands_item_handle",
-      "default": "brands"
+      "id": "at_panel_item_handle",
+      "label": "Panel trigger handle",
+      "info": "Handle of the top-level nav item that opens the mega-panel (e.g. 'products' or 'shop').",
+      "default": "products"
     },
     {
       "type": "link_list",
       "id": "at_categories_menu",
-      "label": "t:settings.at_categories_menu",
-      "info": "t:info.at_categories_menu"
+      "label": "Categories sidebar menu",
+      "info": "Menu whose top-level links populate the left sidebar. Each link can have sub-links that appear in the right pane."
+    },
+    {
+      "type": "text",
+      "id": "at_brands_item_handle",
+      "label": "Brands sidebar item handle",
+      "info": "Handle of the sidebar item that should show the brand grid (e.g. 'brands').",
+      "default": "brands"
+    },
+    {
+      "type": "link_list",
+      "id": "at_brands_menu",
+      "label": "Brands source menu",
+      "info": "Menu whose links are shown as the brand grid when the Brands sidebar item is active."
     },
     {
       "type": "text",
@@ -253,9 +286,9 @@
       "id": "at_brand_icon_source",
       "label": "t:settings.at_brand_icon_source",
       "options": [
-        { "value": "auto",                 "label": "t:options.at_brand_icon_auto" },
-        { "value": "collection_image_only","label": "t:options.at_collection_image_only" },
-        { "value": "initials_only",        "label": "t:options.at_initials_only" }
+        { "value": "auto",                  "label": "t:options.at_brand_icon_auto" },
+        { "value": "collection_image_only", "label": "t:options.at_collection_image_only" },
+        { "value": "initials_only",         "label": "t:options.at_initials_only" }
       ],
       "default": "auto"
     },

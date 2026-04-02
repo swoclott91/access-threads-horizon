@@ -286,6 +286,50 @@
   white-space: nowrap;
 }
 
+/* Sub-navigation grid (non-brands category panels) */
+.at-brands-panel__subnav {
+  display: flex;
+  flex-direction: column;
+}
+
+.at-brands-panel__subnav-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap-3xs) var(--gap-md);
+  padding-inline: var(--padding-md);
+  padding-block: var(--padding-md);
+}
+
+.at-brands-panel__subnav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding-inline: var(--padding-xs);
+  padding-block: var(--padding-xs);
+  border-radius: var(--style-border-radius-inputs);
+  text-decoration: none;
+  color: var(--color-foreground);
+  font-size: var(--font-size--small);
+  transition: background-color var(--animation-speed) var(--animation-easing);
+
+  &:hover {
+    background-color: rgb(var(--color-foreground-rgb) / var(--opacity-6));
+  }
+}
+
+.at-brands-panel__heading-link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.at-brands-panel__view-all--header {
+  margin-inline-start: auto;
+}
+
 /* "View all" footer link */
 .at-brands-panel__footer {
   padding-inline: var(--padding-lg);

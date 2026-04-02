@@ -62,11 +62,10 @@ class AtBrandsPanel extends Component {
     this.dataset.open = '';
     trigger?.setAttribute('aria-expanded', 'true');
 
-    // Activate the default active category (first or already active)
-    const activeBtn = this.querySelector('.at-brands-panel__cat-btn--active')
-      ?? this.querySelector('.at-brands-panel__cat-btn');
-    if (activeBtn instanceof HTMLElement) {
-      this.#activateCategory(activeBtn.dataset.cat ?? '');
+    // Always activate the first category when re-opening so stale state is cleared
+    const firstBtn = this.querySelector('.at-brands-panel__cat-btn');
+    if (firstBtn instanceof HTMLElement) {
+      this.#activateCategory(firstBtn.dataset.cat ?? '');
     }
   }
 
