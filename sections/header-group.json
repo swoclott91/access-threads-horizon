@@ -80,7 +80,7 @@
           "blocks": {}
         },
         "at-menu": {
-          "type": "at-menu",
+          "type": "_at-menu",
           "static": true,
           "settings": {
             "menu": "main-menu",

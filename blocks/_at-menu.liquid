@@ -1,14 +1,13 @@
 {%- comment -%}
-  AT CUSTOM — AT-Menu Block
+  AT CUSTOM — AT-Menu Private Block
   Renders the Access Threads branded mega-menu as a header block so it sits in the
   same row as the logo.  Handles three variants injected via content_for 'block':
     – default (desktop nav bar with mega panel)
     – mobile  (slide-in drawer injected into header drawer slot)
     – navigation_bar (optional swipe-bar for small screens)
 
-  Usage: add this block to the Header section (type: at-menu, id: at-menu).
-  Then remove or leave the _header-menu block — the header section will prefer
-  this block's output when it is present.
+  This is a private block (_at-menu) so it appears in the Header section's editor
+  panel alongside Logo and Menu, exactly like _header-logo and _header-menu.
 {%- endcomment -%}
 
 {%- liquid
@@ -250,6 +249,7 @@
 {% schema %}
 {
   "name": "AT Menu",
+  "tag": null,
   "settings": [
     {
       "type": "header",
