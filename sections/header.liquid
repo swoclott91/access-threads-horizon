@@ -57,7 +57,7 @@
     content_for 'block', type: '_header-menu', id: 'header-menu', variant: 'navigation_bar', transparent: transparent
   endcapture
 
-  {%- comment -%} AT CUSTOM: If an _at-menu block is present, use it in place of _header-menu {%- endcomment -%}
+  # AT CUSTOM: If an _at-menu block is present, use it in place of _header-menu
   capture at_menu_capture
     content_for 'block', type: '_at-menu', id: 'at-menu'
   endcapture
@@ -70,7 +70,7 @@
       content_for 'block', type: '_at-menu', id: 'at-menu', variant: 'navigation_bar', transparent: transparent
     endcapture
   endif
-  {%- comment -%} /AT CUSTOM {%- endcomment -%}
+  # /AT CUSTOM
 
   capture actions
     render 'header-actions', customer_account_menu: section.settings.customer_account_menu, display_style: section.settings.actions_display_style, section: section
