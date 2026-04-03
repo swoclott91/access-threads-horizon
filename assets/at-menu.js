@@ -198,23 +198,44 @@ class AtBrandsPanel extends Component {
   }
 
   /**
-   * Sets `top` / `--at-brands-panel-top` to the **bottom of `.header__row--top`**, matching how
-   * `blocks/_header-menu.liquid` positions `.menu-list__submenu` relative to the nav row (not the
-   * full `#header-component` box, which can extend past the bar and leave a visible gap).
+   * Sets `top` / `--at-brands-panel-top` flush under the AT nav strip.
+   *
+   * - Theme `menu_row` can place the menu in **`.header__row--bottom`**; using only
+   *   `.header__row--top` leaves a gap the height of the entire other row.
+   * - `.header__row` often has more block padding than `.at-menu__nav` (fixed 2.5rem); row bottom
+   *   can sit well below the visible links — use the **nav** box when present and clamp to row.
    */
   #updatePanelTop() {
-    const { panel } = this.refs;
+    const { panel, trigger } = this.refs;
     if (!panel) return;
-    const headerComponent = document.querySelector('#header-component');
-    const topRow =
-      headerComponent?.querySelector('.header__row--top')
-      ?? headerComponent
-      ?? document.querySelector('.header-section')
-      ?? document.querySelector('header');
-    if (!(topRow instanceof HTMLElement)) return;
 
-    const bottom = topRow.getBoundingClientRect().bottom;
-    const topPx = `${bottom}px`;
+    const headerComponent = document.querySelector('#header-component');
+    const row = trigger instanceof HTMLElement ? trigger.closest('.header__row') : null;
+    const nav = trigger instanceof HTMLElement ? trigger.closest('.at-menu__nav') : null;
+
+    let bottom = 0;
+
+    if (nav instanceof HTMLElement && row instanceof HTMLElement) {
+      bottom = Math.min(nav.getBoundingClientRect().bottom, row.getBoundingClientRect().bottom);
+    } else if (row instanceof HTMLElement) {
+      bottom = row.getBoundingClientRect().bottom;
+    } else if (nav instanceof HTMLElement) {
+      bottom = nav.getBoundingClientRect().bottom;
+    }
+
+    if (bottom <= 0) {
+      const fallback =
+        headerComponent?.querySelector('.header__row--top')
+        ?? headerComponent
+        ?? document.querySelector('.header-section')
+        ?? document.querySelector('header');
+      if (fallback instanceof HTMLElement) bottom = fallback.getBoundingClientRect().bottom;
+    }
+
+    if (bottom <= 0) return;
+
+    // Overlap ~1px with theme mega menus (top: calc(100% - 1px + …)) to kill subpixel seams.
+    const topPx = `${Math.max(0, bottom - 1)}px`;
     panel.style.setProperty('--at-brands-panel-top', topPx);
     panel.style.top = topPx;
   }
@@ -227,11 +248,9 @@ class AtBrandsPanel extends Component {
   #bindHeaderLayoutListeners() {
     this.#unbindHeaderLayoutListeners();
     const header = document.querySelector('#header-component');
-    const observeTarget =
-      header?.querySelector('.header__row--top') ?? header;
-    if (observeTarget instanceof HTMLElement) {
+    if (header instanceof HTMLElement) {
       this.#headerResizeObserver = new ResizeObserver(this.#onHeaderLayoutChange);
-      this.#headerResizeObserver.observe(observeTarget);
+      this.#headerResizeObserver.observe(header);
     }
     window.addEventListener('scroll', this.#onHeaderLayoutChange, { passive: true });
     window.addEventListener('resize', this.#onHeaderLayoutChange);
