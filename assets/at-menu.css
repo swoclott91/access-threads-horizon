@@ -75,18 +75,33 @@
    Desktop brands mega panel
    ============================================================================= */
 
+/*
+ * Mirror blocks/_header-menu.liquid: .menu-list__list-item uses flex column + ::after bridge
+ * so pointer path matches mega menus; align-self stretch matches row height like .menu-list__list-item.
+ */
 .at-brands-panel {
-  position: static;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
   height: 100%;
+  min-height: 0;
+}
+
+.at-brands-panel::after {
+  content: '';
+  width: 100%;
+  height: var(--header-padding);
+  margin-bottom: calc(-1 * var(--header-padding));
+  flex-shrink: 0;
 }
 
 .at-brands-panel__dropdown {
   /*
-   * Use position:fixed so the panel always spans the full viewport width and
-   * is never clipped by a positioned ancestor inside the header.
-   * The `top` value is set in JS (AtBrandsPanel.open) to the header's bottom edge.
-   * Falls back to --at-brands-panel-top (a CSS var updated by JS) so the panel
-   * moves with a sticky header.
+   * position:fixed + full viewport width (inset-inline:0) matches need to escape header overflow;
+   * vertical `top` is synced in JS to .header__row--top bottom — same visual seam as theme submenus
+   * (see .menu-list__submenu top: calc(100% - 1px + …) relative to the nav item).
    */
   position: fixed;
   inset-inline: 0;
@@ -94,7 +109,8 @@
   z-index: var(--layer-header-menu);
   display: flex;
   background-color: var(--color-background);
-  border-block-start: 2px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  /* Single hairline at the row seam (theme mega menus overlap ~1px via top calc) */
+  border-block-start: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
   box-shadow: var(--shadow-popover, 0 4px 16px rgb(0 0 0 / 0.12));
   /*
    * Height = space below the header down toward the bottom of the viewport.

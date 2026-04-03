@@ -40,6 +40,9 @@ class AtBrandsPanel extends Component {
   /** @type {HTMLElement | null} */
   #panelSearchBound = null;
 
+  /** @type {ResizeObserver | null} */
+  #headerResizeObserver = null;
+
   connectedCallback() {
     super.connectedCallback();
     // Add pointerenter imperatively so hover always works, regardless of
@@ -73,6 +76,7 @@ class AtBrandsPanel extends Component {
     }
     this.#clearCloseTimer();
     this.#clearFocusOutTimer();
+    this.#unbindHeaderLayoutListeners();
   }
 
   #onPointerEnter = () => {
@@ -118,12 +122,19 @@ class AtBrandsPanel extends Component {
     const { trigger, panel } = this.refs;
     if (!panel || panel.hidden === false) return;
 
-    // Position the fixed-position panel below the header
+    // Position the fixed panel flush with the *top header row* (same visual edge as Horizon mega menus).
     this.#updatePanelTop();
 
     panel.removeAttribute('hidden');
     this.dataset.open = '';
     trigger?.setAttribute('aria-expanded', 'true');
+
+    this.#bindHeaderLayoutListeners();
+
+    // Re-measure after layout / sticky transition so `top` matches paint.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => this.#updatePanelTop());
+    });
 
     // Always activate the first category when re-opening so stale state is cleared
     const firstBtn = this.querySelector('.at-brands-panel__cat-btn');
@@ -142,6 +153,8 @@ class AtBrandsPanel extends Component {
   }
 
   #applyClose() {
+    this.#unbindHeaderLayoutListeners();
+
     const { trigger, panel } = this.refs;
     if (!panel || panel.hidden) return;
 
@@ -185,23 +198,50 @@ class AtBrandsPanel extends Component {
   }
 
   /**
-   * Sets the --at-brands-panel-top CSS variable on the panel element
-   * to match the bottom edge of the nearest header element, so the
-   * fixed-position dropdown always sits directly below the header.
+   * Sets `top` / `--at-brands-panel-top` to the **bottom of `.header__row--top`**, matching how
+   * `blocks/_header-menu.liquid` positions `.menu-list__submenu` relative to the nav row (not the
+   * full `#header-component` box, which can extend past the bar and leave a visible gap).
    */
   #updatePanelTop() {
     const { panel } = this.refs;
     if (!panel) return;
-    const header = document.querySelector('#header-component')
+    const headerComponent = document.querySelector('#header-component');
+    const topRow =
+      headerComponent?.querySelector('.header__row--top')
+      ?? headerComponent
       ?? document.querySelector('.header-section')
       ?? document.querySelector('header');
-    if (header instanceof HTMLElement) {
-      const bottom = header.getBoundingClientRect().bottom;
-      const topPx = `${bottom}px`;
-      panel.style.setProperty('--at-brands-panel-top', topPx);
-      panel.style.top = topPx;
-      /* max-height comes from CSS (90vh / 90dvh − top) */
+    if (!(topRow instanceof HTMLElement)) return;
+
+    const bottom = topRow.getBoundingClientRect().bottom;
+    const topPx = `${bottom}px`;
+    panel.style.setProperty('--at-brands-panel-top', topPx);
+    panel.style.top = topPx;
+  }
+
+  #onHeaderLayoutChange = () => {
+    if (!this.dataset.open) return;
+    this.#updatePanelTop();
+  };
+
+  #bindHeaderLayoutListeners() {
+    this.#unbindHeaderLayoutListeners();
+    const header = document.querySelector('#header-component');
+    const observeTarget =
+      header?.querySelector('.header__row--top') ?? header;
+    if (observeTarget instanceof HTMLElement) {
+      this.#headerResizeObserver = new ResizeObserver(this.#onHeaderLayoutChange);
+      this.#headerResizeObserver.observe(observeTarget);
     }
+    window.addEventListener('scroll', this.#onHeaderLayoutChange, { passive: true });
+    window.addEventListener('resize', this.#onHeaderLayoutChange);
+  }
+
+  #unbindHeaderLayoutListeners() {
+    this.#headerResizeObserver?.disconnect();
+    this.#headerResizeObserver = null;
+    window.removeEventListener('scroll', this.#onHeaderLayoutChange);
+    window.removeEventListener('resize', this.#onHeaderLayoutChange);
   }
 
   // ─── Category switching ──────────────────────────────────────────────────
