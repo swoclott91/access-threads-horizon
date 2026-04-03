@@ -83,3 +83,4 @@ When resolving conflicts, preserve both the upstream changes and the AT customiz
 - **Focus-out handling:** Do not close the mega panel when `focusout` has `relatedTarget === null` (common on click-to-focus). Defer with `setTimeout(0)` and only close if `document.activeElement` is not inside the host.
 - **Pointer-leave delay:** After the hover close delay, skip closing if focus is still inside the panel (keyboard users who moved the pointer away).
 - **Brand search listeners:** Prefer `capture: true` on the dropdown `ref="panel"` for `input` / clear `click` so filtering still runs reliably.
+- **Sidebar category hover:** `mouseenter` does not bubble, so declarative `on:mouseenter` on category buttons is unreliable. Use a bubbling `pointerover` listener on `refs.panel` gated with `(hover: hover) and (pointer: fine)`; keep `on:click` for keyboard and touch.

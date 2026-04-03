@@ -28,6 +28,9 @@ import { Component } from '@theme/component';
 class AtBrandsPanel extends Component {
   requiredRefs = ['trigger', 'panel'];
 
+  /** Desktop: primary pointer can hover (excludes most phones). */
+  static #desktopFinePointerMql = window.matchMedia('(hover: hover) and (pointer: fine)');
+
   /** @type {ReturnType<typeof setTimeout> | null} */
   #closeTimer = null;
 
@@ -50,6 +53,9 @@ class AtBrandsPanel extends Component {
     if (panel) {
       panel.addEventListener('input', this.#onDelegatedSearchInput, true);
       panel.addEventListener('click', this.#onDelegatedSearchClearClick, true);
+      // mouseenter does not bubble; declarative on:mouseenter on cat buttons is unreliable.
+      // pointerover bubbles so one listener switches categories on hover (desktop only).
+      panel.addEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
       this.#panelSearchBound = panel;
     }
   }
@@ -62,6 +68,7 @@ class AtBrandsPanel extends Component {
     if (this.#panelSearchBound) {
       this.#panelSearchBound.removeEventListener('input', this.#onDelegatedSearchInput, true);
       this.#panelSearchBound.removeEventListener('click', this.#onDelegatedSearchClearClick, true);
+      this.#panelSearchBound.removeEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
       this.#panelSearchBound = null;
     }
     this.#clearCloseTimer();
@@ -87,6 +94,16 @@ class AtBrandsPanel extends Component {
     if (!t || !this.contains(t)) return;
     event.preventDefault();
     this.clearSearch();
+  };
+
+  /** @param {PointerEvent} event */
+  #onDelegatedSidebarPointerOver = (event) => {
+    if (!AtBrandsPanel.#desktopFinePointerMql.matches) return;
+    if (!(event.target instanceof Element)) return;
+    const btn = event.target.closest('.at-brands-panel__cat-btn');
+    if (!(btn instanceof HTMLElement) || !this.refs.panel?.contains(btn)) return;
+    if (btn.classList.contains('at-brands-panel__cat-btn--active')) return;
+    this.#activateCategory(btn.dataset.cat ?? '');
   };
 
   // ─── Open / close ────────────────────────────────────────────────────────
@@ -190,7 +207,7 @@ class AtBrandsPanel extends Component {
   // ─── Category switching ──────────────────────────────────────────────────
 
   /**
-   * Called via on:click="/switchCategory" on each cat button.
+   * Called via on:click="/switchCategory" on each cat button (keyboard, touch, or mouse click).
    * @param {MouseEvent | PointerEvent} event
    */
   switchCategory(event) {
@@ -208,7 +225,9 @@ class AtBrandsPanel extends Component {
   #activateCategory(cat) {
     // Update button active states
     for (const btn of this.querySelectorAll('.at-brands-panel__cat-btn')) {
-      btn.classList.toggle('at-brands-panel__cat-btn--active', btn.dataset.cat === cat);
+      const isActive = btn.dataset.cat === cat;
+      btn.classList.toggle('at-brands-panel__cat-btn--active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }
 
     // Show matching content panel, hide others
