@@ -198,13 +198,15 @@ class AtBrandsPanel extends Component {
   }
 
   /**
-   * Sets `top` / `--at-brands-panel-top` flush under the AT nav strip.
+   * Sets `top` / `--at-brands-panel-top` flush under the header row (row border seam).
    *
-   * - Theme `menu_row` can place the menu in **`.header__row--bottom`**; using only
-   *   `.header__row--top` leaves a gap the height of the entire other row.
-   * - `.header__row` often has more block padding than `.at-menu__nav` (fixed 2.5rem); row bottom
-   *   can sit well below the visible links — use **min(nav, row, trigger)** so the panel meets the
-   *   trigger / link strip without a gap from extra row padding.
+   * - Theme `menu_row` can place the menu in **`.header__row--bottom`**; anchor with
+   *   `trigger.closest('.header__row')` — do not use only `.header__row--top`.
+   * - Anchor to **`.header__row` border-box bottom** (not `min(nav, trigger)`): the visible seam
+   *   is the row’s `border-bottom`; using only the short `.at-menu__nav` box left a band of hero
+   *   between the border and the fixed panel.
+   * - Overlap mirrors `_header-menu.liquid` mega menus: `100% - 1px + border-bottom-width` → about
+   *   **1px + row border width** into the row so the hairline meets the panel.
    */
   #updatePanelTop() {
     const { panel, trigger } = this.refs;
@@ -214,13 +216,20 @@ class AtBrandsPanel extends Component {
     const row = trigger instanceof HTMLElement ? trigger.closest('.header__row') : null;
     const nav = trigger instanceof HTMLElement ? trigger.closest('.at-menu__nav') : null;
 
-    /** @type {number[]} */
-    const bottoms = [];
-    if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
-    if (row instanceof HTMLElement) bottoms.push(row.getBoundingClientRect().bottom);
-    if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
+    let bottom = 0;
+    /** Pixels to subtract from `bottom` so the panel overlaps the seam (see theme mega menu top calc). */
+    let seamOverlap = 2;
 
-    let bottom = bottoms.length > 0 ? Math.min(...bottoms) : 0;
+    if (row instanceof HTMLElement) {
+      bottom = row.getBoundingClientRect().bottom;
+      const borderBottom = parseFloat(getComputedStyle(row).borderBottomWidth) || 0;
+      seamOverlap = Math.max(2, 1 + borderBottom);
+    } else {
+      const bottoms = [];
+      if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
+      if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
+      bottom = bottoms.length > 0 ? Math.min(...bottoms) : 0;
+    }
 
     if (bottom <= 0) {
       const fallback =
@@ -228,14 +237,16 @@ class AtBrandsPanel extends Component {
         ?? headerComponent
         ?? document.querySelector('.header-section')
         ?? document.querySelector('header');
-      if (fallback instanceof HTMLElement) bottom = fallback.getBoundingClientRect().bottom;
+      if (fallback instanceof HTMLElement) {
+        bottom = fallback.getBoundingClientRect().bottom;
+        const borderBottom = parseFloat(getComputedStyle(fallback).borderBottomWidth) || 0;
+        seamOverlap = Math.max(2, 1 + borderBottom);
+      }
     }
 
     if (bottom <= 0) return;
 
-    // Overlap a few px with the header row (Horizon mega menus use ~1px) to kill subpixel seams
-    // and trim residual gap when the nav strip is shorter than the full row.
-    const topPx = `${Math.max(0, bottom - 2)}px`;
+    const topPx = `${Math.max(0, bottom - seamOverlap)}px`;
     panel.style.setProperty('--at-brands-panel-top', topPx);
     panel.style.top = topPx;
   }

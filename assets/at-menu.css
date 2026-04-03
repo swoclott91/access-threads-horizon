@@ -117,13 +117,14 @@
 .at-brands-panel__dropdown {
   /*
    * position:fixed + full viewport width (inset-inline:0) escapes header overflow clipping.
-   * Vertical `top` is set in JS from min(.at-menu__nav, .header__row) bottom + trigger row (menu may live
-   * in .header__row--bottom per theme settings) — see AtBrandsPanel.#updatePanelTop.
+   * Vertical `top` is set in JS from the trigger’s `.header__row` border-box bottom + seam overlap
+   * (menu may live in .header__row--bottom per theme settings) — see AtBrandsPanel.#updatePanelTop.
    */
   position: fixed;
   inset-inline: 0;
   top: var(--at-brands-panel-top, 60px);
-  z-index: var(--layer-header-menu);
+  /* Sit above the elevated header row when open (:has(.at-brands-panel[data-open]) z-index) */
+  z-index: calc(var(--layer-header-menu) + 1);
   display: flex;
   background-color: var(--color-background);
   /* Single hairline at the row seam (theme mega menus overlap ~1px via top calc) */
