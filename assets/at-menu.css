@@ -286,8 +286,13 @@
   white-space: nowrap;
 }
 
+/* Ensure [hidden] always wins over any display rule on cat-content panels */
+.at-brands-panel__cat-content[hidden] {
+  display: none;
+}
+
 /* Sub-navigation grid (non-brands category panels) */
-.at-brands-panel__subnav {
+.at-brands-panel__subnav:not([hidden]) {
   display: flex;
   flex-direction: column;
 }
