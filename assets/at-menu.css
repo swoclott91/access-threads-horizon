@@ -442,6 +442,8 @@
 }
 
 .at-brand-avatar--image {
+  background-color: transparent;
+
   img {
     width: 100%;
     height: 100%;
