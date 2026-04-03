@@ -516,6 +516,13 @@
       --color-border: inherit;
       --color-border-rgb: inherit;
       --header-content-transition-timing: var(--submenu-animation-speed) var(--ease-out-cubic);
+      /*
+       * Plain links use :has(.menu-list__link:not([aria-haspopup]):hover) which sets
+       * --closed-underlay-height: 100%. Popup items / mega menus only matched this block,
+       * which omitted it — underlay stayed 0px and the hero showed through (AT Products panel
+       * also skips header-menu activate(), so it never got --full-open-header-height from JS).
+       */
+      --closed-underlay-height: 100%;
     }
   }
 
