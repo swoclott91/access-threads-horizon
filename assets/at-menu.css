@@ -40,6 +40,8 @@
   --at-menu-link-color: currentcolor;
 
   display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--gap-2xs);
   height: 100%;
@@ -55,6 +57,15 @@
   cursor: pointer;
   white-space: nowrap;
   transition: color var(--animation-speed) var(--animation-easing);
+}
+
+/*
+ * Header AT block combines `menu-list__link` with `at-menu__nav-link`.
+ * Theme `_header-menu.liquid` sets `.menu-list__link { flex-direction: column }` for the
+ * mega-menu hover bridge — that stacks the chevron under the title; force row for AT links.
+ */
+.menu-list__link.at-menu__nav-link {
+  flex-direction: row;
 }
 
 .at-menu__nav-link--highlight {
