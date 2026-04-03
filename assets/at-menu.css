@@ -96,9 +96,14 @@
   background-color: var(--color-background);
   border-block-start: 2px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
   box-shadow: var(--shadow-popover, 0 4px 16px rgb(0 0 0 / 0.12));
-  /* Definite height cap so flex descendants can shrink and overflow-y: auto works */
-  max-height: calc(80vh - var(--at-brands-panel-top, 60px));
-  height: min(max-content, calc(80vh - var(--at-brands-panel-top, 60px)));
+  /*
+   * Viewport budget: ~90% of the screen (taller than 3/4), minus space above the panel.
+   * Duplicate max-height/height: `vh` fallback, then `dvh` where supported (mobile chrome).
+   */
+  max-height: calc(90vh - var(--at-brands-panel-top, 60px));
+  max-height: calc(90dvh - var(--at-brands-panel-top, 60px));
+  height: min(max-content, calc(90vh - var(--at-brands-panel-top, 60px)));
+  height: min(max-content, calc(90dvh - var(--at-brands-panel-top, 60px)));
   overflow: hidden;
   /* Let row children shrink below content height so inner overflow-y can scroll */
   align-items: stretch;

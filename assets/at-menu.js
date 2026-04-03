@@ -139,7 +139,7 @@ class AtBrandsPanel extends Component {
       const topPx = `${bottom}px`;
       panel.style.setProperty('--at-brands-panel-top', topPx);
       panel.style.top = topPx;
-      panel.style.maxHeight = `calc(80vh - ${topPx})`;
+      /* max-height comes from CSS (90vh / 90dvh − top) */
     }
   }
 
