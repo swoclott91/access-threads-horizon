@@ -31,6 +31,12 @@ class AtBrandsPanel extends Component {
   /** @type {ReturnType<typeof setTimeout> | null} */
   #closeTimer = null;
 
+  /** @type {ReturnType<typeof setTimeout> | null} */
+  #focusOutTimer = null;
+
+  /** @type {HTMLElement | null} */
+  #panelSearchBound = null;
+
   connectedCallback() {
     super.connectedCallback();
     // Add pointerenter imperatively so hover always works, regardless of
@@ -38,9 +44,14 @@ class AtBrandsPanel extends Component {
     this.addEventListener('pointerenter', this.#onPointerEnter);
     this.addEventListener('pointerleave', this.#onPointerLeave);
     this.addEventListener('focusout', this.#onFocusOut);
-    // Brand search: delegated listeners so filtering always runs (same pattern as pointerenter).
-    this.addEventListener('input', this.#onDelegatedSearchInput);
-    this.addEventListener('click', this.#onDelegatedSearchClearClick);
+    // Brand search: capture on the dropdown so input runs even if bubbling is affected;
+    // avoids duplicate handling vs host-level delegation.
+    const { panel } = this.refs;
+    if (panel) {
+      panel.addEventListener('input', this.#onDelegatedSearchInput, true);
+      panel.addEventListener('click', this.#onDelegatedSearchClearClick, true);
+      this.#panelSearchBound = panel;
+    }
   }
 
   disconnectedCallback() {
@@ -48,9 +59,13 @@ class AtBrandsPanel extends Component {
     this.removeEventListener('pointerenter', this.#onPointerEnter);
     this.removeEventListener('pointerleave', this.#onPointerLeave);
     this.removeEventListener('focusout', this.#onFocusOut);
-    this.removeEventListener('input', this.#onDelegatedSearchInput);
-    this.removeEventListener('click', this.#onDelegatedSearchClearClick);
+    if (this.#panelSearchBound) {
+      this.#panelSearchBound.removeEventListener('input', this.#onDelegatedSearchInput, true);
+      this.#panelSearchBound.removeEventListener('click', this.#onDelegatedSearchClearClick, true);
+      this.#panelSearchBound = null;
+    }
     this.#clearCloseTimer();
+    this.#clearFocusOutTimer();
   }
 
   #onPointerEnter = () => {
@@ -81,6 +96,7 @@ class AtBrandsPanel extends Component {
    */
   open() {
     this.#clearCloseTimer();
+    this.#clearFocusOutTimer();
 
     const { trigger, panel } = this.refs;
     if (!panel || panel.hidden === false) return;
@@ -104,6 +120,7 @@ class AtBrandsPanel extends Component {
    */
   close() {
     this.#clearCloseTimer();
+    this.#clearFocusOutTimer();
     this.#applyClose();
   }
 
@@ -119,23 +136,34 @@ class AtBrandsPanel extends Component {
   #onPointerLeave = () => {
     this.#clearCloseTimer();
     this.#closeTimer = setTimeout(() => {
+      this.#closeTimer = null;
+      if (this.contains(document.activeElement)) return;
       this.#applyClose();
     }, 150);
   };
 
-  /**
-   * @param {FocusEvent} event
-   */
-  #onFocusOut = (event) => {
-    if (!(event.relatedTarget instanceof Node) || !this.contains(event.relatedTarget)) {
-      this.#applyClose();
-    }
+  #onFocusOut = () => {
+    this.#clearFocusOutTimer();
+    // relatedTarget is often null on click-to-focus; defer and use activeElement instead.
+    this.#focusOutTimer = setTimeout(() => {
+      this.#focusOutTimer = null;
+      if (!this.contains(document.activeElement)) {
+        this.#applyClose();
+      }
+    }, 0);
   };
 
   #clearCloseTimer() {
     if (this.#closeTimer !== null) {
       clearTimeout(this.#closeTimer);
       this.#closeTimer = null;
+    }
+  }
+
+  #clearFocusOutTimer() {
+    if (this.#focusOutTimer !== null) {
+      clearTimeout(this.#focusOutTimer);
+      this.#focusOutTimer = null;
     }
   }
 
