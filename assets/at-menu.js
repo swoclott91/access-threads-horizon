@@ -198,15 +198,12 @@ class AtBrandsPanel extends Component {
   }
 
   /**
-   * Sets `top` / `--at-brands-panel-top` flush under the header row (row border seam).
+   * Sets `top` / `--at-brands-panel-top` flush under the menu strip (nav/trigger), not full row.
    *
-   * - Theme `menu_row` can place the menu in **`.header__row--bottom`**; anchor with
-   *   `trigger.closest('.header__row')` — do not use only `.header__row--top`.
-   * - Anchor to **`.header__row` border-box bottom** (not `min(nav, trigger)`): the visible seam
-   *   is the row’s `border-bottom`; using only the short `.at-menu__nav` box left a band of hero
-   *   between the border and the fixed panel.
-   * - Overlap mirrors `_header-menu.liquid` mega menus: `100% - 1px + border-bottom-width` → about
-   *   **1px + row border width** into the row so the hairline meets the panel.
+   * - Theme `menu_row` can place the menu in `.header__row--bottom`; use `trigger.closest('.header__row')`.
+   * - Avoid `row.bottom` only: row is often taller than `.at-menu__nav` (pushes `top` too low, e.g. 107 vs 66).
+   *   Anchor Y = `Math.min(nav.bottom, row.bottom, trigger.bottom)`.
+   * - Seam overlap still uses row `border-bottom-width` when a row exists.
    */
   #updatePanelTop() {
     const { panel, trigger } = this.refs;
@@ -216,19 +213,18 @@ class AtBrandsPanel extends Component {
     const row = trigger instanceof HTMLElement ? trigger.closest('.header__row') : null;
     const nav = trigger instanceof HTMLElement ? trigger.closest('.at-menu__nav') : null;
 
-    let bottom = 0;
-    /** Pixels to subtract from `bottom` so the panel overlaps the seam (see theme mega menu top calc). */
-    let seamOverlap = 2;
+    /** @type {number[]} */
+    const bottoms = [];
+    if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
+    if (row instanceof HTMLElement) bottoms.push(row.getBoundingClientRect().bottom);
+    if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
 
+    let bottom = bottoms.length > 0 ? Math.min(...bottoms) : 0;
+
+    let seamOverlap = 2;
     if (row instanceof HTMLElement) {
-      bottom = row.getBoundingClientRect().bottom;
       const borderBottom = parseFloat(getComputedStyle(row).borderBottomWidth) || 0;
       seamOverlap = Math.max(2, 1 + borderBottom);
-    } else {
-      const bottoms = [];
-      if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
-      if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
-      bottom = bottoms.length > 0 ? Math.min(...bottoms) : 0;
     }
 
     if (bottom <= 0) {
