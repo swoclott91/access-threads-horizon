@@ -97,13 +97,14 @@
   border-block-start: 2px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
   box-shadow: var(--shadow-popover, 0 4px 16px rgb(0 0 0 / 0.12));
   /*
-   * Viewport budget: ~90% of the screen (taller than 3/4), minus space above the panel.
-   * Duplicate max-height/height: `vh` fallback, then `dvh` where supported (mobile chrome).
+   * Fill from below the header to the bottom of the viewport (not `min(max-content, …)` —
+   * that shrank the flyout to only ~3 brand rows when content was shorter than the cap).
+   * `dvh` overrides `vh` where supported for mobile browser chrome.
    */
-  max-height: calc(90vh - var(--at-brands-panel-top, 60px));
-  max-height: calc(90dvh - var(--at-brands-panel-top, 60px));
-  height: min(max-content, calc(90vh - var(--at-brands-panel-top, 60px)));
-  height: min(max-content, calc(90dvh - var(--at-brands-panel-top, 60px)));
+  height: calc(100vh - var(--at-brands-panel-top, 60px));
+  height: calc(100dvh - var(--at-brands-panel-top, 60px));
+  max-height: calc(100vh - var(--at-brands-panel-top, 60px));
+  max-height: calc(100dvh - var(--at-brands-panel-top, 60px));
   overflow: hidden;
   /* Let row children shrink below content height so inner overflow-y can scroll */
   align-items: stretch;
