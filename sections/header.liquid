@@ -504,7 +504,9 @@
     /* Multiple selectors for performance: each simple :has() check is faster than one complex selector with multiple conditions */
     &:has(.mega-menu__list:hover),
     &:has(.menu-list__link:is(:hover, [aria-expanded='true'])),
-    &:has(.menu-list__list-item[slot='overflow'] .menu-list__link:is(:hover, [aria-expanded='true'])) {
+    &:has(.menu-list__list-item[slot='overflow'] .menu-list__link:is(:hover, [aria-expanded='true'])),
+    /* AT CUSTOM: fixed mega panel can sit below the nav row; pointer crosses hero gap so :hover leaves #header-component while menu is still open */
+    &:has(.at-brands-panel[data-open]) {
       --header-logo-display: unset;
       --header-logo-inverse-display: unset;
       --color-foreground: inherit;
@@ -520,8 +522,10 @@
   /* When top row has transparent background, make it inherit colors from header component */
   [data-transparent-color-scheme='top']:hover .header__row--top,
   [data-transparent-color-scheme='top']:focus-within .header__row--top,
+  [data-transparent-color-scheme='top']:has(.at-brands-panel[data-open]) .header__row--top,
   [data-transparent-color-scheme='both']:hover .header__row--top,
-  [data-transparent-color-scheme='both']:focus-within .header__row--top {
+  [data-transparent-color-scheme='both']:focus-within .header__row--top,
+  [data-transparent-color-scheme='both']:has(.at-brands-panel[data-open]) .header__row--top {
     --color-foreground: inherit;
     --color-foreground-rgb: inherit;
     --color-border: inherit;
@@ -627,8 +631,10 @@
   /* When top row has transparent background, make underlay inherit colors from header component */
   [data-transparent-color-scheme='top']:hover,
   [data-transparent-color-scheme='top']:focus-within,
+  [data-transparent-color-scheme='top']:has(.at-brands-panel[data-open]),
   [data-transparent-color-scheme='both']:hover,
-  [data-transparent-color-scheme='both']:focus-within {
+  [data-transparent-color-scheme='both']:focus-within,
+  [data-transparent-color-scheme='both']:has(.at-brands-panel[data-open]) {
     :is(.header__underlay-open, .header__underlay-closed) {
       --color-scheme-top-row: var(--color-background);
     }
@@ -670,7 +676,8 @@
 
     &:has(.mega-menu__list:hover),
     &:has(.menu-list__link[aria-haspopup]:is(:hover, [aria-expanded='true'])),
-    &:has(.menu-list__list-item[slot='overflow'] .menu-list__link:is(:hover, [aria-expanded='true'])) {
+    &:has(.menu-list__list-item[slot='overflow'] .menu-list__link:is(:hover, [aria-expanded='true'])),
+    &:has(.at-brands-panel[data-open]) {
       /* Only elevate the row when the submenu is open to avoid overlapping other elevated content */
       z-index: var(--layer-heightened);
     }
