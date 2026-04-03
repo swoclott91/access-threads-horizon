@@ -231,7 +231,23 @@
               role="listitem"
             >
               <div class="at-drawer__letter-header" aria-hidden="true">{{- letter -}}</div>
-              <div class="at-drawer__brand-grid">
+              {%- liquid
+                assign letter_brand_count = 0
+                for brand_link in brands_link.links
+                  assign brand_first_letter = brand_link.title | upcase | slice: 0, 1
+                  if brand_first_letter == letter
+                    assign letter_brand_count = letter_brand_count | plus: 1
+                  endif
+                endfor
+                assign drawer_grid_rows = 1
+                if letter_brand_count > 0
+                  assign drawer_grid_rows = letter_brand_count | plus: mobile_cols | minus: 1 | divided_by: mobile_cols
+                endif
+              -%}
+              <div
+                class="at-drawer__brand-grid"
+                style="--at-drawer-brand-rows: {{ drawer_grid_rows }};"
+              >
                 {%- for brand_link in brands_link.links -%}
                   {%- assign brand_first_letter = brand_link.title | upcase | slice: 0, 1 -%}
                   {%- if brand_first_letter == letter -%}

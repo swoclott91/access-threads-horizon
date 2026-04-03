@@ -254,8 +254,15 @@
   padding-block: var(--padding-md);
 }
 
+/*
+ * Column-major order: grid-auto-flow: column + a fixed row count places
+ * items down column 1, then column 2, etc. Row count is set in Liquid as
+ * ceil(brand_count / cols) via --at-brands-rows.
+ */
 .at-brands-panel__grid {
   display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--at-brands-rows, 1), auto);
   grid-template-columns: repeat(var(--at-brands-cols, 4), minmax(0, 1fr));
   gap: var(--gap-2xs) var(--gap-md);
 }
@@ -652,6 +659,8 @@
 /* Brand grid within a letter section (2-column default) */
 .at-drawer__brand-grid {
   display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--at-drawer-brand-rows, 1), auto);
   grid-template-columns: repeat(var(--at-brands-mobile-cols, 2), minmax(0, 1fr));
   padding-inline: var(--padding-sm);
   padding-block: var(--padding-xs);

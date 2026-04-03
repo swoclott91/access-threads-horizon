@@ -24,6 +24,12 @@
   assign panel_id       = 'at-panel-' | append: panel_link.handle
   assign brands_handle  = brands_handle | default: 'brands'
 
+  # Row count for column-major CSS grid: ceil(brand_total / cols)
+  assign brand_grid_rows = 1
+  if brand_total > 0
+    assign brand_grid_rows = brand_total | plus: cols | minus: 1 | divided_by: cols
+  endif
+
   # First sidebar item handle — used to set the initially active state
   assign first_cat_handle = categories_linklist.links.first.handle
 -%}
@@ -148,7 +154,10 @@
               role="list"
               aria-label="{{ cat_link.title }}"
             >
-              <div class="at-brands-panel__grid" style="--at-brands-cols: {{ cols }};">
+              <div
+            class="at-brands-panel__grid"
+            style="--at-brands-cols: {{ cols }}; --at-brands-rows: {{ brand_grid_rows }};"
+          >
                 {%- for brand_link in brands_linklist.links -%}
                   {%- liquid
                     assign brand_icon = blank
