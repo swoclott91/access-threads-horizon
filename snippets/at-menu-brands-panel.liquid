@@ -21,8 +21,10 @@
   assign cols           = block_settings.at_brands_panel_columns | default: 4
   assign img_radius     = block_settings.at_brand_image_border_radius | default: 4
   assign brand_total    = brands_linklist.links.size | default: 0
-  assign panel_id       = 'at-panel-' | append: panel_link.handle
-  assign brands_handle  = brands_handle | default: 'brands'
+  assign panel_id         = 'at-panel-' | append: panel_link.handle
+  assign brands_grid_id   = 'at-brands-grid-' | append: panel_link.handle
+  assign brands_search_id = 'at-brands-search-' | append: panel_link.handle
+  assign brands_handle    = brands_handle | default: 'brands'
 
   # Row count for column-major CSS grid: ceil(brand_total / cols)
   assign brand_grid_rows = 1
@@ -112,16 +114,15 @@
                   <span class="at-brands-panel__search-icon svg-wrapper" aria-hidden="true">
                     {{- 'icon-search.svg' | inline_asset_content -}}
                   </span>
-                  <label for="at-brands-search" class="visually-hidden">Search brands</label>
+                  <label for="{{ brands_search_id }}" class="visually-hidden">Search brands</label>
                   <input
                     ref="searchInput"
-                    id="at-brands-search"
+                    id="{{ brands_search_id }}"
                     type="search"
                     class="at-brands-panel__search"
                     placeholder="Search brands…"
                     autocomplete="off"
-                    on:input="/filterBrands"
-                    aria-controls="at-brands-grid"
+                    aria-controls="{{ brands_grid_id }}"
                     aria-label="Search brands"
                   >
                   <button
@@ -129,7 +130,6 @@
                     type="button"
                     class="at-brands-panel__search-clear"
                     aria-label="Clear search"
-                    on:click="/clearSearch"
                     hidden
                   >
                     <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
@@ -150,14 +150,14 @@
             {%- comment -%} Brand grid {%- endcomment -%}
             <div
               class="at-brands-panel__grid-wrapper"
-              id="at-brands-grid"
+              id="{{ brands_grid_id }}"
               role="list"
               aria-label="{{ cat_link.title }}"
             >
               <div
-            class="at-brands-panel__grid"
-            style="--at-brands-cols: {{ cols }}; --at-brands-rows: {{ brand_grid_rows }};"
-          >
+                class="at-brands-panel__grid"
+                style="--at-brands-cols: {{ cols }}; --at-brands-rows: {{ brand_grid_rows }};"
+              >
                 {%- for brand_link in brands_linklist.links -%}
                   {%- liquid
                     assign brand_icon = blank

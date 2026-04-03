@@ -180,7 +180,6 @@
             class="at-drawer__search"
             placeholder="{{ 'placeholders.search' | t | default: 'Search brands…' }}"
             autocomplete="off"
-            on:input="/filterBrands"
             aria-controls="at-drawer-brands-list"
             aria-label="{{ 'content.search' | t | default: 'Search brands' }}"
         >
@@ -189,7 +188,6 @@
           type="button"
           class="at-drawer__search-clear"
           aria-label="{{ 'actions.clear' | t | default: 'Clear' }}"
-          on:click="/clearSearch"
           hidden
         >
           <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>

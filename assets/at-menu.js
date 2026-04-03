@@ -38,6 +38,9 @@ class AtBrandsPanel extends Component {
     this.addEventListener('pointerenter', this.#onPointerEnter);
     this.addEventListener('pointerleave', this.#onPointerLeave);
     this.addEventListener('focusout', this.#onFocusOut);
+    // Brand search: delegated listeners so filtering always runs (same pattern as pointerenter).
+    this.addEventListener('input', this.#onDelegatedSearchInput);
+    this.addEventListener('click', this.#onDelegatedSearchClearClick);
   }
 
   disconnectedCallback() {
@@ -45,18 +48,31 @@ class AtBrandsPanel extends Component {
     this.removeEventListener('pointerenter', this.#onPointerEnter);
     this.removeEventListener('pointerleave', this.#onPointerLeave);
     this.removeEventListener('focusout', this.#onFocusOut);
+    this.removeEventListener('input', this.#onDelegatedSearchInput);
+    this.removeEventListener('click', this.#onDelegatedSearchClearClick);
+    this.#clearCloseTimer();
   }
 
   #onPointerEnter = () => {
     this.open();
   };
 
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.removeEventListener('pointerleave', this.#onPointerLeave);
-    this.removeEventListener('focusout', this.#onFocusOut);
-    this.#clearCloseTimer();
-  }
+  /** @param {Event} event */
+  #onDelegatedSearchInput = (event) => {
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (!event.target.classList.contains('at-brands-panel__search')) return;
+    if (!this.contains(event.target)) return;
+    const query = event.target.value.trim().toLowerCase();
+    this.#applyFilter(query);
+  };
+
+  /** @param {Event} event */
+  #onDelegatedSearchClearClick = (event) => {
+    const t = event.target instanceof Element ? event.target.closest('.at-brands-panel__search-clear') : null;
+    if (!t || !this.contains(t)) return;
+    event.preventDefault();
+    this.clearSearch();
+  };
 
   // ─── Open / close ────────────────────────────────────────────────────────
 
@@ -172,24 +188,21 @@ class AtBrandsPanel extends Component {
       const matches = panel.dataset.cat === cat;
       panel.hidden = !matches;
     }
+
+    // Re-apply search to the now-visible panel (and fix stale hidden state when switching back).
+    const q = this.querySelector('.at-brands-panel__search')?.value.trim().toLowerCase() ?? '';
+    this.#applyFilter(q);
   }
 
   // ─── Brand search ────────────────────────────────────────────────────────
 
   /**
-   * Called via on:input="/filterBrands" on the search input.
-   */
-  filterBrands() {
-    const query = this.refs.searchInput?.value.trim().toLowerCase() ?? '';
-    this.#applyFilter(query);
-  }
-
-  /**
    * @param {string} query - Lowercase search string.
    */
   #applyFilter(query) {
+    const active = this.querySelector('.at-brands-panel__cat-content:not([hidden])');
     const items = /** @type {NodeListOf<HTMLElement>} */ (
-      this.querySelectorAll('[data-brand-name]')
+      active?.querySelectorAll('.at-brands-panel__brand-item[data-brand-name]') ?? []
     );
 
     let visible = 0;
@@ -201,27 +214,27 @@ class AtBrandsPanel extends Component {
       if (show) visible++;
     }
 
-    // Update the count badge
     if (this.refs.countBadge) {
       this.refs.countBadge.textContent = String(visible);
     }
 
-    // Show/hide the clear button
-    if (this.refs.searchClear) {
-      this.refs.searchClear.hidden = query === '';
+    const clearBtn = active?.querySelector('.at-brands-panel__search-clear');
+    if (clearBtn instanceof HTMLElement) {
+      clearBtn.hidden = query === '';
     }
   }
 
   /**
-   * Clear the search input. Called via on:click="/clearSearch".
+   * Clear the search input and show all brands in the active panel.
    */
   clearSearch() {
-    if (this.refs.searchInput) {
-      this.refs.searchInput.value = '';
+    const input = this.querySelector('.at-brands-panel__search');
+    if (input instanceof HTMLInputElement) {
+      input.value = '';
     }
 
     this.#applyFilter('');
-    this.refs.searchInput?.focus();
+    input?.focus();
   }
 }
 
@@ -261,7 +274,32 @@ class AtMenuDrawer extends Component {
   connectedCallback() {
     super.connectedCallback();
     this.#setView('categories');
+    this.addEventListener('input', this.#onDelegatedDrawerSearchInput);
+    this.addEventListener('click', this.#onDelegatedDrawerSearchClearClick);
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('input', this.#onDelegatedDrawerSearchInput);
+    this.removeEventListener('click', this.#onDelegatedDrawerSearchClearClick);
+  }
+
+  /** @param {Event} event */
+  #onDelegatedDrawerSearchInput = (event) => {
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (!event.target.classList.contains('at-drawer__search')) return;
+    if (!this.contains(event.target)) return;
+    const query = event.target.value.trim().toLowerCase();
+    this.#applyFilter(query);
+  };
+
+  /** @param {Event} event */
+  #onDelegatedDrawerSearchClearClick = (event) => {
+    const t = event.target instanceof Element ? event.target.closest('.at-drawer__search-clear') : null;
+    if (!t || !this.contains(t)) return;
+    event.preventDefault();
+    this.clearSearch();
+  };
 
   // ─── View switching ──────────────────────────────────────────────────────
 
@@ -300,19 +338,12 @@ class AtMenuDrawer extends Component {
   // ─── Brand search ────────────────────────────────────────────────────────
 
   /**
-   * Called via on:input="/filterBrands" on the drawer search input.
-   */
-  filterBrands() {
-    const query = this.refs.searchInput?.value.trim().toLowerCase() ?? '';
-    this.#applyFilter(query);
-  }
-
-  /**
    * @param {string} query
    */
   #applyFilter(query) {
+    const { brandsView } = this.refs;
     const items = /** @type {NodeListOf<HTMLElement>} */ (
-      this.querySelectorAll('[data-brand-name]')
+      brandsView?.querySelectorAll('.at-drawer__brand-item[data-brand-name]') ?? []
     );
 
     let visible = 0;
@@ -328,38 +359,36 @@ class AtMenuDrawer extends Component {
       this.refs.countBadge.textContent = String(visible);
     }
 
-    if (this.refs.searchClear) {
-      this.refs.searchClear.hidden = query === '';
+    const clearBtn = brandsView?.querySelector('.at-drawer__search-clear');
+    if (clearBtn instanceof HTMLElement) {
+      clearBtn.hidden = query === '';
     }
 
-    // Hide letter section headers when all their brands are hidden
     for (const section of this.querySelectorAll('.at-drawer__letter-section')) {
-      const hasVisible = section.querySelector('[data-brand-name]:not([hidden])') !== null;
+      const hasVisible =
+        section.querySelector('.at-drawer__brand-item[data-brand-name]:not([hidden])') !== null;
       if (section instanceof HTMLElement) {
         section.hidden = !hasVisible;
       }
     }
 
-    // Hide alphabet bar during active search
     if (this.refs.alphaBar) {
       this.refs.alphaBar.hidden = query !== '';
     }
   }
 
   #clearFilter() {
-    if (this.refs.searchInput) {
-      this.refs.searchInput.value = '';
+    const input = this.querySelector('.at-drawer__search');
+    if (input instanceof HTMLInputElement) {
+      input.value = '';
     }
 
     this.#applyFilter('');
   }
 
-  /**
-   * Clear the search input. Called via on:click="/clearSearch".
-   */
   clearSearch() {
     this.#clearFilter();
-    this.refs.searchInput?.focus();
+    this.querySelector('.at-drawer__search')?.focus();
   }
 
   // ─── Alphabet jump ───────────────────────────────────────────────────────
