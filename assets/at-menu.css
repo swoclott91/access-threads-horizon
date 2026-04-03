@@ -99,29 +99,29 @@
   /*
    * Height = space below the header down toward the bottom of the viewport.
    * Tune without editing the full calc():
-   *   --at-brands-panel-visible-fraction  unitless, default 1 (full band). E.g. 0.85 = 85%.
+   *   --at-brands-panel-visible-fraction  unitless, default 0.75 (~25% shorter than full band).
    *   --at-brands-panel-bottom-gap        extra px subtracted from the bottom (breathing room).
    * Override in Admin → Online store → Themes → … → Edit code → assets/at-menu.css,
    * or Theme settings → Custom CSS, e.g.:
-   *   .at-brands-panel__dropdown { --at-brands-panel-visible-fraction: 0.9; --at-brands-panel-bottom-gap: 24px; }
+   *   .at-brands-panel__dropdown { --at-brands-panel-visible-fraction: 1; --at-brands-panel-bottom-gap: 24px; }
    */
-  --at-brands-panel-visible-fraction: 1;
+  --at-brands-panel-visible-fraction: 0.75;
   --at-brands-panel-bottom-gap: 0px;
   height: calc(
     (100vh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
-      var(--at-brands-panel-visible-fraction, 1)
+      var(--at-brands-panel-visible-fraction, 0.75)
   );
   height: calc(
     (100dvh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
-      var(--at-brands-panel-visible-fraction, 1)
+      var(--at-brands-panel-visible-fraction, 0.75)
   );
   max-height: calc(
     (100vh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
-      var(--at-brands-panel-visible-fraction, 1)
+      var(--at-brands-panel-visible-fraction, 0.75)
   );
   max-height: calc(
     (100dvh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
-      var(--at-brands-panel-visible-fraction, 1)
+      var(--at-brands-panel-visible-fraction, 0.75)
   );
   overflow: hidden;
   /* Let row children shrink below content height so inner overflow-y can scroll */
