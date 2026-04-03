@@ -97,14 +97,32 @@
   border-block-start: 2px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
   box-shadow: var(--shadow-popover, 0 4px 16px rgb(0 0 0 / 0.12));
   /*
-   * Fill from below the header to the bottom of the viewport (not `min(max-content, …)` —
-   * that shrank the flyout to only ~3 brand rows when content was shorter than the cap).
-   * `dvh` overrides `vh` where supported for mobile browser chrome.
+   * Height = space below the header down toward the bottom of the viewport.
+   * Tune without editing the full calc():
+   *   --at-brands-panel-visible-fraction  unitless, default 1 (full band). E.g. 0.85 = 85%.
+   *   --at-brands-panel-bottom-gap        extra px subtracted from the bottom (breathing room).
+   * Override in Admin → Online store → Themes → … → Edit code → assets/at-menu.css,
+   * or Theme settings → Custom CSS, e.g.:
+   *   .at-brands-panel__dropdown { --at-brands-panel-visible-fraction: 0.9; --at-brands-panel-bottom-gap: 24px; }
    */
-  height: calc(100vh - var(--at-brands-panel-top, 60px));
-  height: calc(100dvh - var(--at-brands-panel-top, 60px));
-  max-height: calc(100vh - var(--at-brands-panel-top, 60px));
-  max-height: calc(100dvh - var(--at-brands-panel-top, 60px));
+  --at-brands-panel-visible-fraction: 1;
+  --at-brands-panel-bottom-gap: 0px;
+  height: calc(
+    (100vh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
+      var(--at-brands-panel-visible-fraction, 1)
+  );
+  height: calc(
+    (100dvh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
+      var(--at-brands-panel-visible-fraction, 1)
+  );
+  max-height: calc(
+    (100vh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
+      var(--at-brands-panel-visible-fraction, 1)
+  );
+  max-height: calc(
+    (100dvh - var(--at-brands-panel-top, 60px) - var(--at-brands-panel-bottom-gap, 0px)) *
+      var(--at-brands-panel-visible-fraction, 1)
+  );
   overflow: hidden;
   /* Let row children shrink below content height so inner overflow-y can scroll */
   align-items: stretch;
