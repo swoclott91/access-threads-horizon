@@ -68,7 +68,13 @@
 }
 
 .at-brands-panel[data-open] .at-menu__nav-link-chevron {
-  transform: rotate(90deg);
+  transform: rotate(180deg);
+}
+
+/* Standalone AT menu section: submenus use :hover / :focus-within (no data-open on host). */
+.at-menu__nav-item:hover .at-menu__nav-link-chevron,
+.at-menu__nav-item:focus-within .at-menu__nav-link-chevron {
+  transform: rotate(180deg);
 }
 
 /* =============================================================================

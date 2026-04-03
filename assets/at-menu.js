@@ -203,7 +203,8 @@ class AtBrandsPanel extends Component {
    * - Theme `menu_row` can place the menu in **`.header__row--bottom`**; using only
    *   `.header__row--top` leaves a gap the height of the entire other row.
    * - `.header__row` often has more block padding than `.at-menu__nav` (fixed 2.5rem); row bottom
-   *   can sit well below the visible links — use the **nav** box when present and clamp to row.
+   *   can sit well below the visible links — use **min(nav, row, trigger)** so the panel meets the
+   *   trigger / link strip without a gap from extra row padding.
    */
   #updatePanelTop() {
     const { panel, trigger } = this.refs;
@@ -213,15 +214,13 @@ class AtBrandsPanel extends Component {
     const row = trigger instanceof HTMLElement ? trigger.closest('.header__row') : null;
     const nav = trigger instanceof HTMLElement ? trigger.closest('.at-menu__nav') : null;
 
-    let bottom = 0;
+    /** @type {number[]} */
+    const bottoms = [];
+    if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
+    if (row instanceof HTMLElement) bottoms.push(row.getBoundingClientRect().bottom);
+    if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
 
-    if (nav instanceof HTMLElement && row instanceof HTMLElement) {
-      bottom = Math.min(nav.getBoundingClientRect().bottom, row.getBoundingClientRect().bottom);
-    } else if (row instanceof HTMLElement) {
-      bottom = row.getBoundingClientRect().bottom;
-    } else if (nav instanceof HTMLElement) {
-      bottom = nav.getBoundingClientRect().bottom;
-    }
+    let bottom = bottoms.length > 0 ? Math.min(...bottoms) : 0;
 
     if (bottom <= 0) {
       const fallback =
@@ -234,8 +233,9 @@ class AtBrandsPanel extends Component {
 
     if (bottom <= 0) return;
 
-    // Overlap ~1px with theme mega menus (top: calc(100% - 1px + …)) to kill subpixel seams.
-    const topPx = `${Math.max(0, bottom - 1)}px`;
+    // Overlap a few px with the header row (Horizon mega menus use ~1px) to kill subpixel seams
+    // and trim residual gap when the nav strip is shorter than the full row.
+    const topPx = `${Math.max(0, bottom - 2)}px`;
     panel.style.setProperty('--at-brands-panel-top', topPx);
     panel.style.top = topPx;
   }
