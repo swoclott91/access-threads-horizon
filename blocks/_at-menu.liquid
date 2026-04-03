@@ -132,9 +132,10 @@
   ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {% else %}
 
-    <div
+    <header-menu
       class="header-menu{{ color_scheme_classes }}"
       {{ block.shopify_attributes }}
+      data-hydration-key="at-header-menu"
     >
       <div class="header-menu__inner">
         <nav
@@ -218,7 +219,9 @@
           {%- endfor -%}
         </nav>
       </div>
-    </div>
+
+      <script src="{{ 'header-menu.js' | asset_url }}" type="module" fetchpriority="low"></script>
+    </header-menu>
 
 {% endcase %}
 

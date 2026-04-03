@@ -86,7 +86,7 @@
       {%- for cat_link in categories_linklist.links -%}
         {%- assign is_first   = forloop.first -%}
         {%- assign is_brands  = false -%}
-        {%- if cat_link.handle == brands_handle and brands_linklist != blank -%}
+        {%- if cat_link.handle == brands_handle -%}
           {%- assign is_brands = true -%}
         {%- endif -%}
 
@@ -193,7 +193,11 @@
                     <span class="at-brands-panel__brand-name">{{- brand_link.title -}}</span>
                   </a>
                 {%- else -%}
-                  <p class="at-brands-panel__empty">No brands configured. Set the "Brands source menu" in the AT Menu block settings.</p>
+                  <p class="at-brands-panel__empty">
+                    No brands found. In the theme editor, set the
+                    <strong>Brands source menu</strong> in the AT&nbsp;Menu block
+                    to a menu that contains your brand collection links.
+                  </p>
                 {%- endfor -%}
               </div>
             </div>

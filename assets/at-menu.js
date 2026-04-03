@@ -33,9 +33,23 @@ class AtBrandsPanel extends Component {
 
   connectedCallback() {
     super.connectedCallback();
+    // Add pointerenter imperatively so hover always works, regardless of
+    // whether the Component base class processes on: attrs on the root element.
+    this.addEventListener('pointerenter', this.#onPointerEnter);
     this.addEventListener('pointerleave', this.#onPointerLeave);
     this.addEventListener('focusout', this.#onFocusOut);
   }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.removeEventListener('pointerenter', this.#onPointerEnter);
+    this.removeEventListener('pointerleave', this.#onPointerLeave);
+    this.removeEventListener('focusout', this.#onFocusOut);
+  }
+
+  #onPointerEnter = () => {
+    this.open();
+  };
 
   disconnectedCallback() {
     super.disconnectedCallback();
