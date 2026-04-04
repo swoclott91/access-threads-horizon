@@ -133,7 +133,11 @@ class AtBrandsPanel extends Component {
 
     // Re-measure after layout / sticky transition so `top` matches paint.
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => this.#updatePanelTop());
+      requestAnimationFrame(() => {
+        this.#updatePanelTop();
+        // `--top-row-height` on #header-component is set in rAF in utilities.js; one more tick helps home vs other pages.
+        queueMicrotask(() => this.#updatePanelTop());
+      });
     });
 
     // Always activate the first category when re-opening so stale state is cleared
@@ -198,12 +202,12 @@ class AtBrandsPanel extends Component {
   }
 
   /**
-   * Sets `top` / `--at-brands-panel-top` flush under the menu strip (nav/trigger), not full row.
+   * Sets `top` / `--at-brands-panel-top` flush under the header seam.
    *
-   * - Theme `menu_row` can place the menu in `.header__row--bottom`; use `trigger.closest('.header__row')`.
-   * - Avoid `row.bottom` only: row is often taller than `.at-menu__nav` (pushes `top` too low, e.g. 107 vs 66).
-   *   Anchor Y = `Math.min(nav.bottom, row.bottom, trigger.bottom)`.
-   * - Seam overlap still uses row `border-bottom-width` when a row exists.
+   * Home vs other pages: link `getBoundingClientRect()` can sit much lower than the real first-row
+   * seam (e.g. ~92px vs ~66px). Horizon sets `--top-row-height` on `#header-component` (utilities.js);
+   * when the trigger lives in `.header__row--top`, use `min(header.top + --top-row-height, topRow.bottom)`.
+   * Menu in `.header__row--bottom` uses that row’s bottom. Otherwise fall back to min(nav, row, trigger).
    */
   #updatePanelTop() {
     const { panel, trigger } = this.refs;
@@ -213,31 +217,19 @@ class AtBrandsPanel extends Component {
     const row = trigger instanceof HTMLElement ? trigger.closest('.header__row') : null;
     const nav = trigger instanceof HTMLElement ? trigger.closest('.at-menu__nav') : null;
 
-    /** @type {number[]} */
-    const bottoms = [];
-    if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
-    if (row instanceof HTMLElement) bottoms.push(row.getBoundingClientRect().bottom);
-    if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
+    const bottom = this.#resolvePanelSeamBottom(trigger, headerComponent, nav, row);
 
-    let bottom = bottoms.length > 0 ? Math.min(...bottoms) : 0;
+    const seamRow =
+      trigger instanceof HTMLElement
+        ? (trigger.closest('.header__row--top') ??
+            trigger.closest('.header__row--bottom') ??
+            row)
+        : row;
 
     let seamOverlap = 2;
-    if (row instanceof HTMLElement) {
-      const borderBottom = parseFloat(getComputedStyle(row).borderBottomWidth) || 0;
+    if (seamRow instanceof HTMLElement) {
+      const borderBottom = parseFloat(getComputedStyle(seamRow).borderBottomWidth) || 0;
       seamOverlap = Math.max(2, 1 + borderBottom);
-    }
-
-    if (bottom <= 0) {
-      const fallback =
-        headerComponent?.querySelector('.header__row--top')
-        ?? headerComponent
-        ?? document.querySelector('.header-section')
-        ?? document.querySelector('header');
-      if (fallback instanceof HTMLElement) {
-        bottom = fallback.getBoundingClientRect().bottom;
-        const borderBottom = parseFloat(getComputedStyle(fallback).borderBottomWidth) || 0;
-        seamOverlap = Math.max(2, 1 + borderBottom);
-      }
     }
 
     if (bottom <= 0) return;
@@ -245,6 +237,61 @@ class AtBrandsPanel extends Component {
     const topPx = `${Math.max(0, bottom - seamOverlap)}px`;
     panel.style.setProperty('--at-brands-panel-top', topPx);
     panel.style.top = topPx;
+  }
+
+  /**
+   * Viewport Y of the bottom edge of the header region the mega panel should meet.
+   * @param {HTMLElement | undefined} trigger
+   * @param {Element | null} headerComponent
+   * @param {HTMLElement | null} nav
+   * @param {HTMLElement | null} row
+   */
+  #resolvePanelSeamBottom(trigger, headerComponent, nav, row) {
+    if (!(trigger instanceof HTMLElement) || !(headerComponent instanceof HTMLElement)) {
+      return this.#fallbackPanelSeamBottom(nav, row, trigger, headerComponent);
+    }
+
+    const headerRect = headerComponent.getBoundingClientRect();
+    const topRowPx = parseFloat(getComputedStyle(headerComponent).getPropertyValue('--top-row-height'));
+
+    if (trigger.closest('.header__row--top') && !Number.isNaN(topRowPx) && topRowPx > 0) {
+      const fromThemeVar = headerRect.top + topRowPx;
+      const topRowEl = trigger.closest('.header__row--top');
+      const fromRect =
+        topRowEl instanceof HTMLElement ? topRowEl.getBoundingClientRect().bottom : Number.POSITIVE_INFINITY;
+      return Math.min(fromThemeVar, fromRect);
+    }
+
+    if (trigger.closest('.header__row--bottom') && row instanceof HTMLElement) {
+      return row.getBoundingClientRect().bottom;
+    }
+
+    return this.#fallbackPanelSeamBottom(nav, row, trigger, headerComponent);
+  }
+
+  /**
+   * @param {HTMLElement | null} nav
+   * @param {HTMLElement | null} row
+   * @param {HTMLElement | undefined} trigger
+   * @param {Element | null} headerComponent
+   */
+  #fallbackPanelSeamBottom(nav, row, trigger, headerComponent) {
+    /** @type {number[]} */
+    const bottoms = [];
+    if (nav instanceof HTMLElement) bottoms.push(nav.getBoundingClientRect().bottom);
+    if (row instanceof HTMLElement) bottoms.push(row.getBoundingClientRect().bottom);
+    if (trigger instanceof HTMLElement) bottoms.push(trigger.getBoundingClientRect().bottom);
+    if (bottoms.length > 0) return Math.min(...bottoms);
+
+    const fallback =
+      headerComponent instanceof Element
+        ? (headerComponent.querySelector('.header__row--top') ?? headerComponent)
+        : null;
+    const el =
+      fallback instanceof HTMLElement
+        ? fallback
+        : (document.querySelector('.header-section') ?? document.querySelector('header'));
+    return el instanceof HTMLElement ? el.getBoundingClientRect().bottom : 0;
   }
 
   #onHeaderLayoutChange = () => {

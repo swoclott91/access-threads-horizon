@@ -117,7 +117,7 @@
 .at-brands-panel__dropdown {
   /*
    * position:fixed + full viewport width (inset-inline:0) escapes header overflow clipping.
-   * Vertical `top` is set in JS from min(nav, row, trigger) bottoms + row seam overlap
+   * Vertical `top` is set in JS: top-row seam via --top-row-height + header rect, else row/nav/trigger
    * (menu may live in .header__row--bottom per theme settings) — see AtBrandsPanel.#updatePanelTop.
    */
   position: fixed;
