@@ -16,9 +16,9 @@
           "type": "text",
           "name": "t:names.heading",
           "settings": {
-            "text": "<p>Your Source For Blank Apparel</p>",
+            "text": "<p>Everyday Blank Apparel at a Wholesale Price</p>",
             "width": "fit-content",
-            "max_width": "normal",
+            "max_width": "narrow",
             "alignment": "left",
             "type_preset": "h2",
             "font": "var(--font-body--family)",
