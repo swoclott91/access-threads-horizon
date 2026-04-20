@@ -16,7 +16,7 @@
           "type": "text",
           "name": "t:names.heading",
           "settings": {
-            "text": "<p>Everyday Blank Apparel at a Wholesale Price</p>",
+            "text": "<p>Welcome to Blank Apparel</p>",
             "width": "fit-content",
             "max_width": "narrow",
             "alignment": "left",
@@ -42,7 +42,7 @@
           "type": "text",
           "name": "t:names.text",
           "settings": {
-            "text": "<p>Shop premium blank apparel from top brands at the best prices, delivered fast.</p>",
+            "text": "<p>Access the brands and styles used by professional print shops. Make shirts at home, or grow your business. </p>",
             "width": "fit-content",
             "max_width": "normal",
             "alignment": "left",
