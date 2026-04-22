@@ -495,15 +495,17 @@
 
 /* =============================================================================
    Mobile drawer
-   (extends .drawer from base.css — transform, position, z-index are inherited)
+   Lives inside the .menu-drawer wrapper that header-drawer.js already positions
+   and animates (position: fixed, translateX slide-in). We intentionally do NOT
+   extend .drawer from base.css because that class applies its own
+   transform: translateX(-120%) which conflicts with the parent animation.
    ============================================================================= */
 
 .at-drawer {
   display: flex;
   flex-direction: column;
-  width: var(--drawer-width, 95vw);
-  max-width: var(--drawer-max-width, 500px);
-  height: var(--drawer-height, 100dvh);
+  width: 100%;
+  height: 100%;
   background-color: var(--color-background);
 }
 
@@ -650,6 +652,41 @@
   width: 0.875rem;
   height: 0.875rem;
   opacity: 0.4;
+}
+
+/* Accordion (details/summary) for categories with sub-links */
+.at-drawer__accordion {
+  width: 100%;
+}
+
+.at-drawer__accordion[open] .at-drawer__accordion-chevron {
+  transform: rotate(90deg);
+}
+
+.at-drawer__accordion-chevron {
+  transition: transform var(--animation-speed) var(--animation-easing);
+}
+
+.at-drawer__sub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  padding-inline-start: calc(var(--drawer-inline-padding) + var(--gap-sm));
+  padding-block-end: var(--padding-sm);
+}
+
+.at-drawer__sub-item {
+  display: block;
+  padding-inline: var(--drawer-inline-padding);
+  padding-block: var(--padding-sm);
+  font-size: var(--font-size--small);
+  color: var(--color-foreground);
+  text-decoration: none;
+  transition: background-color var(--animation-speed) var(--animation-easing);
+
+  &:hover {
+    background-color: rgb(var(--color-foreground-rgb) / var(--opacity-6));
+  }
 }
 
 /* Search bar in brands view */
