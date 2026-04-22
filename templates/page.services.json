@@ -37,16 +37,10 @@
             "padding-inline-end": 0
           },
           "blocks": {}
-        },
-        "page-content": {
-          "type": "page-content",
-          "settings": {},
-          "blocks": {}
         }
       },
       "block_order": [
-        "heading",
-        "page-content"
+        "heading"
       ],
       "settings": {
         "content_direction": "column",
