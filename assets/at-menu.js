@@ -37,30 +37,17 @@ class AtBrandsPanel extends Component {
   /** @type {ReturnType<typeof setTimeout> | null} */
   #focusOutTimer = null;
 
-  /** @type {HTMLElement | null} */
-  #panelSearchBound = null;
-
   /** @type {ResizeObserver | null} */
   #headerResizeObserver = null;
 
   connectedCallback() {
     super.connectedCallback();
-    // Add pointerenter imperatively so hover always works, regardless of
-    // whether the Component base class processes on: attrs on the root element.
     this.addEventListener('pointerenter', this.#onPointerEnter);
     this.addEventListener('pointerleave', this.#onPointerLeave);
     this.addEventListener('focusout', this.#onFocusOut);
-    // Brand search: capture on the dropdown so input runs even if bubbling is affected;
-    // avoids duplicate handling vs host-level delegation.
-    const { panel } = this.refs;
-    if (panel) {
-      panel.addEventListener('input', this.#onDelegatedSearchInput, true);
-      panel.addEventListener('click', this.#onDelegatedSearchClearClick, true);
-      // mouseenter does not bubble; declarative on:mouseenter on cat buttons is unreliable.
-      // pointerover bubbles so one listener switches categories on hover (desktop only).
-      panel.addEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
-      this.#panelSearchBound = panel;
-    }
+    this.addEventListener('input', this.#onDelegatedSearchInput);
+    this.addEventListener('click', this.#onDelegatedSearchClearClick);
+    this.addEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
   }
 
   disconnectedCallback() {
@@ -68,12 +55,9 @@ class AtBrandsPanel extends Component {
     this.removeEventListener('pointerenter', this.#onPointerEnter);
     this.removeEventListener('pointerleave', this.#onPointerLeave);
     this.removeEventListener('focusout', this.#onFocusOut);
-    if (this.#panelSearchBound) {
-      this.#panelSearchBound.removeEventListener('input', this.#onDelegatedSearchInput, true);
-      this.#panelSearchBound.removeEventListener('click', this.#onDelegatedSearchClearClick, true);
-      this.#panelSearchBound.removeEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
-      this.#panelSearchBound = null;
-    }
+    this.removeEventListener('input', this.#onDelegatedSearchInput);
+    this.removeEventListener('click', this.#onDelegatedSearchClearClick);
+    this.removeEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
     this.#clearCloseTimer();
     this.#clearFocusOutTimer();
     this.#unbindHeaderLayoutListeners();
@@ -105,7 +89,7 @@ class AtBrandsPanel extends Component {
     if (!AtBrandsPanel.#desktopFinePointerMql.matches) return;
     if (!(event.target instanceof Element)) return;
     const btn = event.target.closest('.at-brands-panel__cat-btn');
-    if (!(btn instanceof HTMLElement) || !this.refs.panel?.contains(btn)) return;
+    if (!(btn instanceof HTMLElement) || !this.contains(btn)) return;
     if (btn.classList.contains('at-brands-panel__cat-btn--active')) return;
     this.#activateCategory(btn.dataset.cat ?? '');
   };
