@@ -69,10 +69,10 @@
 <at-menu-panel class="at-panel">
 
   {%- comment -%} ═══════════════════════════════════════════════════════════
-    VIEW: Main Menu
-    Shows top-level nav items. The panel trigger item (e.g. "Products")
-    drills into the categories view; other items with children use
-    accordions; plain items are direct links.
+    VIEW: Main
+    Inlines the categories from at_categories_menu directly so users see
+    Brands, T-Shirts, Polos, etc. without an extra "Products" drill-down.
+    Non-panel menu items (Services, Contact, etc.) are appended below.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
   <div class="at-panel__view" data-view="main">
 
@@ -90,91 +90,9 @@
 
     <nav class="at-panel__body" aria-label="{{ drawer_heading | escape }}">
       <ul class="at-panel__list" role="list">
-        {%- for link in menu_links -%}
-          <li class="at-panel__list-item" style="--at-panel-index: {{ forloop.index }};">
-            {%- if link.handle == panel_handle and categories_linklist != blank -%}
-              <button
-                type="button"
-                class="at-panel__item"
-                on:click="/navigate"
-                data-target="categories"
-              >
-                <span class="at-panel__item-text">{{- link.title -}}</span>
-                <span class="at-panel__chevron svg-wrapper" aria-hidden="true">
-                  {{- 'icon-chevron-right.svg' | inline_asset_content -}}
-                </span>
-              </button>
 
-            {%- elsif link.links != blank -%}
-              <details class="at-panel__accordion">
-                <summary class="at-panel__item">
-                  <span class="at-panel__item-text">{{- link.title -}}</span>
-                  <span class="at-panel__chevron at-panel__accordion-icon svg-wrapper" aria-hidden="true">
-                    {{- 'icon-chevron-right.svg' | inline_asset_content -}}
-                  </span>
-                </summary>
-                <ul class="at-panel__sub-list" role="list">
-                  {%- for sub_link in link.links -%}
-                    <li>
-                      <a
-                        href="{{ sub_link.url }}"
-                        class="at-panel__sub-item"
-                        {% if sub_link.current %}aria-current="page"{% endif %}
-                      >
-                        {{- sub_link.title -}}
-                      </a>
-                    </li>
-                  {%- endfor -%}
-                </ul>
-              </details>
-
-            {%- else -%}
-              <a
-                href="{{ link.url }}"
-                class="at-panel__item{% if link.handle == highlight_handle %} at-panel__item--highlight{% endif %}"
-                {% if link.current %}aria-current="page"{% endif %}
-              >
-                <span class="at-panel__item-text">{{- link.title -}}</span>
-              </a>
-            {%- endif -%}
-          </li>
-        {%- endfor -%}
-      </ul>
-    </nav>
-  </div>
-
-
-  {%- comment -%} ═══════════════════════════════════════════════════════════
-    VIEW: Categories
-    Shows items from at_categories_menu (same data as desktop sidebar).
-    Each category with children drills into its own view; brands drills
-    into the brand grid; plain items are direct links.
-  ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
-  {%- if categories_linklist != blank -%}
-    <div class="at-panel__view" data-view="categories" hidden>
-
-      <div class="at-panel__header">
-        <button
-          type="button"
-          class="at-panel__back"
-          aria-label="{{ 'actions.back' | t | default: 'Back' }}"
-          on:click="/back"
-        >
-          <span class="svg-wrapper">{{- 'icon-chevron-left.svg' | inline_asset_content -}}</span>
-        </button>
-        <h2 class="at-panel__title">{{- panel_link.title | default: 'Products' | escape -}}</h2>
-        <button
-          type="button"
-          class="at-panel__close"
-          aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
-          on:click="header-drawer/close"
-        >
-          <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
-        </button>
-      </div>
-
-      <nav class="at-panel__body" aria-label="{{ panel_link.title | default: 'Products' | escape }}">
-        <ul class="at-panel__list" role="list">
+        {%- comment -%} ── Category items (inlined from at_categories_menu) ── {%- endcomment -%}
+        {%- if categories_linklist != blank -%}
           {%- for cat_link in categories_linklist.links -%}
             {%- liquid
               assign is_brands = false
@@ -224,10 +142,52 @@
               {%- endif -%}
             </li>
           {%- endfor -%}
-        </ul>
-      </nav>
-    </div>
-  {%- endif -%}
+        {%- endif -%}
+
+        {%- comment -%} ── Remaining main menu items (skip the panel trigger) ── {%- endcomment -%}
+        {%- for link in menu_links -%}
+          {%- if link.handle == panel_handle -%}
+            {%- continue -%}
+          {%- endif -%}
+          <li class="at-panel__list-item" style="--at-panel-index: {{ forloop.index | plus: categories_linklist.links.size }};">
+            {%- if link.links != blank -%}
+              <details class="at-panel__accordion">
+                <summary class="at-panel__item">
+                  <span class="at-panel__item-text">{{- link.title -}}</span>
+                  <span class="at-panel__chevron at-panel__accordion-icon svg-wrapper" aria-hidden="true">
+                    {{- 'icon-chevron-right.svg' | inline_asset_content -}}
+                  </span>
+                </summary>
+                <ul class="at-panel__sub-list" role="list">
+                  {%- for sub_link in link.links -%}
+                    <li>
+                      <a
+                        href="{{ sub_link.url }}"
+                        class="at-panel__sub-item"
+                        {% if sub_link.current %}aria-current="page"{% endif %}
+                      >
+                        {{- sub_link.title -}}
+                      </a>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              </details>
+
+            {%- else -%}
+              <a
+                href="{{ link.url }}"
+                class="at-panel__item{% if link.handle == highlight_handle %} at-panel__item--highlight{% endif %}"
+                {% if link.current %}aria-current="page"{% endif %}
+              >
+                <span class="at-panel__item-text">{{- link.title -}}</span>
+              </a>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+
+      </ul>
+    </nav>
+  </div>
 
 
   {%- comment -%} ═══════════════════════════════════════════════════════════
