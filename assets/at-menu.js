@@ -403,111 +403,199 @@ if (!customElements.get('at-brands-panel')) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   AtMenuDrawer
-   Mobile slide-in drawer. Manages:
-   - Category ↔ brands view switching
-   - Brand search / filter inside the drawer
+   AtMenuPanel
+   Mobile drawer view-stack. Manages:
+   - Forward/back navigation between named views (main → categories → brands)
+   - Slide animations between views
+   - Brand search / filter within the brands view
    - Alphabet quick-jump
+   Lives inside the <header-drawer> component; close buttons delegate to
+   header-drawer/close so focus-trap teardown works correctly.
    ───────────────────────────────────────────────────────────────────────────── */
 
 /**
- * @typedef {object} AtMenuDrawerRefs
- * @property {HTMLElement} categoriesView - The categories view container.
- * @property {HTMLElement} brandsView - The brands drill-down view container.
- * @property {HTMLInputElement} [searchInput] - Brand search input in drawer.
- * @property {HTMLElement} [searchClear] - Clear search button in drawer.
- * @property {HTMLElement} [countBadge] - Brand count badge in drawer.
+ * @typedef {object} AtMenuPanelRefs
+ * @property {HTMLInputElement} [searchInput] - Brand search input.
+ * @property {HTMLElement} [searchClear] - Clear search button.
+ * @property {HTMLElement} [brandCount] - Brand count badge.
+ * @property {HTMLElement} [brandsBody] - Scrollable brands container.
  * @property {HTMLElement} [alphaBar] - Alphabet quick-jump bar.
  */
 
 /**
- * Mobile drawer custom element for the AT Menu.
+ * View-stack panel for the AT mobile drawer.
  *
- * @extends {Component<AtMenuDrawerRefs>}
+ * @extends {Component<AtMenuPanelRefs>}
  */
-class AtMenuDrawer extends Component {
-  requiredRefs = ['categoriesView', 'brandsView'];
+class AtMenuPanel extends Component {
+  /** @type {string[]} */
+  #viewStack = [];
 
-  /** @type {'categories' | 'brands'} */
-  #view = 'categories';
+  /** @type {HTMLElement | null} */
+  #activeView = null;
+
+  /** @type {boolean} */
+  #animating = false;
+
+  /** @type {MutationObserver | null} */
+  #detailsObserver = null;
 
   connectedCallback() {
     super.connectedCallback();
-    this.#setView('categories');
-    this.addEventListener('input', this.#onDelegatedDrawerSearchInput);
-    this.addEventListener('click', this.#onDelegatedDrawerSearchClearClick);
+
+    this.#activeView = this.querySelector('.at-panel__view[data-view="main"]');
+    this.#viewStack = [];
+
+    this.addEventListener('input', this.#onSearchInput);
+    this.addEventListener('click', this.#onSearchClearClick);
+
+    // Reset to main view whenever the parent <details> drawer closes.
+    const details = this.closest('details.menu-drawer-container');
+    if (details) {
+      this.#detailsObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.attributeName === 'open' && !details.hasAttribute('open')) {
+            this.reset();
+          }
+        }
+      });
+      this.#detailsObserver.observe(details, { attributes: true });
+    }
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.removeEventListener('input', this.#onDelegatedDrawerSearchInput);
-    this.removeEventListener('click', this.#onDelegatedDrawerSearchClearClick);
+    this.removeEventListener('input', this.#onSearchInput);
+    this.removeEventListener('click', this.#onSearchClearClick);
+    this.#detailsObserver?.disconnect();
+    this.#detailsObserver = null;
   }
 
-  /** @param {Event} event */
-  #onDelegatedDrawerSearchInput = (event) => {
-    if (!(event.target instanceof HTMLInputElement)) return;
-    if (!event.target.classList.contains('at-drawer__search')) return;
-    if (!this.contains(event.target)) return;
-    const query = event.target.value.trim().toLowerCase();
-    this.#applyFilter(query);
-  };
-
-  /** @param {Event} event */
-  #onDelegatedDrawerSearchClearClick = (event) => {
-    const t = event.target instanceof Element ? event.target.closest('.at-drawer__search-clear') : null;
-    if (!t || !this.contains(t)) return;
-    event.preventDefault();
-    this.clearSearch();
-  };
-
-  // ─── View switching ──────────────────────────────────────────────────────
+  // ─── View navigation ──────────────────────────────────────────────────────
 
   /**
-   * Show the brands drill-down view. Called via on:click="/showBrands".
+   * Navigate forward to a named view. Called via on:click="/navigate"
+   * with data-target="viewName" on the trigger element.
+   * @param {MouseEvent} event
    */
-  showBrands() {
-    this.#setView('brands');
+  navigate(event) {
+    if (this.#animating) return;
+    if (!(event.currentTarget instanceof HTMLElement)) return;
 
-    // Focus search if present
-    requestAnimationFrame(() => {
-      this.refs.searchInput?.focus();
-    });
+    const target = event.currentTarget.dataset.target;
+    if (!target) return;
+
+    const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    if (!(nextView instanceof HTMLElement) || !this.#activeView) return;
+
+    this.#transition(this.#activeView, nextView, 'forward');
   }
 
   /**
-   * Show the categories view. Called via on:click="/showCategories".
+   * Navigate back to the previous view. Called via on:click="/back".
    */
-  showCategories() {
-    this.#setView('categories');
-    this.#clearFilter();
+  back() {
+    if (this.#animating) return;
+
+    const prevViewName = this.#viewStack[this.#viewStack.length - 1];
+    if (!prevViewName || !this.#activeView) return;
+
+    const prevView = this.querySelector(`.at-panel__view[data-view="${prevViewName}"]`);
+    if (!(prevView instanceof HTMLElement)) return;
+
+    this.#transition(this.#activeView, prevView, 'back');
   }
 
   /**
-   * @param {'categories' | 'brands'} view
+   * Reset to the main view without animation (used when the drawer closes).
    */
-  #setView(view) {
-    this.#view = view;
-    this.dataset.view = view;
+  reset() {
+    for (const view of this.querySelectorAll('.at-panel__view')) {
+      if (view instanceof HTMLElement) {
+        view.hidden = view.dataset.view !== 'main';
+        view.classList.remove(
+          'at-panel__view--enter-right',
+          'at-panel__view--exit-left',
+          'at-panel__view--enter-left',
+          'at-panel__view--exit-right'
+        );
+      }
+    }
+    this.#activeView = this.querySelector('.at-panel__view[data-view="main"]');
+    this.#viewStack = [];
+    this.#animating = false;
+    this.#clearBrandFilter();
+  }
 
-    const { categoriesView, brandsView } = this.refs;
-    if (categoriesView) categoriesView.hidden = view !== 'categories';
-    if (brandsView) brandsView.hidden = view !== 'brands';
+  /**
+   * Animate between two views.
+   * @param {HTMLElement} from
+   * @param {HTMLElement} to
+   * @param {'forward' | 'back'} direction
+   */
+  #transition(from, to, direction) {
+    this.#animating = true;
+
+    if (direction === 'forward') {
+      this.#viewStack.push(from.dataset.view ?? '');
+    } else {
+      this.#viewStack.pop();
+    }
+
+    to.hidden = false;
+
+    const enterClass =
+      direction === 'forward' ? 'at-panel__view--enter-right' : 'at-panel__view--enter-left';
+    const exitClass =
+      direction === 'forward' ? 'at-panel__view--exit-left' : 'at-panel__view--exit-right';
+
+    to.classList.add(enterClass);
+    from.classList.add(exitClass);
+
+    let settled = false;
+    const onEnd = () => {
+      if (settled) return;
+      settled = true;
+      to.classList.remove(enterClass);
+      from.classList.remove(exitClass);
+      from.hidden = true;
+      this.#activeView = to;
+      this.#animating = false;
+    };
+
+    to.addEventListener('animationend', onEnd, { once: true });
+
+    // Safety fallback if animationend doesn't fire (e.g. prefers-reduced-motion)
+    setTimeout(onEnd, 350);
   }
 
   // ─── Brand search ────────────────────────────────────────────────────────
 
+  /** @param {Event} event */
+  #onSearchInput = (event) => {
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (!event.target.classList.contains('at-panel__search')) return;
+    this.#applyBrandFilter(event.target.value.trim().toLowerCase());
+  };
+
+  /** @param {Event} event */
+  #onSearchClearClick = (event) => {
+    const btn =
+      event.target instanceof Element ? event.target.closest('.at-panel__search-clear') : null;
+    if (!btn || !this.contains(btn)) return;
+    event.preventDefault();
+    this.clearSearch();
+  };
+
   /**
    * @param {string} query
    */
-  #applyFilter(query) {
-    const { brandsView } = this.refs;
+  #applyBrandFilter(query) {
     const items = /** @type {NodeListOf<HTMLElement>} */ (
-      brandsView?.querySelectorAll('.at-drawer__brand-item[data-brand-name]') ?? []
+      this.querySelectorAll('.at-panel__brand-item[data-brand-name]')
     );
 
     let visible = 0;
-
     for (const item of items) {
       const name = item.dataset.brandName?.toLowerCase() ?? '';
       const show = query === '' || name.includes(query);
@@ -515,20 +603,17 @@ class AtMenuDrawer extends Component {
       if (show) visible++;
     }
 
-    if (this.refs.countBadge) {
-      this.refs.countBadge.textContent = String(visible);
+    if (this.refs.brandCount) {
+      this.refs.brandCount.textContent = String(visible);
+    }
+    if (this.refs.searchClear instanceof HTMLElement) {
+      this.refs.searchClear.hidden = query === '';
     }
 
-    const clearBtn = brandsView?.querySelector('.at-drawer__search-clear');
-    if (clearBtn instanceof HTMLElement) {
-      clearBtn.hidden = query === '';
-    }
-
-    for (const section of this.querySelectorAll('.at-drawer__letter-section')) {
-      const hasVisible =
-        section.querySelector('.at-drawer__brand-item[data-brand-name]:not([hidden])') !== null;
+    for (const section of this.querySelectorAll('.at-panel__letter-section')) {
       if (section instanceof HTMLElement) {
-        section.hidden = !hasVisible;
+        section.hidden =
+          section.querySelector('.at-panel__brand-item:not([hidden])') === null;
       }
     }
 
@@ -537,24 +622,22 @@ class AtMenuDrawer extends Component {
     }
   }
 
-  #clearFilter() {
-    const input = this.querySelector('.at-drawer__search');
-    if (input instanceof HTMLInputElement) {
-      input.value = '';
+  #clearBrandFilter() {
+    if (this.refs.searchInput instanceof HTMLInputElement) {
+      this.refs.searchInput.value = '';
     }
-
-    this.#applyFilter('');
+    this.#applyBrandFilter('');
   }
 
   clearSearch() {
-    this.#clearFilter();
-    this.querySelector('.at-drawer__search')?.focus();
+    this.#clearBrandFilter();
+    this.refs.searchInput?.focus();
   }
 
   // ─── Alphabet jump ───────────────────────────────────────────────────────
 
   /**
-   * Scroll to a letter section. Called via on:click="/scrollToLetter" on alphabet buttons.
+   * Scroll to a letter section. Called via on:click="/scrollToLetter".
    * @param {MouseEvent} event
    */
   scrollToLetter(event) {
@@ -566,17 +649,22 @@ class AtMenuDrawer extends Component {
     const target = this.querySelector(`#at-letter-${letter}`);
     if (!(target instanceof HTMLElement)) return;
 
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const scrollParent = this.refs.brandsBody;
+    if (scrollParent) {
+      const offset = target.offsetTop - scrollParent.offsetTop;
+      scrollParent.scrollTo({ top: offset, behavior: 'smooth' });
+    } else {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
-    // Update active alpha button state
-    for (const btn of this.querySelectorAll('.at-drawer__alpha-btn')) {
-      btn.classList.toggle('at-drawer__alpha-btn--active', btn.dataset.letter === letter);
+    for (const btn of this.querySelectorAll('.at-panel__alpha-btn')) {
+      btn.classList.toggle('at-panel__alpha-btn--active', btn.dataset.letter === letter);
     }
   }
 }
 
-if (!customElements.get('at-menu-drawer')) {
-  customElements.define('at-menu-drawer', AtMenuDrawer);
+if (!customElements.get('at-menu-panel')) {
+  customElements.define('at-menu-panel', AtMenuPanel);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

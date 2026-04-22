@@ -494,14 +494,24 @@
 }
 
 /* =============================================================================
-   Mobile drawer
-   Lives inside the .menu-drawer wrapper that header-drawer.js already positions
-   and animates (position: fixed, translateX slide-in). We intentionally do NOT
-   extend .drawer from base.css because that class applies its own
-   transform: translateX(-120%) which conflicts with the parent animation.
+   Mobile panel (at-menu-panel)
+   View-stack component that lives inside the .menu-drawer container.
+   Each view fills the panel; forward/back navigation uses slide animations.
    ============================================================================= */
 
-.at-drawer {
+.at-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
+/* ── View container ── */
+
+.at-panel__view {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -509,8 +519,58 @@
   background-color: var(--color-background);
 }
 
-/* Drawer header row */
-.at-drawer__header {
+.at-panel__view[hidden] {
+  display: none;
+}
+
+/* Stacked views sit above the one behind them */
+.at-panel__view:not([data-view='main']) {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ── View transition animations ── */
+
+@keyframes at-panel-enter-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes at-panel-exit-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-30%); }
+}
+
+@keyframes at-panel-enter-left {
+  from { transform: translateX(-30%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes at-panel-exit-right {
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
+}
+
+.at-panel__view--enter-right {
+  animation: at-panel-enter-right var(--drawer-animation-speed, 0.3s) var(--animation-easing) forwards;
+}
+
+.at-panel__view--exit-left {
+  animation: at-panel-exit-left var(--drawer-animation-speed, 0.3s) var(--animation-easing) forwards;
+}
+
+.at-panel__view--enter-left {
+  animation: at-panel-enter-left var(--drawer-animation-speed, 0.3s) var(--animation-easing) forwards;
+}
+
+.at-panel__view--exit-right {
+  animation: at-panel-exit-right var(--drawer-animation-speed, 0.3s) var(--animation-easing) forwards;
+}
+
+/* ── Header row (back / title / close) ── */
+
+.at-panel__header {
   display: flex;
   align-items: center;
   gap: var(--gap-sm);
@@ -520,32 +580,15 @@
   flex-shrink: 0;
 }
 
-.at-drawer__back-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--minimum-touch-target);
-  height: var(--minimum-touch-target);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: currentcolor;
-  padding: 0;
-  flex-shrink: 0;
-
-  svg {
-    display: block;
-  }
-}
-
-.at-drawer__title {
+.at-panel__title {
   flex: 1;
   font-weight: 600;
   font-size: var(--font-size--medium);
   margin: 0;
 }
 
-.at-drawer__close-btn {
+.at-panel__close,
+.at-panel__back {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -563,62 +606,24 @@
   }
 }
 
-/* Scrollable body */
-.at-drawer__body {
+/* ── Scrollable body ── */
+
+.at-panel__body {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
 }
 
-/* Pinned bottom alphabet bar */
-.at-drawer__alpha-bar {
-  flex-shrink: 0;
-  padding-inline: var(--padding-sm);
-  padding-block: var(--padding-xs);
-  border-block-start: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
-  background-color: var(--color-background);
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gap-3xs);
-  justify-content: center;
-}
+/* ── Nav list items ── */
 
-.at-drawer__alpha-bar[hidden] {
-  display: none;
-}
-
-.at-drawer__alpha-btn {
-  min-width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.25rem;
-  font-size: var(--font-size--xsmall);
-  font-weight: 500;
-  background-color: rgb(var(--color-foreground-rgb) / 0.06);
-  color: var(--color-foreground);
-  border: none;
-  cursor: pointer;
-  transition: background-color var(--animation-speed) var(--animation-easing),
-    color var(--animation-speed) var(--animation-easing);
-
-  &:hover {
-    background-color: rgb(var(--color-foreground-rgb) / 0.12);
-  }
-}
-
-.at-drawer__alpha-btn--active {
-  background-color: var(--color-foreground);
-  color: var(--color-background);
-}
-
-/* Category list (categories view) */
-.at-drawer__cat-list {
+.at-panel__list {
   list-style: none;
   margin: 0;
   padding: var(--padding-sm) 0;
 }
 
-.at-drawer__cat-item {
+.at-panel__item {
   display: flex;
   align-items: center;
   gap: var(--gap-sm);
@@ -627,6 +632,7 @@
   padding-block: var(--padding-md);
   text-align: start;
   font-size: var(--font-size--medium);
+  font-family: var(--menu-top-level-font-family, var(--font-heading--family));
   color: var(--color-foreground);
   background: none;
   border: none;
@@ -639,14 +645,16 @@
   }
 }
 
-.at-drawer__cat-icon {
-  flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
-  opacity: 0.7;
+.at-panel__item--highlight {
+  color: var(--color-accent, currentcolor);
 }
 
-.at-drawer__cat-chevron {
+.at-panel__item--child {
+  font-size: var(--font-size--small);
+  padding-block: var(--padding-sm);
+}
+
+.at-panel__chevron {
   margin-inline-start: auto;
   flex-shrink: 0;
   width: 0.875rem;
@@ -654,20 +662,21 @@
   opacity: 0.4;
 }
 
-/* Accordion (details/summary) for categories with sub-links */
-.at-drawer__accordion {
+/* ── Accordion (details/summary for non-panel items) ── */
+
+.at-panel__accordion {
   width: 100%;
 }
 
-.at-drawer__accordion[open] .at-drawer__accordion-chevron {
+.at-panel__accordion[open] .at-panel__accordion-icon {
   transform: rotate(90deg);
 }
 
-.at-drawer__accordion-chevron {
+.at-panel__accordion-icon {
   transition: transform var(--animation-speed) var(--animation-easing);
 }
 
-.at-drawer__sub-list {
+.at-panel__sub-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -675,7 +684,7 @@
   padding-block-end: var(--padding-sm);
 }
 
-.at-drawer__sub-item {
+.at-panel__sub-item {
   display: block;
   padding-inline: var(--drawer-inline-padding);
   padding-block: var(--padding-sm);
@@ -689,15 +698,102 @@
   }
 }
 
-/* Search bar in brands view */
-.at-drawer__search-wrapper {
+/* ── Category sub-page: grid + grouped layouts ── */
+
+.at-panel__grid {
+  list-style: none;
+  margin: 0;
+  padding: var(--padding-sm) var(--drawer-inline-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2xs);
+}
+
+.at-panel__grid--images {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gap-sm);
+}
+
+.at-panel__grid-item {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--padding-sm);
+  border-radius: var(--style-border-radius-inputs);
+  text-decoration: none;
+  color: var(--color-foreground);
+  font-size: var(--font-size--small);
+  transition: background-color var(--animation-speed) var(--animation-easing);
+
+  &:hover {
+    background-color: rgb(var(--color-foreground-rgb) / var(--opacity-6));
+  }
+}
+
+.at-panel__grid--images .at-panel__grid-item {
+  flex-direction: column;
+  text-align: center;
+  gap: var(--gap-xs);
+}
+
+.at-panel__grid-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--style-border-radius-inputs);
+}
+
+.at-panel__grid-item-text {
+  line-height: 1.3;
+}
+
+.at-panel__group {
+  padding-block-start: var(--padding-sm);
+}
+
+.at-panel__group-title {
+  padding-inline: var(--drawer-inline-padding);
+  padding-block: var(--padding-xs);
+  font-size: var(--font-size--xsmall);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-sm);
+  color: rgb(var(--color-foreground-rgb) / 0.55);
+  margin: 0;
+}
+
+.at-panel__view-all {
+  padding-inline: var(--drawer-inline-padding);
+  padding-block: var(--padding-md);
+  border-block-start: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  flex-shrink: 0;
+}
+
+.at-panel__view-all-link {
+  font-size: var(--font-size--small);
+  font-weight: 500;
+  color: var(--color-foreground);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity var(--animation-speed) var(--animation-easing);
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+/* ── Brand search (brands view) ── */
+
+.at-panel__search-wrapper {
   padding-inline: var(--drawer-inline-padding);
   padding-block: var(--padding-sm);
   border-block-end: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
   position: relative;
+  flex-shrink: 0;
 }
 
-.at-drawer__search-icon {
+.at-panel__search-icon {
   position: absolute;
   inset-inline-start: calc(var(--drawer-inline-padding) + var(--padding-sm));
   top: 50%;
@@ -708,7 +804,7 @@
   opacity: 0.5;
 }
 
-.at-drawer__search {
+.at-panel__search {
   width: 100%;
   padding-inline-start: calc(var(--padding-sm) * 2 + 0.875rem);
   padding-inline-end: var(--padding-md);
@@ -725,7 +821,7 @@
   }
 }
 
-.at-drawer__search-clear {
+.at-panel__search-clear {
   position: absolute;
   inset-inline-end: calc(var(--drawer-inline-padding) + var(--padding-xs));
   top: 50%;
@@ -743,20 +839,22 @@
   }
 }
 
-.at-drawer__brand-count {
+.at-panel__brand-count {
   font-size: var(--font-size--xsmall);
   opacity: 0.5;
   padding-inline: var(--drawer-inline-padding);
   padding-block-start: var(--padding-2xs);
   display: block;
+  flex-shrink: 0;
 }
 
-/* Brands list: letter section headers */
-.at-drawer__letter-section {
+/* ── Brand grid (A-Z sections) ── */
+
+.at-panel__letter-section {
   padding-block-start: var(--padding-xs);
 }
 
-.at-drawer__letter-header {
+.at-panel__letter-header {
   position: sticky;
   top: 0;
   z-index: var(--layer-flat);
@@ -770,19 +868,17 @@
   border-block-end: 1px solid rgb(var(--color-foreground-rgb) / 0.06);
 }
 
-/* Brand grid within a letter section (2-column default) */
-.at-drawer__brand-grid {
+.at-panel__brand-grid {
   display: grid;
   grid-auto-flow: column;
-  grid-template-rows: repeat(var(--at-drawer-brand-rows, 1), auto);
+  grid-template-rows: repeat(var(--at-panel-brand-rows, 1), auto);
   grid-template-columns: repeat(var(--at-brands-mobile-cols, 2), minmax(0, 1fr));
   padding-inline: var(--padding-sm);
   padding-block: var(--padding-xs);
   gap: var(--gap-3xs);
 }
 
-/* Brand item in drawer */
-.at-drawer__brand-item {
+.at-panel__brand-item {
   display: flex;
   align-items: center;
   gap: var(--gap-sm);
@@ -800,15 +896,57 @@
   }
 }
 
-.at-drawer__brand-name {
+.at-panel__brand-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.3;
 }
 
-/* Empty state */
-.at-drawer__empty {
+/* ── Alphabet quick-jump bar ── */
+
+.at-panel__alpha-bar {
+  flex-shrink: 0;
+  padding-inline: var(--padding-sm);
+  padding-block: var(--padding-xs);
+  border-block-start: 1px solid rgb(var(--color-foreground-rgb) / var(--opacity-10));
+  background-color: var(--color-background);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-3xs);
+  justify-content: center;
+}
+
+.at-panel__alpha-bar[hidden] {
+  display: none;
+}
+
+.at-panel__alpha-btn {
+  min-width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.25rem;
+  font-size: var(--font-size--xsmall);
+  font-weight: 500;
+  background-color: rgb(var(--color-foreground-rgb) / 0.06);
+  color: var(--color-foreground);
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--animation-speed) var(--animation-easing),
+    color var(--animation-speed) var(--animation-easing);
+
+  &:hover {
+    background-color: rgb(var(--color-foreground-rgb) / 0.12);
+  }
+}
+
+.at-panel__alpha-btn--active {
+  background-color: var(--color-foreground);
+  color: var(--color-background);
+}
+
+/* ── Empty state ── */
+
+.at-panel__empty {
   padding-inline: var(--drawer-inline-padding);
   padding-block: var(--padding-3xl);
   text-align: center;
@@ -824,12 +962,18 @@
   .at-menu__nav-link,
   .at-brands-panel__cat-btn,
   .at-brands-panel__brand-item,
-  .at-drawer__cat-item,
-  .at-drawer__brand-item,
-  .at-drawer__alpha-btn,
-  .at-menu__nav-link-chevron,
-  .at-drawer-overlay {
+  .at-panel__item,
+  .at-panel__brand-item,
+  .at-panel__alpha-btn,
+  .at-menu__nav-link-chevron {
     transition: none;
+  }
+
+  .at-panel__view--enter-right,
+  .at-panel__view--exit-left,
+  .at-panel__view--enter-left,
+  .at-panel__view--exit-right {
+    animation-duration: 0.01ms;
   }
 }
 
@@ -837,33 +981,32 @@
    Inline SVG icon sizing
    ============================================================================= */
 
-/* Standardise inline SVG icons used throughout the AT-Menu */
 .at-menu .svg-wrapper svg,
-.at-drawer .svg-wrapper svg,
+.at-panel .svg-wrapper svg,
 .at-brands-panel .svg-wrapper svg {
   display: block;
 }
 
-.at-drawer__close-btn svg,
-.at-drawer__back-btn svg {
+.at-panel__close svg,
+.at-panel__back svg {
   width: 1.25rem;
   height: 1.25rem;
 }
 
-.at-drawer__cat-chevron svg,
+.at-panel__chevron svg,
 .at-brands-panel__cat-chevron svg,
 .at-menu__nav-link-chevron svg {
   width: 0.875rem;
   height: 0.875rem;
 }
 
-.at-drawer__search-icon svg,
+.at-panel__search-icon svg,
 .at-brands-panel__search-icon svg {
   width: 0.875rem;
   height: 0.875rem;
 }
 
-.at-drawer__search-clear svg,
+.at-panel__search-clear svg,
 .at-brands-panel__search-clear svg {
   width: 0.75rem;
   height: 0.75rem;

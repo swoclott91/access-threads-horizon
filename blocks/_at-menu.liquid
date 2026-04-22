@@ -86,9 +86,13 @@
             {%- render 'at-menu-mobile-drawer',
               section: block,
               menu_links: menu_links,
-              brands_link: nil,
-              brands_item_handle: brands_handle,
-              highlight_handle: highlight_handle
+              panel_link: panel_link,
+              panel_handle: panel_handle,
+              categories_linklist: cats_ll,
+              brands_linklist: brands_ll,
+              brands_handle: brands_handle,
+              highlight_handle: highlight_handle,
+              mobile_drawer_label: block_settings.at_mobile_drawer_label
             -%}
           </div>
         </details>
@@ -366,6 +370,13 @@
     {
       "type": "header",
       "content": "t:content.mobile_layout"
+    },
+    {
+      "type": "text",
+      "id": "at_mobile_drawer_label",
+      "label": "Mobile drawer heading",
+      "info": "Title shown at the top of the mobile menu drawer.",
+      "default": "Shop"
     },
     {
       "type": "checkbox",
