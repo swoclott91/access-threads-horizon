@@ -480,9 +480,12 @@ class AtMenuPanel extends Component {
    */
   navigate(event) {
     if (this.#animating) return;
-    if (!(event.currentTarget instanceof HTMLElement)) return;
+    if (!(event.target instanceof Element)) return;
 
-    const target = event.currentTarget.dataset.target;
+    const btn = event.target.closest('[data-target]');
+    if (!(btn instanceof HTMLElement)) return;
+
+    const target = btn.dataset.target;
     if (!target) return;
 
     const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
@@ -641,9 +644,12 @@ class AtMenuPanel extends Component {
    * @param {MouseEvent} event
    */
   scrollToLetter(event) {
-    if (!(event.currentTarget instanceof HTMLElement)) return;
+    if (!(event.target instanceof Element)) return;
 
-    const letter = event.currentTarget.dataset.letter;
+    const btn = event.target.closest('[data-letter]');
+    if (!(btn instanceof HTMLElement)) return;
+
+    const letter = btn.dataset.letter;
     if (!letter) return;
 
     const target = this.querySelector(`#at-letter-${letter}`);
