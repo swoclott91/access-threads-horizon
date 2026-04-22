@@ -351,6 +351,10 @@
   &:hover {
     background-color: rgb(var(--color-foreground-rgb) / var(--opacity-6));
   }
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .at-brands-panel__brand-name {
@@ -852,6 +856,10 @@
 
 .at-panel__letter-section {
   padding-block-start: var(--padding-xs);
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .at-panel__letter-header {
@@ -893,6 +901,10 @@
 
   &:hover {
     background-color: rgb(var(--color-foreground-rgb) / var(--opacity-6));
+  }
+
+  &[hidden] {
+    display: none;
   }
 }
 
