@@ -305,10 +305,12 @@ class AtBrandsPanel extends Component {
   /**
    * Recalculate `--header-group-height` after a double-rAF delay.
    *
-   * The stock header ResizeObserver (header.js) only sums entries that
-   * changed, so a logo-swap resize on a transparent header can produce an
-   * incomplete total. Re-running the same calculation with all children
-   * fixes the drift.
+   * The stock ResizeObserver in header.js can produce an incomplete total
+   * when only some observed elements fire. This mirrors the logic in
+   * utilities.js `calculateHeaderGroupHeight` but correctly skips the
+   * section wrapper that *contains* `#header-component` (the stock
+   * function compares `child === header`, which never matches because
+   * the header is a grandchild of `#header-group`, not a direct child).
    */
   static #fixHeaderGroupHeight() {
     requestAnimationFrame(() => {
@@ -319,7 +321,8 @@ class AtBrandsPanel extends Component {
 
         let height = 0;
         for (const child of headerGroup.children) {
-          if (child === header || !(child instanceof HTMLElement)) continue;
+          if (!(child instanceof HTMLElement)) continue;
+          if (child === header || child.contains(header)) continue;
           height += child.offsetHeight;
         }
         if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
