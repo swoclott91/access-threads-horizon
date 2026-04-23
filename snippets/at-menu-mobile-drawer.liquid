@@ -4,16 +4,15 @@
   Renders inside the <header-drawer>'s .menu-drawer container.
   Uses <at-menu-panel> custom element for multi-view navigation:
     – main       : top-level nav items from the main menu
-    – categories : category sidebar items from at_categories_menu
     – brands     : brand grid with search + A-Z
-    – cat-{handle}: sub-links for each category with children
+    Non-brand categories with children render inline as accordions to keep
+    the mobile drawer lightweight.
 
   Close buttons use header-drawer/close so the stock component
   handles focus-trap teardown and details[open] reset.
 
   @param {object}  section              - The block object (for settings).
   @param {array}   menu_links           - Top-level links from the main nav.
-  @param {object}  panel_link           - The nav link that triggers the categories panel.
   @param {string}  panel_handle         - Handle of the panel trigger item.
   @param {object}  categories_linklist  - Linklist for the categories sidebar.
   @param {object}  brands_linklist      - Linklist for the brand grid.
@@ -119,17 +118,84 @@
                 </button>
 
               {%- elsif cat_link.links != blank -%}
-                <button
-                  type="button"
-                  class="at-panel__item{% if is_highlight %} at-panel__item--highlight{% endif %}"
-                  on:click="/navigate"
-                  data-target="cat-{{ cat_link.handle }}"
-                >
-                  <span class="at-panel__item-text">{{- cat_link.title -}}</span>
-                  <span class="at-panel__chevron svg-wrapper" aria-hidden="true">
-                    {{- 'icon-chevron-right.svg' | inline_asset_content -}}
-                  </span>
-                </button>
+                {%- liquid
+                  assign has_groups = false
+                  for sub_link in cat_link.links
+                    if sub_link.links != blank
+                      assign has_groups = true
+                      break
+                    endif
+                  endfor
+                -%}
+                <details class="at-panel__accordion">
+                  <summary class="at-panel__item{% if is_highlight %} at-panel__item--highlight{% endif %}">
+                    <span class="at-panel__item-text">{{- cat_link.title -}}</span>
+                    <span class="at-panel__chevron at-panel__accordion-icon svg-wrapper" aria-hidden="true">
+                      {{- 'icon-chevron-right.svg' | inline_asset_content -}}
+                    </span>
+                  </summary>
+
+                  {%- if has_groups -%}
+                    <div>
+                      {%- for group_link in cat_link.links -%}
+                        {%- if group_link.links != blank -%}
+                          <div class="at-panel__group">
+                            <h3 class="at-panel__group-title">{{- group_link.title -}}</h3>
+                            <ul class="at-panel__sub-list" role="list">
+                              {%- for item_link in group_link.links -%}
+                                <li>
+                                  <a
+                                    href="{{ item_link.url }}"
+                                    class="at-panel__sub-item"
+                                    {% if item_link.current %}aria-current="page"{% endif %}
+                                  >
+                                    {{- item_link.title -}}
+                                  </a>
+                                </li>
+                              {%- endfor -%}
+                            </ul>
+                          </div>
+                        {%- else -%}
+                          <ul class="at-panel__sub-list" role="list">
+                            <li>
+                              <a
+                                href="{{ group_link.url }}"
+                                class="at-panel__sub-item"
+                                {% if group_link.current %}aria-current="page"{% endif %}
+                              >
+                                {{- group_link.title -}}
+                              </a>
+                            </li>
+                          </ul>
+                        {%- endif -%}
+                      {%- endfor -%}
+                    </div>
+                  {%- else -%}
+                    <ul class="at-panel__sub-list" role="list">
+                      {%- for sub_link in cat_link.links -%}
+                        <li>
+                          <a
+                            href="{{ sub_link.url }}"
+                            class="at-panel__sub-item"
+                            {% if sub_link.current %}aria-current="page"{% endif %}
+                          >
+                            {{- sub_link.title -}}
+                          </a>
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                  {%- endif -%}
+
+                  {%- if cat_link.url != blank -%}
+                    <ul class="at-panel__sub-list" role="list">
+                      <li>
+                        <a href="{{ cat_link.url }}" class="at-panel__sub-item">
+                          Shop all {{- ' ' -}}{{- cat_link.title -}}
+                        </a>
+                      </li>
+                    </ul>
+                  {%- endif -%}
+                </details>
 
               {%- else -%}
                 <a
@@ -373,132 +439,4 @@
       {%- endif -%}
     </div>
   {%- endif -%}
-
-
-  {%- comment -%} ═══════════════════════════════════════════════════════════
-    VIEWS: Category sub-pages
-    One view per category that has children (excluding brands).
-    Supports two layouts:
-      – Grouped: sub-links nested 3-deep render with group headings
-      – Flat: direct sub-links in a grid with optional collection images
-  ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
-  {%- if categories_linklist != blank -%}
-    {%- for cat_link in categories_linklist.links -%}
-      {%- if cat_link.links != blank and cat_link.handle != brands_handle -%}
-        {%- liquid
-          # Detect if this category has grouped (3-level) children
-          assign has_groups = false
-          for sub_link in cat_link.links
-            if sub_link.links != blank
-              assign has_groups = true
-              break
-            endif
-          endfor
-
-          # Detect if children are collection links (render images)
-          assign render_images = false
-          assign cat_collection_links = cat_link.links | where: 'type', 'collection_link'
-          assign cat_catalog_links = cat_link.links | where: 'type', 'catalog_link'
-          if cat_collection_links.size > 0 or cat_catalog_links.size > 0
-            assign render_images = true
-          endif
-        -%}
-        <div class="at-panel__view" data-view="cat-{{ cat_link.handle }}" hidden>
-
-          <div class="at-panel__header">
-            <button
-              type="button"
-              class="at-panel__back"
-              aria-label="{{ 'actions.back' | t | default: 'Back' }}"
-              on:click="/back"
-            >
-              <span class="svg-wrapper">{{- 'icon-chevron-left.svg' | inline_asset_content -}}</span>
-            </button>
-            <h2 class="at-panel__title">{{- cat_link.title | escape -}}</h2>
-            <button
-              type="button"
-              class="at-panel__close"
-              aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
-              on:click="header-drawer/close"
-            >
-              <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
-            </button>
-          </div>
-
-          <div class="at-panel__body">
-            {%- if has_groups -%}
-              {%- comment -%} Grouped layout: children act as group headings {%- endcomment -%}
-              {%- for group_link in cat_link.links -%}
-                {%- if group_link.links != blank -%}
-                  <div class="at-panel__group">
-                    <h3 class="at-panel__group-title">{{- group_link.title -}}</h3>
-                    <ul class="at-panel__grid{% if render_images %} at-panel__grid--images{% endif %}" role="list">
-                      {%- for item_link in group_link.links -%}
-                        <li>
-                          <a
-                            href="{{ item_link.url }}"
-                            class="at-panel__grid-item"
-                            {% if item_link.current %}aria-current="page"{% endif %}
-                          >
-                            {%- if render_images -%}
-                              {%- render 'link-featured-image',
-                                link: item_link,
-                                class: 'at-panel__grid-image',
-                                sizes: 'auto, 200px'
-                              -%}
-                            {%- endif -%}
-                            <span class="at-panel__grid-item-text">{{- item_link.title -}}</span>
-                          </a>
-                        </li>
-                      {%- endfor -%}
-                    </ul>
-                  </div>
-                {%- else -%}
-                  <a
-                    href="{{ group_link.url }}"
-                    class="at-panel__item at-panel__item--child"
-                    {% if group_link.current %}aria-current="page"{% endif %}
-                  >
-                    <span class="at-panel__item-text">{{- group_link.title -}}</span>
-                  </a>
-                {%- endif -%}
-              {%- endfor -%}
-
-            {%- else -%}
-              {%- comment -%} Flat layout: sub-links in a grid/list {%- endcomment -%}
-              <ul class="at-panel__grid{% if render_images %} at-panel__grid--images{% endif %}" role="list">
-                {%- for sub_link in cat_link.links -%}
-                  <li>
-                    <a
-                      href="{{ sub_link.url }}"
-                      class="at-panel__grid-item"
-                      {% if sub_link.current %}aria-current="page"{% endif %}
-                    >
-                      {%- if render_images -%}
-                        {%- render 'link-featured-image',
-                          link: sub_link,
-                          class: 'at-panel__grid-image',
-                          sizes: 'auto, 200px'
-                        -%}
-                      {%- endif -%}
-                      <span class="at-panel__grid-item-text">{{- sub_link.title -}}</span>
-                    </a>
-                  </li>
-                {%- endfor -%}
-              </ul>
-            {%- endif -%}
-
-            {%- if cat_link.url != blank -%}
-              <div class="at-panel__view-all">
-                <a href="{{ cat_link.url }}" class="at-panel__view-all-link">
-                  Shop all {{ cat_link.title }} →
-                </a>
-              </div>
-            {%- endif -%}
-          </div>
-        </div>
-      {%- endif -%}
-    {%- endfor -%}
-  {%- endif -%}
-
 </at-menu-panel>
