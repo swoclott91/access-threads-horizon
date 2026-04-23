@@ -1,5 +1,6 @@
 {% liquid
   assign order = 'logo,menu,localization,search,drawer_search,actions'
+  assign at_menu_enabled = false
 
   if shop.customer_accounts_enabled
     assign order = 'drawer_search,logo,menu,localization,search,actions'
@@ -62,6 +63,7 @@
     content_for 'block', type: '_at-menu', id: 'at-menu'
   endcapture
   if at_menu_capture != blank
+    assign at_menu_enabled = true
     assign menu = at_menu_capture
     capture drawer_menu
       content_for 'block', type: '_at-menu', id: 'at-menu', variant: 'mobile'
@@ -1138,7 +1140,7 @@
   }
 {% endstylesheet %}
 
-{% unless request.design_mode %}
+{% unless request.design_mode or at_menu_enabled %}
   <script type="module">
     import { hydrate } from '@theme/section-hydration';
     const url = new URL(window.location.href);
