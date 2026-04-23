@@ -225,12 +225,11 @@
       </div>
 
       <script src="{{ 'header-menu.js' | asset_url }}" type="module" fetchpriority="low"></script>
+      <script src="{{ 'at-menu.js' | asset_url }}" type="module"></script>
+      {{ 'at-menu.css' | asset_url | stylesheet_tag }}
     </header-menu>
 
 {% endcase %}
-
-<script src="{{ 'at-menu.js' | asset_url }}" type="module"></script>
-{{ 'at-menu.css' | asset_url | stylesheet_tag }}
 
 {% schema %}
 {
