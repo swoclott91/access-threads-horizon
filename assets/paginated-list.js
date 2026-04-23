@@ -1,12 +1,6 @@
 import { Component } from '@theme/component';
 import { sectionRenderer } from '@theme/section-renderer';
-import {
-  mediaQueryLarge,
-  requestIdleCallback,
-  viewTransition,
-  isLowPowerDevice,
-  prefersReducedMotion,
-} from '@theme/utilities';
+import { requestIdleCallback, viewTransition } from '@theme/utilities';
 import { ThemeEvents } from '@theme/events';
 import { PaginatedListAspectRatioHelper } from '@theme/paginated-list-aspect-ratio';
 
@@ -50,10 +44,8 @@ export default class PaginatedList extends Component {
       });
     }
 
-    if (this.#shouldPrefetchAdjacentPages()) {
-      this.#fetchPage('next');
-      this.#fetchPage('previous');
-    }
+    this.#fetchPage('next');
+    this.#fetchPage('previous');
     this.#observeViewMore();
 
     // Listen for filter updates to clear cached pages
@@ -67,15 +59,6 @@ export default class PaginatedList extends Component {
     }
     // Remove the filter update listener
     document.removeEventListener(ThemeEvents.FilterUpdate, this.#handleFilterUpdate);
-  }
-
-  #shouldPrefetchAdjacentPages() {
-    return (
-      mediaQueryLarge.matches &&
-      !isLowPowerDevice() &&
-      !prefersReducedMotion() &&
-      navigator.connection?.saveData !== true
-    );
   }
 
   #observeViewMore() {
@@ -210,11 +193,9 @@ export default class PaginatedList extends Component {
 
     history.pushState('', '', nextPage.url.toString());
 
-    if (this.#shouldPrefetchAdjacentPages()) {
-      requestIdleCallback(() => {
-        this.#fetchPage('next');
-      });
-    }
+    requestIdleCallback(() => {
+      this.#fetchPage('next');
+    });
   }
 
   async #renderPreviousPage() {
@@ -261,11 +242,9 @@ export default class PaginatedList extends Component {
       });
     }
 
-    if (this.#shouldPrefetchAdjacentPages()) {
-      requestIdleCallback(() => {
-        this.#fetchPage('previous');
-      });
-    }
+    requestIdleCallback(() => {
+      this.#fetchPage('previous');
+    });
   }
 
   /**

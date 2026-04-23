@@ -1,7 +1,7 @@
 (function () {
   const viewTransitionRenderBlocker = document.getElementById('view-transition-render-blocker');
-  // Remove the view transition render blocker when transitions should be skipped.
-  if (shouldDisableViewTransitions()) {
+  // Remove the view transition render blocker if the user has reduced motion enabled or is on a low power device.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || isLowPowerDevice()) {
     viewTransitionRenderBlocker?.remove();
   } else {
     // If the browser didn't manage to parse the main content quickly, at least let the user see something.
@@ -91,17 +91,7 @@
    * @returns {viewTransition is null}
    */
   function shouldSkipViewTransition(viewTransition) {
-    return !(viewTransition instanceof ViewTransition) || shouldDisableViewTransitions();
-  }
-
-  function shouldDisableViewTransitions() {
-    return (
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      window.matchMedia('(max-width: 749px)').matches ||
-      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
-      isLowPowerDevice() ||
-      navigator.connection?.saveData === true
-    );
+    return !(viewTransition instanceof ViewTransition) || isLowPowerDevice();
   }
 
   /*

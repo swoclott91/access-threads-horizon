@@ -99,7 +99,6 @@
             "type_font_primary_size": "1rem",
             "type_font_primary_link": "heading",
             "type_case_primary_link": "none",
-            "at_mobile_drawer_label": "Shop",
             "at_mobile_navigation_bar": false
           },
           "blocks": {}
