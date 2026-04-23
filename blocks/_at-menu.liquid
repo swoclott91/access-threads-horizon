@@ -56,12 +56,14 @@
     <div
       class="header__drawer"
       ref="headerDrawerContainer"
+      data-hydration-key="header-drawer-mobile"
       {{ block.shopify_attributes }}
     >
       <script src="{{ 'header-drawer.js' | asset_url }}" type="module" fetchpriority="low"></script>
       <header-drawer class="header-drawer">
         <details
-          id="at-menu-drawer-container"
+          id="Details-menu-drawer-container"
+          data-skip-node-update="true"
           class="menu-drawer-container"
           ref="details"
           scroll-lock
@@ -107,6 +109,7 @@
       <div
         class="menu-list menu-list--mobile{% if transparent == blank %} color-{{ block_settings.color_scheme_navigation_bar }}{% endif %}"
         style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;"
+        data-hydration-key="header-menu-mobile-navigation-bar"
         {{ block.shopify_attributes }}
       >
         <div class="menu-list__scroll-container">
@@ -137,10 +140,12 @@
   {% else %}
 
     <header-menu
+      ref="headerMenu"
       class="header-menu{{ color_scheme_classes }}"
       {{ block.shopify_attributes }}
-      data-hydration-key="at-header-menu"
+      data-hydration-key="header-menu"
     >
+      <div ref="overflowMenu" hidden></div>
       <div class="header-menu__inner">
         <nav
           class="at-menu__nav"
