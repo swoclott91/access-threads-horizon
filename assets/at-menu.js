@@ -106,7 +106,6 @@ class AtBrandsPanel extends Component {
     const { trigger, panel } = this.refs;
     if (!panel || panel.hidden === false) return;
 
-    // Position the fixed panel flush with the *top header row* (same visual edge as Horizon mega menus).
     this.#updatePanelTop();
 
     panel.removeAttribute('hidden');
@@ -114,17 +113,15 @@ class AtBrandsPanel extends Component {
     trigger?.setAttribute('aria-expanded', 'true');
 
     this.#bindHeaderLayoutListeners();
+    AtBrandsPanel.#fixHeaderGroupHeight();
 
-    // Re-measure after layout / sticky transition so `top` matches paint.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         this.#updatePanelTop();
-        // `--top-row-height` on #header-component is set in rAF in utilities.js; one more tick helps home vs other pages.
         queueMicrotask(() => this.#updatePanelTop());
       });
     });
 
-    // Always activate the first category when re-opening so stale state is cleared
     const firstBtn = this.querySelector('.at-brands-panel__cat-btn');
     if (firstBtn instanceof HTMLElement) {
       this.#activateCategory(firstBtn.dataset.cat ?? '');
@@ -149,6 +146,8 @@ class AtBrandsPanel extends Component {
     panel.setAttribute('hidden', '');
     delete this.dataset.open;
     trigger?.setAttribute('aria-expanded', 'false');
+
+    AtBrandsPanel.#fixHeaderGroupHeight();
   }
 
   #onPointerLeave = () => {
@@ -299,6 +298,34 @@ class AtBrandsPanel extends Component {
     this.#headerResizeObserver = null;
     window.removeEventListener('scroll', this.#onHeaderLayoutChange);
     window.removeEventListener('resize', this.#onHeaderLayoutChange);
+  }
+
+  /**
+   * Recalculate `--header-group-height` after a double-rAF delay.
+   *
+   * The stock header ResizeObserver (header.js) only sums entries that
+   * changed, so a logo-swap resize on a transparent header can produce an
+   * incomplete total. Re-running the same calculation with all children
+   * fixes the drift.
+   */
+  static #fixHeaderGroupHeight() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const headerGroup = document.querySelector('#header-group');
+        const header = document.querySelector('#header-component');
+        if (!headerGroup || !(header instanceof HTMLElement)) return;
+
+        let height = 0;
+        for (const child of headerGroup.children) {
+          if (child === header || !(child instanceof HTMLElement)) continue;
+          height += child.offsetHeight;
+        }
+        if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
+          height += header.offsetHeight;
+        }
+        document.body.style.setProperty('--header-group-height', `${Math.round(height)}px`);
+      });
+    });
   }
 
   // ─── Category switching ──────────────────────────────────────────────────
