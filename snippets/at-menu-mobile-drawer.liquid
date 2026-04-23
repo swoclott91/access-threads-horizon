@@ -396,11 +396,12 @@
                           data-brand-name="{{ brand_link.title | escape }}"
                         >
                           {%- if brand_icon != blank -%}
-                            {{-
-                              brand_icon
-                              | image_url: width: 48, height: 48, crop: 'center'
-                              | image_tag: alt: '', loading: 'lazy', width: 24, height: 24
-                            -}}
+                            <span
+                              class="at-menu-deferred-image"
+                              data-at-menu-image-src="{{ brand_icon | image_url: width: 48, height: 48, crop: 'center' | escape }}"
+                              data-at-menu-image-width="24"
+                              data-at-menu-image-height="24"
+                            ></span>
                           {%- else -%}
                             {{- brand_link.title | slice: 0, 2 | upcase -}}
                           {%- endif -%}

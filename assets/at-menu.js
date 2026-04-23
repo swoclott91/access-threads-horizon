@@ -128,6 +128,8 @@ class AtBrandsPanel extends Component {
     if (firstBtn instanceof HTMLElement) {
       this.#activateCategory(firstBtn.dataset.cat ?? '');
     }
+
+    hydrateDeferredMenuImages(panel);
   }
 
   /**
@@ -363,6 +365,9 @@ class AtBrandsPanel extends Component {
     for (const panel of this.querySelectorAll('.at-brands-panel__cat-content')) {
       const matches = panel.dataset.cat === cat;
       panel.hidden = !matches;
+      if (matches) {
+        hydrateDeferredMenuImages(panel);
+      }
     }
 
     // Re-apply search to the now-visible panel (and fix stale hidden state when switching back).
@@ -507,6 +512,7 @@ class AtMenuPanel extends Component {
     const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
     if (!(nextView instanceof HTMLElement) || !this.#activeView) return;
 
+    hydrateDeferredMenuImages(nextView);
     this.#transition(this.#activeView, nextView, 'forward');
   }
 
@@ -728,6 +734,56 @@ function hydrateBrandAvatars() {
     if (name) {
       avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
     }
+  }
+}
+
+/**
+ * Convert deferred AT menu image placeholders into real lazy-loaded images.
+ * This keeps the hidden desktop/mobile brand directories from issuing image
+ * requests until the user actually opens the relevant menu view.
+ *
+ * @param {ParentNode} [root=document]
+ */
+function hydrateDeferredMenuImages(root = document) {
+  const placeholders = /** @type {NodeListOf<HTMLElement>} */ (
+    root.querySelectorAll('.at-menu-deferred-image[data-at-menu-image-src]:not([data-at-menu-image-loaded])')
+  );
+
+  for (const placeholder of placeholders) {
+    const src = placeholder.dataset.atMenuImageSrc;
+    if (!src) continue;
+
+    placeholder.dataset.atMenuImageLoaded = 'true';
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.decoding = 'async';
+
+    const width = Number.parseInt(placeholder.dataset.atMenuImageWidth ?? '', 10);
+    const height = Number.parseInt(placeholder.dataset.atMenuImageHeight ?? '', 10);
+
+    if (!Number.isNaN(width) && width > 0) img.width = width;
+    if (!Number.isNaN(height) && height > 0) img.height = height;
+
+    img.addEventListener(
+      'load',
+      () => {
+        placeholder.closest('.at-brand-avatar')?.classList.add('at-brand-avatar--loaded');
+      },
+      { once: true }
+    );
+
+    img.addEventListener(
+      'error',
+      () => {
+        delete placeholder.dataset.atMenuImageLoaded;
+      },
+      { once: true }
+    );
+
+    placeholder.replaceChildren(img);
   }
 }
 

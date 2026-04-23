@@ -480,13 +480,23 @@
 }
 
 .at-brand-avatar--image {
-  background-color: transparent;
+  background-color: rgb(var(--color-foreground-rgb) / 0.08);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
+}
+
+.at-brand-avatar--loaded {
+  background-color: transparent;
+}
+
+.at-menu-deferred-image {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .at-brand-avatar--initials {

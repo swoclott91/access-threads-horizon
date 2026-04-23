@@ -4,7 +4,6 @@ import {
   mediaQueryLarge,
   requestIdleCallback,
   viewTransition,
-  isTouchDevice,
   isLowPowerDevice,
   prefersReducedMotion,
 } from '@theme/utilities';
@@ -73,7 +72,6 @@ export default class PaginatedList extends Component {
   #shouldPrefetchAdjacentPages() {
     return (
       mediaQueryLarge.matches &&
-      !isTouchDevice() &&
       !isLowPowerDevice() &&
       !prefersReducedMotion() &&
       navigator.connection?.saveData !== true
