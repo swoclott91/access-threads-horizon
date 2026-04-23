@@ -417,6 +417,9 @@
   body {
     --header-height: 60px;
     --header-group-height: var(--header-height);
+    /* AT CUSTOM: transparent layout consumers should never use a value smaller than the visible header */
+    --header-overlay-height: max(var(--header-group-height), var(--header-height));
+    /* /AT CUSTOM */
     --transparent-header-offset-boolean: 0; /* stylelint-disable-line declaration-property-value-disallowed-list */
   }
 
