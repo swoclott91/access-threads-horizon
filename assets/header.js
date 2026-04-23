@@ -226,6 +226,9 @@ onDocumentLoaded(() => {
   if (headerGroup) {
     const resizeObserver = new ResizeObserver((entries) => {
       const headerGroupHeight = entries.reduce((totalHeight, entry) => {
+        if (entry.target !== header && entry.target.contains?.(header)) {
+          return totalHeight;
+        }
         if (
           entry.target !== header ||
           (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling)

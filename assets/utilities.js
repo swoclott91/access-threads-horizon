@@ -729,7 +729,8 @@ export function calculateHeaderGroupHeight(
   const children = headerGroup.children;
   for (let i = 0; i < children.length; i++) {
     const element = children[i];
-    if (element === header || !(element instanceof HTMLElement)) continue;
+    if (!(element instanceof HTMLElement)) continue;
+    if (element === header || element.contains(header)) continue;
     totalHeight += element.offsetHeight;
   }
 
