@@ -17,11 +17,6 @@
   The <dialog> is display:none until showModal() is called – nothing here
   is visible while the dialog is closed.
 {%- endcomment -%}
-{{ 'at-bulk-grid.css' | asset_url | stylesheet_tag }}
-<script
-  src="{{ 'at-bulk-grid.js' | asset_url }}?v=2"
-  type="module"
-></script>
 <dialog
   id="at-bulk-grid-quick-add-dialog"
   class="at-bulk-grid-modal__dialog color-{{ settings.popover_color_scheme }}"

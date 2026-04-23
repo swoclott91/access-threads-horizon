@@ -5,6 +5,40 @@ import { DialogComponent, DialogCloseEvent } from '@theme/dialog';
 import { mediaQueryLarge, isMobileBreakpoint, getIOSVersion } from '@theme/utilities';
 import VariantPicker from '@theme/variant-picker';
 
+let atBulkGridAssetsPromise = null;
+
+async function ensureQuickAddBulkGridAssets(root = document) {
+  if (typeof root?.querySelector !== 'function') return;
+  if (!root.querySelector('[data-at-bulk-grid-trigger]')) return;
+
+  const quickAddDialog = document.getElementById('quick-add-dialog');
+  if (!(quickAddDialog instanceof HTMLElement)) return;
+
+  const stylesheetUrl = quickAddDialog.dataset.atBulkGridStyle;
+  if (stylesheetUrl && !document.querySelector(`link[data-at-bulk-grid-style="${stylesheetUrl}"]`)) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = stylesheetUrl;
+    link.dataset.atBulkGridStyle = stylesheetUrl;
+    document.head.appendChild(link);
+  }
+
+  if (atBulkGridAssetsPromise) {
+    await atBulkGridAssetsPromise;
+    return;
+  }
+
+  const scriptUrl = quickAddDialog.dataset.atBulkGridScript;
+  if (!scriptUrl) return;
+
+  atBulkGridAssetsPromise = import(scriptUrl).catch((error) => {
+    atBulkGridAssetsPromise = null;
+    throw error;
+  });
+
+  await atBulkGridAssetsPromise;
+}
+
 export class QuickAddComponent extends Component {
   /** @type {AbortController | null} */
   #abortController = null;
@@ -111,6 +145,7 @@ export class QuickAddComponent extends Component {
       // Use a fresh clone from the cache
       const freshContent = /** @type {Element} */ (productGrid.cloneNode(true));
       await this.updateQuickAddModal(freshContent);
+      await ensureQuickAddBulkGridAssets(freshContent);
       this.#updateVariantPicker(productGrid);
     }
 
