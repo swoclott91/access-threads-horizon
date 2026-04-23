@@ -504,10 +504,45 @@ class AtMenuPanel extends Component {
     const target = btn.dataset.target;
     if (!target) return;
 
-    const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    const nextView = this.#ensureView(target);
     if (!(nextView instanceof HTMLElement) || !this.#activeView) return;
 
     this.#transition(this.#activeView, nextView, 'forward');
+  }
+
+  /**
+   * Resolve a view element by name, materializing it from a <template>
+   * if necessary. The brands view and per-category views ship inside
+   * <template data-view-template="..."> tags so their (heavy) markup
+   * and image URLs are not live on initial page load — this is the
+   * critical mobile memory / preload-scanner fix. On first navigate,
+   * we clone the template contents into the panel and hydrate any
+   * initials avatars that were just inserted.
+   *
+   * @param {string} target - View name, matches data-view attribute.
+   * @returns {HTMLElement | null}
+   */
+  #ensureView(target) {
+    const existing = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    if (existing instanceof HTMLElement) return existing;
+
+    const template = this.querySelector(`template[data-view-template="${target}"]`);
+    if (!(template instanceof HTMLTemplateElement)) return null;
+
+    this.appendChild(template.content.cloneNode(true));
+
+    const view = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    if (!(view instanceof HTMLElement)) return null;
+
+    for (const avatar of view.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')) {
+      if (!(avatar instanceof HTMLElement)) continue;
+      const name = avatar.dataset.brandName ?? '';
+      if (name) {
+        avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
+      }
+    }
+
+    return view;
   }
 
   /**
