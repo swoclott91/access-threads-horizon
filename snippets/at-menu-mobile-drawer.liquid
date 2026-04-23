@@ -193,15 +193,8 @@
   {%- comment -%} ═══════════════════════════════════════════════════════════
     VIEW: Brands
     Search bar, A-Z brand grid with avatars, pinned alphabet quick-jump.
-
-    Wrapped in <template> so the brand grid (~100 items + image URLs) is NOT
-    in the live DOM on initial page load. assets/at-menu.js clones this into
-    the panel the first time the user navigates to the brands view. This is
-    the primary mobile memory / preload-scanner fix — without it, iOS
-    WebKit's preload scanner fetches every avatar URL on every page load.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {%- if brand_source_links != blank -%}
-    <template data-view-template="brands">
     <div class="at-panel__view at-panel__view--brands" data-view="brands" hidden>
 
       <div class="at-panel__header">
@@ -379,7 +372,6 @@
         </nav>
       {%- endif -%}
     </div>
-    </template>
   {%- endif -%}
 
 
@@ -389,10 +381,6 @@
     Supports two layouts:
       – Grouped: sub-links nested 3-deep render with group headings
       – Flat: direct sub-links in a grid with optional collection images
-
-    Each view is wrapped in <template> so link-featured-image URLs for
-    sub-links are NOT processed by the preload scanner on initial page
-    load. assets/at-menu.js clones the matching template on first navigate.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {%- if categories_linklist != blank -%}
     {%- for cat_link in categories_linklist.links -%}
@@ -415,7 +403,6 @@
             assign render_images = true
           endif
         -%}
-        <template data-view-template="cat-{{ cat_link.handle }}">
         <div class="at-panel__view" data-view="cat-{{ cat_link.handle }}" hidden>
 
           <div class="at-panel__header">
@@ -510,7 +497,6 @@
             {%- endif -%}
           </div>
         </div>
-        </template>
       {%- endif -%}
     {%- endfor -%}
   {%- endif -%}
