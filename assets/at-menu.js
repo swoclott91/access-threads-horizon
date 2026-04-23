@@ -48,6 +48,8 @@ class AtBrandsPanel extends Component {
     this.addEventListener('input', this.#onDelegatedSearchInput);
     this.addEventListener('click', this.#onDelegatedSearchClearClick);
     this.addEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
+
+    AtBrandsPanel.#fixHeaderGroupHeight();
   }
 
   disconnectedCallback() {
