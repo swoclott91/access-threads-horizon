@@ -40,6 +40,9 @@ class AtBrandsPanel extends Component {
   /** @type {ResizeObserver | null} */
   #headerResizeObserver = null;
 
+  /** @type {MutationObserver | null} */
+  #avatarObserver = null;
+
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener('pointerenter', this.#onPointerEnter);
@@ -50,6 +53,14 @@ class AtBrandsPanel extends Component {
     this.addEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
 
     AtBrandsPanel.#fixHeaderGroupHeight();
+
+    // Watch for brand items arriving via Section Rendering API morph
+    // (they render with data-brand-name but no --at-brand-avatar-bg, which
+    // is computed client-side). The initial render emits an empty shell
+    // on most pages, so the first real avatars usually arrive via morph.
+    hydrateAvatarsIn(this);
+    this.#avatarObserver = new MutationObserver(() => hydrateAvatarsIn(this));
+    this.#avatarObserver.observe(this, { childList: true, subtree: true });
   }
 
   disconnectedCallback() {
@@ -63,6 +74,8 @@ class AtBrandsPanel extends Component {
     this.#clearCloseTimer();
     this.#clearFocusOutTimer();
     this.#unbindHeaderLayoutListeners();
+    this.#avatarObserver?.disconnect();
+    this.#avatarObserver = null;
   }
 
   #onPointerEnter = () => {
@@ -359,79 +372,17 @@ class AtBrandsPanel extends Component {
       btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }
 
-    // Show matching content panel, hide others. Hydrate the matching panel's
-    // inert grid blob first so its heavy grid content exists before the user
-    // sees it. On mobile the desktop panel is CSS-hidden so this code path
-    // never runs, which is the whole point — grids stay as inert <script>
-    // text on mobile and never become DOM.
+    // Show matching content panel, hide others. Grid content inside each
+    // cat-content is either present (eager_loading=true on the Section
+    // Rendering API re-fetch, morphed in via data-hydration-key) or absent
+    // (eager_loading=false on initial page render). Both states are valid —
+    // no on-demand parsing here.
     for (const panel of this.querySelectorAll('.at-brands-panel__cat-content')) {
-      const matches = panel.dataset.cat === cat;
-      if (matches && panel instanceof HTMLElement) {
-        this.#hydrateCatContent(panel);
-      }
-      panel.hidden = !matches;
+      panel.hidden = panel.dataset.cat !== cat;
     }
 
-    // Re-apply search to the now-visible panel (and fix stale hidden state when switching back).
     const q = this.querySelector('.at-brands-panel__search')?.value.trim().toLowerCase() ?? '';
     this.#applyFilter(q);
-  }
-
-  /**
-   * Materialize a cat-content's inert grid blob on first activation.
-   *
-   * Each .at-brands-panel__cat-content contains either a brand grid or a
-   * category subnav grid, shipped as inert <script type="text/html"
-   * data-at-panel-grid="..."> so it is not parsed as DOM on page load. On
-   * the first `#activateCategory` call for a given cat-content we parse
-   * the blob via DOMParser, insert the parsed children before the script
-   * node, and hydrate initials avatars. Mobile never reaches this path
-   * because the desktop panel is `display: none` on small viewports and
-   * never receives pointerenter/hover/click, so the blob stays inert and
-   * the ~100-item brand grid plus per-category subnavs are never parsed
-   * on mobile — which is the purpose of the wrapping.
-   *
-   * Idempotent: sets `data-hydrated` to prevent double-parsing.
-   *
-   * @param {HTMLElement} catContent
-   */
-  #hydrateCatContent(catContent) {
-    if (catContent.dataset.hydrated === 'true') return;
-
-    const script = catContent.querySelector(
-      ':scope > script[type="text/html"][data-at-panel-grid]'
-    );
-    if (!(script instanceof HTMLScriptElement)) {
-      catContent.dataset.hydrated = 'true';
-      return;
-    }
-
-    const html = (script.textContent ?? '').trim();
-    if (!html) {
-      catContent.dataset.hydrated = 'true';
-      return;
-    }
-
-    try {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const nodes = Array.from(doc.body.childNodes);
-      for (const node of nodes) {
-        catContent.insertBefore(document.adoptNode(node), script);
-      }
-    } catch (_err) {
-      // Parsing failed — nothing to insert. Fall through and mark hydrated
-      // so we don't retry every activation.
-    }
-
-    for (const avatar of catContent.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')) {
-      if (!(avatar instanceof HTMLElement)) continue;
-      const name = avatar.dataset.brandName ?? '';
-      if (name) {
-        avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
-      }
-    }
-
-    catContent.dataset.hydrated = 'true';
   }
 
   // ─── Brand search ────────────────────────────────────────────────────────
@@ -520,6 +471,9 @@ class AtMenuPanel extends Component {
   /** @type {MutationObserver | null} */
   #detailsObserver = null;
 
+  /** @type {MutationObserver | null} */
+  #avatarObserver = null;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -541,6 +495,14 @@ class AtMenuPanel extends Component {
       });
       this.#detailsObserver.observe(details, { attributes: true });
     }
+
+    // Watch for brand items arriving via Section Rendering API morph
+    // (the brands + per-category views only render during the SRA re-fetch).
+    // When they appear, they have data-brand-name but no --at-brand-avatar-bg;
+    // this observer applies colors to any new initials avatars.
+    hydrateAvatarsIn(this);
+    this.#avatarObserver = new MutationObserver(() => hydrateAvatarsIn(this));
+    this.#avatarObserver.observe(this, { childList: true, subtree: true });
   }
 
   disconnectedCallback() {
@@ -549,6 +511,8 @@ class AtMenuPanel extends Component {
     this.removeEventListener('click', this.#onSearchClearClick);
     this.#detailsObserver?.disconnect();
     this.#detailsObserver = null;
+    this.#avatarObserver?.disconnect();
+    this.#avatarObserver = null;
   }
 
   // ─── View navigation ──────────────────────────────────────────────────────
@@ -556,6 +520,15 @@ class AtMenuPanel extends Component {
   /**
    * Navigate forward to a named view. Called via on:click="/navigate"
    * with data-target="viewName" on the trigger element.
+   *
+   * Views other than "main" are rendered only during the Section Rendering
+   * API re-fetch (eager_loading=true in blocks/_at-menu.liquid). On the
+   * initial page render they don't exist yet. If the user somehow taps a
+   * navigation button in that tiny window before SRA morph completes, we
+   * simply no-op — the target view doesn't exist, so there's nothing to
+   * slide to. The user stays on the main view and can retry after
+   * hydration (usually within ~200ms of DOMContentLoaded).
+   *
    * @param {MouseEvent} event
    */
   navigate(event) {
@@ -566,71 +539,12 @@ class AtMenuPanel extends Component {
     if (!(btn instanceof HTMLElement)) return;
 
     const target = btn.dataset.target;
-    if (!target) return;
+    if (!target || !this.#activeView) return;
 
-    const nextView = this.#ensureView(target);
-    if (!(nextView instanceof HTMLElement) || !this.#activeView) return;
+    const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    if (!(nextView instanceof HTMLElement)) return;
 
     this.#transition(this.#activeView, nextView, 'forward');
-  }
-
-  /**
-   * Resolve a view element by name, materializing it from an inert
-   * <script type="text/html"> blob if necessary.
-   *
-   * The Brands view and per-category views ship inside
-   * <script type="text/html" data-at-drawer-view="..."> elements so
-   * their HTML (~100 brand items, per-category featured images) is NOT
-   * parsed as DOM, NOT scanned by the preload scanner, and NOT added to
-   * the accessibility tree on initial page load. Script content is
-   * always raw text per spec — the strongest inertness guarantee
-   * available in browsers.
-   *
-   * On first navigate we parse the blob via DOMParser (same pattern the
-   * theme already uses in at-bulk-grid.js), append the resulting
-   * <div class="at-panel__view"> to the panel, and hydrate any
-   * initials-style brand avatars that were just inserted. Subsequent
-   * navigates find the materialized view via querySelector and reuse it.
-   *
-   * Returns null if no matching view or blob is found, which causes
-   * navigate() to no-op rather than throw.
-   *
-   * @param {string} target - View name, matches data-view attribute.
-   * @returns {HTMLElement | null}
-   */
-  #ensureView(target) {
-    const existing = this.querySelector(`.at-panel__view[data-view="${target}"]`);
-    if (existing instanceof HTMLElement) return existing;
-
-    const script = this.querySelector(
-      `script[type="text/html"][data-at-drawer-view="${target}"]`
-    );
-    if (!(script instanceof HTMLScriptElement)) return null;
-
-    const html = (script.textContent ?? '').trim();
-    if (!html) return null;
-
-    let parsedView = null;
-    try {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      parsedView = doc.querySelector(`.at-panel__view[data-view="${target}"]`);
-    } catch (_err) {
-      return null;
-    }
-    if (!(parsedView instanceof HTMLElement)) return null;
-
-    const adopted = document.adoptNode(parsedView);
-    this.appendChild(adopted);
-
-    for (const avatar of adopted.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')) {
-      if (!(avatar instanceof HTMLElement)) continue;
-      const name = avatar.dataset.brandName ?? '';
-      if (name) {
-        avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
-      }
-    }
-
-    return adopted;
   }
 
   /**
@@ -838,24 +752,25 @@ function brandColor(name) {
 }
 
 /**
- * Hydrate all brand initials avatars in the document with a computed background colour.
- * Called once on idle so it doesn't block the main thread.
+ * Apply computed background colors to any initials avatars inside `root`
+ * that don't already have one. Cheap to call repeatedly — the early-exit
+ * on already-hydrated avatars keeps the cost proportional to *new* avatars.
+ *
+ * Used by both custom elements' MutationObservers so avatars coming in via
+ * Section Rendering API morph pick up colors automatically.
+ *
+ * @param {ParentNode} root
  */
-function hydrateBrandAvatars() {
+function hydrateAvatarsIn(root) {
   const avatars = /** @type {NodeListOf<HTMLElement>} */ (
-    document.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')
+    root.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')
   );
 
   for (const avatar of avatars) {
+    if (avatar.style.getPropertyValue('--at-brand-avatar-bg')) continue;
     const name = avatar.dataset.brandName ?? '';
     if (name) {
       avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
     }
   }
-}
-
-if ('requestIdleCallback' in window) {
-  requestIdleCallback(hydrateBrandAvatars);
-} else {
-  setTimeout(hydrateBrandAvatars, 200);
 }

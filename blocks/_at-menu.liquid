@@ -25,6 +25,30 @@
   assign cats_ll          = linklists[block_settings.at_categories_menu]
   assign brands_ll        = linklists[block_settings.at_brands_menu]
 
+  # ─── Two-phase render (Horizon-native pattern) ────────────────────────────
+  # Mirrors snippets/header-drawer.liquid lines 25-37. On the INITIAL page
+  # render, `section.index` is set to the section's numeric index, so
+  # `eager_loading` stays false and we ship a lightweight skeleton: just the
+  # top-level nav links (desktop) and the main drawer view (mobile), with no
+  # ~100-brand grid, no per-category subnavs, no image dereferences.
+  #
+  # When Shopify re-fetches the header via the Section Rendering API
+  # (assets/section-hydration.js -> sectionRenderer, kicked off on idle after
+  # DOMContentLoaded), `section.index` is blank — that's the Section Rendering
+  # API contract. In that render we flip `eager_loading` to true and emit the
+  # full menu. assets/morph.js's morphHydrationByKey then morphs only elements
+  # tagged with data-hydration-key, preserving the already-live <at-menu-panel>
+  # and <at-brands-panel> custom element instances while appending the heavy
+  # content as real DOM.
+  #
+  # Net effect on mobile: initial page HTML stays small enough for iOS
+  # WebKit's parse/memory budget even on a heavy collection template. The
+  # full menu arrives asynchronously after the page is already interactive.
+  assign eager_loading = false
+  if section.index == blank
+    assign eager_loading = true
+  endif
+
   # Find the panel trigger link in the main menu
   assign panel_link = nil
   for link in menu_links
@@ -92,7 +116,8 @@
               brands_linklist: brands_ll,
               brands_handle: brands_handle,
               highlight_handle: highlight_handle,
-              mobile_drawer_label: block_settings.at_mobile_drawer_label
+              mobile_drawer_label: block_settings.at_mobile_drawer_label,
+              eager_loading: eager_loading
             -%}
           </div>
         </details>
@@ -166,7 +191,8 @@
                 brands_linklist: brands_ll,
                 categories_linklist: cats_ll,
                 brands_handle: brands_handle,
-                section: block
+                section: block,
+                eager_loading: eager_loading
               -%}
 
             {%- elsif link.links != blank -%}

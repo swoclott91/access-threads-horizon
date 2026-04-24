@@ -12,6 +12,14 @@
   @param {object} [brands_linklist]   - Linklist whose links are displayed as the brand grid.
   @param {string} [brands_handle]     - Handle of the sidebar item that should show the brand grid.
   @param {object} section             - The block object (used for settings).
+  @param {boolean} eager_loading      - When false (initial page render) the
+                                        brand grid and per-category subnav grids
+                                        are skipped to keep initial HTML small.
+                                        When true (Section Rendering API
+                                        re-fetch) they render as real DOM and
+                                        are morphed into the existing
+                                        <at-brands-panel> via data-hydration-key
+                                        on the parent <header-menu>.
 {%- enddoc -%}
 
 {%- liquid
@@ -146,15 +154,19 @@
               </span>
             </div>
 
-            {%- comment -%} ─── Brand grid (inert) ──────────────────────────
-              The ~100-brand grid is shipped inside a <script type="text/html">
-              blob so it is NOT parsed into DOM on any page. On desktop first
-              panel open, assets/at-menu.js parses and injects it. On mobile
-              the desktop panel is CSS-hidden and never opens, so this blob
-              stays as raw text forever — saves the biggest chunk of DOM-parse
-              cost on the mobile collection/PDP crash path.
+            {%- comment -%} ─── Brand grid ───────────────────────────────────
+              Gated on eager_loading. On the initial page render (eager_loading
+              false) this is skipped entirely — no <img> tags, no ~100 brand
+              anchors, no grid wrapper. The content-header above (title +
+              search input + count badge) still renders so the panel feels
+              present if a user somehow triggers it during the small window
+              before Shopify's Section Rendering API re-fetch arrives.
+
+              On the SRA re-fetch (eager_loading true) the grid renders as
+              real DOM and morphs into the live <at-brands-panel> via
+              data-hydration-key on the parent <header-menu>.
             ─────────────────────────────────────────────────────────────── {%- endcomment -%}
-            <script type="text/html" data-at-panel-grid="{{ cat_link.handle }}">
+            {%- if eager_loading -%}
             <div
               class="at-brands-panel__grid-wrapper"
               id="{{ brands_grid_id }}"
@@ -208,7 +220,7 @@
                 {%- endfor -%}
               </div>
             </div>
-            </script>
+            {%- endif -%}
 
             {%- if cat_link.url != blank -%}
               <div class="at-brands-panel__footer">
@@ -239,15 +251,12 @@
               {%- endif -%}
             </div>
 
-            {%- if cat_link.links != blank -%}
-              {%- comment -%} ─── Category subnav grid (inert) ──────────────
-                Same rationale as the brand grid: shipped as inert script text
-                so per-sub-link .object.featured_image dereferences never create
-                <img> nodes in the DOM on any page. Parsed and injected on
-                desktop first activation; on mobile the wrapper is CSS-hidden
-                and the blob is never parsed.
+            {%- if eager_loading and cat_link.links != blank -%}
+              {%- comment -%} ─── Category subnav grid ───────────────────────
+                Gated on eager_loading (same rationale as the brand grid).
+                Rendered only on Section Rendering API re-fetch, then morphed
+                into the live DOM via data-hydration-key.
               ─────────────────────────────────────────────────────────────── {%- endcomment -%}
-              <script type="text/html" data-at-panel-grid="{{ cat_link.handle }}">
               <div class="at-brands-panel__grid-wrapper">
                 <ul class="at-brands-panel__subnav-grid list-unstyled" role="list">
                   {%- for sub_link in cat_link.links -%}
@@ -276,8 +285,7 @@
                   {%- endfor -%}
                 </ul>
               </div>
-              </script>
-            {%- else -%}
+            {%- elsif cat_link.links == blank -%}
               <div class="at-brands-panel__placeholder">
                 <a href="{{ cat_link.url }}" class="button button--secondary button--small">
                   Shop {{ cat_link.title }} &rarr;

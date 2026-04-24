@@ -20,6 +20,12 @@
   @param {string}  brands_handle        - Handle of the brands category.
   @param {string}  highlight_handle     - Handle of the highlighted item.
   @param {string}  mobile_drawer_label  - Heading shown in the main view.
+  @param {boolean} eager_loading        - When false (initial page render) the
+                                          heavy brands + per-category views are
+                                          skipped to keep initial HTML small.
+                                          When true (Section Rendering API
+                                          re-fetch) the full drawer is emitted
+                                          and morphed in via data-hydration-key.
 {%- enddoc -%}
 
 {%- liquid
@@ -66,7 +72,7 @@
   assign alpha_letters = all_letters | split: ','
 -%}
 
-<at-menu-panel class="at-panel">
+<at-menu-panel class="at-panel" data-hydration-key="at-mobile-drawer">
 
   {%- comment -%} ═══════════════════════════════════════════════════════════
     VIEW: Main
@@ -194,16 +200,17 @@
     VIEW: Brands
     Search bar, A-Z brand grid with avatars, pinned alphabet quick-jump.
 
-    Wrapped in <script type="text/html"> so the brand grid (~100 items +
-    image URLs) ships as raw text and is NOT parsed as HTML, NOT scanned
-    by the preload scanner, and does NOT create DOM nodes on initial
-    page load. assets/at-menu.js parses and injects this on first
-    navigate. Script content is the strongest inert-HTML mechanism
-    available in browsers — stronger than <template>, which had
-    implementation-specific issues on mobile WebKit.
+    Gated on eager_loading (Horizon's two-phase render pattern). On the
+    INITIAL page render this entire block is skipped — we ship only the
+    main view above, keeping initial HTML small enough for mobile
+    WebKit's parse budget on heavy templates (collection, PDP). Shopify's
+    Section Rendering API then re-fetches the header section on idle, at
+    which point eager_loading flips true and the brands + per-category
+    views render as real DOM. assets/morph.js sees the matching
+    data-hydration-key on <at-menu-panel> and appends these new view
+    children while preserving the custom-element instance and its state.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
-  {%- if brand_source_links != blank -%}
-    <script type="text/html" data-at-drawer-view="brands">
+  {%- if eager_loading and brand_source_links != blank -%}
     <div class="at-panel__view at-panel__view--brands" data-view="brands" hidden>
 
       <div class="at-panel__header">
@@ -306,13 +313,11 @@
                     {%- if brand_first_letter == letter -%}
                       {%- liquid
                         # PERF: metaobject lookup (brand_link.object.metafields.custom.brand.value)
-                        # forces an additional metaobject load per brand. On Shopify Growth plan
-                        # with ~100 brands, that's ~100 expensive storage-layer loads per page
-                        # (twice, because the desktop panel does it too), which pushes heavy
-                        # pages like collection listings past the server-render budget and
-                        # returns 5xx on mobile. The metafield-icon feature is disabled until
-                        # server-side metaobject access is cheaper or the views move to a
-                        # Section Rendering API fetch. featured_image still resolves normally.
+                        # was dropped because it forces an additional per-brand metaobject load
+                        # that's expensive on the Growth plan. featured_image still resolves
+                        # normally. This loop now runs only during the Section Rendering API
+                        # re-fetch (gated on eager_loading above), so it doesn't block the
+                        # initial page render on heavy mobile templates.
                         assign brand_icon = blank
                         unless icon_source == 'initials_only'
                           assign coll_img = brand_link.object.featured_image
@@ -376,7 +381,6 @@
         </nav>
       {%- endif -%}
     </div>
-    </script>
   {%- endif -%}
 
 
@@ -387,12 +391,11 @@
       – Grouped: sub-links nested 3-deep render with group headings
       – Flat: direct sub-links in a grid with optional collection images
 
-    Each view is wrapped in <script type="text/html"> so link-featured-image
-    URLs for sub-links are NOT parsed or preload-scanned on initial page
-    load. assets/at-menu.js parses and injects the matching view on first
-    navigate.
+    Also gated on eager_loading — these views (with their link-featured-image
+    sub-links and multi-level nesting) only render on the Section Rendering
+    API re-fetch, not on the initial page load.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
-  {%- if categories_linklist != blank -%}
+  {%- if eager_loading and categories_linklist != blank -%}
     {%- for cat_link in categories_linklist.links -%}
       {%- if cat_link.links != blank and cat_link.handle != brands_handle -%}
         {%- liquid
@@ -413,7 +416,6 @@
             assign render_images = true
           endif
         -%}
-        <script type="text/html" data-at-drawer-view="cat-{{ cat_link.handle }}">
         <div class="at-panel__view" data-view="cat-{{ cat_link.handle }}" hidden>
 
           <div class="at-panel__header">
@@ -508,7 +510,6 @@
             {%- endif -%}
           </div>
         </div>
-        </script>
       {%- endif -%}
     {%- endfor -%}
   {%- endif -%}
