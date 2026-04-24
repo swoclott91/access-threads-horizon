@@ -58,16 +58,23 @@ class HeaderComponent extends Component {
   #scrollRafId = null;
 
   /**
-   * Keeps the global `--header-height` custom property up to date,
-   * which other theme components can then consume
+   * Keeps the global header height custom properties in sync so other
+   * theme components can consume the current transparent-header offsets.
    */
+  #syncHeaderCustomProperties = (headerHeight = Math.round(this.getBoundingClientRect().height)) => {
+    document.body.style.setProperty('--header-height', `${headerHeight}px`);
+
+    const headerGroupHeight = calculateHeaderGroupHeight(this);
+    document.body.style.setProperty('--header-group-height', `${Math.round(headerGroupHeight)}px`);
+  };
+
   #resizeObserver = new ResizeObserver(([entry]) => {
     if (!entry || !entry.borderBoxSize[0]) return;
 
     // The initial height is calculated using the .offsetHeight property, which returns an integer.
     // We round to the nearest integer to avoid unnecessaary reflows.
     const roundedHeaderHeight = Math.round(entry.borderBoxSize[0].blockSize);
-    document.body.style.setProperty('--header-height', `${roundedHeaderHeight}px`);
+    this.#syncHeaderCustomProperties(roundedHeaderHeight);
 
     // Check if the menu drawer should be hidden in favor of the header menu
     if (this.#menuDrawerHiddenWidth && window.innerWidth > this.#menuDrawerHiddenWidth) {
@@ -185,6 +192,7 @@ class HeaderComponent extends Component {
   connectedCallback() {
     super.connectedCallback();
     this.#resizeObserver.observe(this);
+    this.#syncHeaderCustomProperties(Math.round(this.offsetHeight));
     this.addEventListener('overflowMinimum', this.#handleOverflowMinimum);
 
     const stickyMode = this.getAttribute('sticky');
@@ -224,9 +232,17 @@ onDocumentLoaded(() => {
 
   // Update header group height on resize of any child
   if (headerGroup) {
-    const resizeObserver = new ResizeObserver(() => {
+    const syncHeaderGroupHeight = () => {
       const headerGroupHeight = calculateHeaderGroupHeight(header, headerGroup);
-      document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+      document.body.style.setProperty('--header-group-height', `${Math.round(headerGroupHeight)}px`);
+    };
+
+    // Re-run once after the window load event so an early inline measurement
+    // cannot leave the transparent home-page offset stuck on a stale value.
+    syncHeaderGroupHeight();
+
+    const resizeObserver = new ResizeObserver(() => {
+      syncHeaderGroupHeight();
     });
 
     if (header instanceof HTMLElement) {
