@@ -359,15 +359,79 @@ class AtBrandsPanel extends Component {
       btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
     }
 
-    // Show matching content panel, hide others
+    // Show matching content panel, hide others. Hydrate the matching panel's
+    // inert grid blob first so its heavy grid content exists before the user
+    // sees it. On mobile the desktop panel is CSS-hidden so this code path
+    // never runs, which is the whole point — grids stay as inert <script>
+    // text on mobile and never become DOM.
     for (const panel of this.querySelectorAll('.at-brands-panel__cat-content')) {
       const matches = panel.dataset.cat === cat;
+      if (matches && panel instanceof HTMLElement) {
+        this.#hydrateCatContent(panel);
+      }
       panel.hidden = !matches;
     }
 
     // Re-apply search to the now-visible panel (and fix stale hidden state when switching back).
     const q = this.querySelector('.at-brands-panel__search')?.value.trim().toLowerCase() ?? '';
     this.#applyFilter(q);
+  }
+
+  /**
+   * Materialize a cat-content's inert grid blob on first activation.
+   *
+   * Each .at-brands-panel__cat-content contains either a brand grid or a
+   * category subnav grid, shipped as inert <script type="text/html"
+   * data-at-panel-grid="..."> so it is not parsed as DOM on page load. On
+   * the first `#activateCategory` call for a given cat-content we parse
+   * the blob via DOMParser, insert the parsed children before the script
+   * node, and hydrate initials avatars. Mobile never reaches this path
+   * because the desktop panel is `display: none` on small viewports and
+   * never receives pointerenter/hover/click, so the blob stays inert and
+   * the ~100-item brand grid plus per-category subnavs are never parsed
+   * on mobile — which is the purpose of the wrapping.
+   *
+   * Idempotent: sets `data-hydrated` to prevent double-parsing.
+   *
+   * @param {HTMLElement} catContent
+   */
+  #hydrateCatContent(catContent) {
+    if (catContent.dataset.hydrated === 'true') return;
+
+    const script = catContent.querySelector(
+      ':scope > script[type="text/html"][data-at-panel-grid]'
+    );
+    if (!(script instanceof HTMLScriptElement)) {
+      catContent.dataset.hydrated = 'true';
+      return;
+    }
+
+    const html = (script.textContent ?? '').trim();
+    if (!html) {
+      catContent.dataset.hydrated = 'true';
+      return;
+    }
+
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const nodes = Array.from(doc.body.childNodes);
+      for (const node of nodes) {
+        catContent.insertBefore(document.adoptNode(node), script);
+      }
+    } catch (_err) {
+      // Parsing failed — nothing to insert. Fall through and mark hydrated
+      // so we don't retry every activation.
+    }
+
+    for (const avatar of catContent.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')) {
+      if (!(avatar instanceof HTMLElement)) continue;
+      const name = avatar.dataset.brandName ?? '';
+      if (name) {
+        avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
+      }
+    }
+
+    catContent.dataset.hydrated = 'true';
   }
 
   // ─── Brand search ────────────────────────────────────────────────────────
