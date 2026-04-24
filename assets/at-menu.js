@@ -504,10 +504,69 @@ class AtMenuPanel extends Component {
     const target = btn.dataset.target;
     if (!target) return;
 
-    const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    const nextView = this.#ensureView(target);
     if (!(nextView instanceof HTMLElement) || !this.#activeView) return;
 
     this.#transition(this.#activeView, nextView, 'forward');
+  }
+
+  /**
+   * Resolve a view element by name, materializing it from an inert
+   * <script type="text/html"> blob if necessary.
+   *
+   * The Brands view and per-category views ship inside
+   * <script type="text/html" data-at-drawer-view="..."> elements so
+   * their HTML (~100 brand items, per-category featured images) is NOT
+   * parsed as DOM, NOT scanned by the preload scanner, and NOT added to
+   * the accessibility tree on initial page load. Script content is
+   * always raw text per spec — the strongest inertness guarantee
+   * available in browsers.
+   *
+   * On first navigate we parse the blob via DOMParser (same pattern the
+   * theme already uses in at-bulk-grid.js), append the resulting
+   * <div class="at-panel__view"> to the panel, and hydrate any
+   * initials-style brand avatars that were just inserted. Subsequent
+   * navigates find the materialized view via querySelector and reuse it.
+   *
+   * Returns null if no matching view or blob is found, which causes
+   * navigate() to no-op rather than throw.
+   *
+   * @param {string} target - View name, matches data-view attribute.
+   * @returns {HTMLElement | null}
+   */
+  #ensureView(target) {
+    const existing = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    if (existing instanceof HTMLElement) return existing;
+
+    const script = this.querySelector(
+      `script[type="text/html"][data-at-drawer-view="${target}"]`
+    );
+    if (!(script instanceof HTMLScriptElement)) return null;
+
+    const html = (script.textContent ?? '').trim();
+    if (!html) return null;
+
+    let parsedView = null;
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      parsedView = doc.querySelector(`.at-panel__view[data-view="${target}"]`);
+    } catch (_err) {
+      return null;
+    }
+    if (!(parsedView instanceof HTMLElement)) return null;
+
+    const adopted = document.adoptNode(parsedView);
+    this.appendChild(adopted);
+
+    for (const avatar of adopted.querySelectorAll('.at-brand-avatar--initials[data-brand-name]')) {
+      if (!(avatar instanceof HTMLElement)) continue;
+      const name = avatar.dataset.brandName ?? '';
+      if (name) {
+        avatar.style.setProperty('--at-brand-avatar-bg', brandColor(name));
+      }
+    }
+
+    return adopted;
   }
 
   /**

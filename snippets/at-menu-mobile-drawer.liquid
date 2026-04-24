@@ -193,8 +193,17 @@
   {%- comment -%} ═══════════════════════════════════════════════════════════
     VIEW: Brands
     Search bar, A-Z brand grid with avatars, pinned alphabet quick-jump.
+
+    Wrapped in <script type="text/html"> so the brand grid (~100 items +
+    image URLs) ships as raw text and is NOT parsed as HTML, NOT scanned
+    by the preload scanner, and does NOT create DOM nodes on initial
+    page load. assets/at-menu.js parses and injects this on first
+    navigate. Script content is the strongest inert-HTML mechanism
+    available in browsers — stronger than <template>, which had
+    implementation-specific issues on mobile WebKit.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {%- if brand_source_links != blank -%}
+    <script type="text/html" data-at-drawer-view="brands">
     <div class="at-panel__view at-panel__view--brands" data-view="brands" hidden>
 
       <div class="at-panel__header">
@@ -372,6 +381,7 @@
         </nav>
       {%- endif -%}
     </div>
+    </script>
   {%- endif -%}
 
 
@@ -381,6 +391,11 @@
     Supports two layouts:
       – Grouped: sub-links nested 3-deep render with group headings
       – Flat: direct sub-links in a grid with optional collection images
+
+    Each view is wrapped in <script type="text/html"> so link-featured-image
+    URLs for sub-links are NOT parsed or preload-scanned on initial page
+    load. assets/at-menu.js parses and injects the matching view on first
+    navigate.
   ═══════════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {%- if categories_linklist != blank -%}
     {%- for cat_link in categories_linklist.links -%}
@@ -403,6 +418,7 @@
             assign render_images = true
           endif
         -%}
+        <script type="text/html" data-at-drawer-view="cat-{{ cat_link.handle }}">
         <div class="at-panel__view" data-view="cat-{{ cat_link.handle }}" hidden>
 
           <div class="at-panel__header">
@@ -497,6 +513,7 @@
             {%- endif -%}
           </div>
         </div>
+        </script>
       {%- endif -%}
     {%- endfor -%}
   {%- endif -%}
