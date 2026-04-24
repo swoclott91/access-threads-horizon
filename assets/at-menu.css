@@ -166,6 +166,19 @@
   display: none;
 }
 
+/*
+ * PERF: when the mega-panel isn't open the browser still has to keep track
+ * of ~100 brand cards + per-category subnav grids in its layout/paint
+ * trees. `content-visibility: auto` tells the engine it can skip all of
+ * that work until the panel actually becomes relevant (hover/focus).
+ * `contain-intrinsic-size` reserves a sensible placeholder so opening the
+ * panel for the first time doesn't cause a layout jank.
+ */
+.at-brands-panel__dropdown {
+  content-visibility: auto;
+  contain-intrinsic-size: 480px 600px;
+}
+
 /* Left sidebar – category rail */
 .at-brands-panel__sidebar {
   --at-brands-sidebar-width: 12rem;
@@ -371,6 +384,16 @@
 }
 
 /*
+ * PERF: hidden category subnav grids are still in the DOM once the
+ * section hydrates. Tell the browser it can skip rendering them until the
+ * user activates that category.
+ */
+.at-brands-panel__cat-content {
+  content-visibility: auto;
+  contain-intrinsic-size: 480px 520px;
+}
+
+/*
  * Each visible cat panel fills the right column and passes a bounded height
  * to the scrollable grid wrapper (flex + min-height:0).
  */
@@ -527,8 +550,18 @@
   display: none;
 }
 
-/* Stacked views sit above the one behind them */
+/* Stacked views sit above the one behind them.
+ *
+ * PERF: non-main views (brands list, per-category grids) are absolutely
+ * positioned and only become visible during slide transitions. Apply
+ * `content-visibility: auto` so the browser skips their render work
+ * while they're off-screen. `data-view="main"` is excluded because it's
+ * the first screen the user sees when opening the drawer — hitting it
+ * with content-visibility:auto would cause a one-frame flash.
+ */
 .at-panel__view:not([data-view='main']) {
+  content-visibility: auto;
+  contain-intrinsic-size: 320px 560px;
   position: absolute;
   inset: 0;
   z-index: 1;

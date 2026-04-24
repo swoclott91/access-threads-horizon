@@ -204,7 +204,13 @@
                     >
                       {%- if brand_icon != blank -%}
                         {{- brand_icon | image_url: width: 48, height: 48, crop: 'center'
-                            | image_tag: alt: '', loading: 'lazy', width: 24, height: 24 -}}
+                            | image_tag:
+                              alt: '',
+                              loading: 'lazy',
+                              fetchpriority: 'low',
+                              decoding: 'async',
+                              width: 24,
+                              height: 24 -}}
                       {%- else -%}
                         {{- brand_link.title | slice: 0, 2 | upcase -}}
                       {%- endif -%}
@@ -271,7 +277,13 @@
                             style="--at-brand-avatar-radius: {{ img_radius }}px;">
                             {{- sub_link.object.featured_image
                                 | image_url: width: 48, height: 48, crop: 'center'
-                                | image_tag: alt: '', loading: 'lazy', width: 24, height: 24 -}}
+                                | image_tag:
+                                  alt: '',
+                                  loading: 'lazy',
+                                  fetchpriority: 'low',
+                                  decoding: 'async',
+                                  width: 24,
+                                  height: 24 -}}
                           </span>
                         {%- endif -%}
                         <span class="at-brands-panel__brand-name">{{- sub_link.title -}}</span>

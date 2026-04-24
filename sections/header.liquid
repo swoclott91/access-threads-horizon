@@ -1140,7 +1140,43 @@
     import { hydrate } from '@theme/section-hydration';
     const url = new URL(window.location.href);
     url.searchParams.delete('page');
-    hydrate('{{ section.id }}', url);
+
+    /*
+     * AT-menu customization (mobile JIT hydration)
+     * ============================================
+     * Stock Horizon hydrates the header on idle so the mobile drawer is
+     * ready before the user taps the hamburger. That pattern is cheap when
+     * the drawer is small (stock ships a plain menu tree) but expensive for
+     * the AT menu, which adds ~100 brand cards + per-category subnavs on
+     * hydration. On slow mobile CPUs / slow Shopify plans this SRA round
+     * trip + morph can starve render of heavy collection pages (e.g. the
+     * Gildan collection) and has been correlated with the "There was a
+     * problem loading this website" WebKit renderer crash.
+     *
+     * Strategy:
+     *   - Desktop: hydrate on idle as usual — the mega-panel must be ready
+     *     for the first hover.
+     *   - Mobile with AT drawer present: wait until the user actually opens
+     *     the drawer, then run hydration once. Pages where the user never
+     *     opens the drawer pay zero SRA / morph cost.
+     *   - Any other case (stock header on mobile, reduced-motion, etc.):
+     *     fall back to the stock idle hydration behaviour.
+     */
+    const atDrawer = document.getElementById('at-menu-drawer-container');
+    const isMobileViewport = window.matchMedia('(max-width: 749px)').matches;
+
+    if (atDrawer && isMobileViewport) {
+      let hydrated = false;
+      const onToggle = () => {
+        if (hydrated || !atDrawer.open) return;
+        hydrated = true;
+        atDrawer.removeEventListener('toggle', onToggle);
+        hydrate('{{ section.id }}', url);
+      };
+      atDrawer.addEventListener('toggle', onToggle);
+    } else {
+      hydrate('{{ section.id }}', url);
+    }
   </script>
 {% endunless %}
 
