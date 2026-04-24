@@ -59,7 +59,6 @@
         },
         "header-menu": {
           "type": "_header-menu",
-          "disabled": true,
           "static": true,
           "settings": {
             "menu": "main-menu",
