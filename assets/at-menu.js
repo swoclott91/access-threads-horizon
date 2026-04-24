@@ -474,6 +474,18 @@ class AtMenuPanel extends Component {
   /** @type {MutationObserver | null} */
   #avatarObserver = null;
 
+  /**
+   * When the user taps a nav button (e.g. "Brands") before SRA hydration
+   * has inserted the target view, we queue the navigation here so it can
+   * resolve the moment the view appears in the DOM. See `navigate()` and
+   * `#tryResolvePendingNavigation()`.
+   * @type {string | null}
+   */
+  #pendingTarget = null;
+
+  /** @type {HTMLElement | null} */
+  #pendingButton = null;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -496,12 +508,17 @@ class AtMenuPanel extends Component {
       this.#detailsObserver.observe(details, { attributes: true });
     }
 
-    // Watch for brand items arriving via Section Rendering API morph
-    // (the brands + per-category views only render during the SRA re-fetch).
-    // When they appear, they have data-brand-name but no --at-brand-avatar-bg;
-    // this observer applies colors to any new initials avatars.
+    // Watch for brand items + sub-views arriving via Section Rendering API
+    // morph (brands + per-category views only render during the SRA
+    // re-fetch). When new nodes appear we do two things:
+    //   1. Apply computed avatar colors to any initials avatars.
+    //   2. Resolve a pending navigation if the user tapped "Brands" or a
+    //      category before its view was in the DOM.
     hydrateAvatarsIn(this);
-    this.#avatarObserver = new MutationObserver(() => hydrateAvatarsIn(this));
+    this.#avatarObserver = new MutationObserver(() => {
+      hydrateAvatarsIn(this);
+      this.#tryResolvePendingNavigation();
+    });
     this.#avatarObserver.observe(this, { childList: true, subtree: true });
   }
 
@@ -522,12 +539,13 @@ class AtMenuPanel extends Component {
    * with data-target="viewName" on the trigger element.
    *
    * Views other than "main" are rendered only during the Section Rendering
-   * API re-fetch (eager_loading=true in blocks/_at-menu.liquid). On the
-   * initial page render they don't exist yet. If the user somehow taps a
-   * navigation button in that tiny window before SRA morph completes, we
-   * simply no-op — the target view doesn't exist, so there's nothing to
-   * slide to. The user stays on the main view and can retry after
-   * hydration (usually within ~200ms of DOMContentLoaded).
+   * API re-fetch (eager_loading=true in blocks/_at-menu.liquid). On mobile
+   * that fetch is kicked off when the drawer opens (see header.liquid), so
+   * there's a brief window where the user might tap "Brands" or a category
+   * before its view exists in the DOM. In that window we queue the
+   * navigation, show a loading state on the tapped button, and complete
+   * the navigation the moment the view is morphed in (see the
+   * MutationObserver in connectedCallback).
    *
    * @param {MouseEvent} event
    */
@@ -542,9 +560,61 @@ class AtMenuPanel extends Component {
     if (!target || !this.#activeView) return;
 
     const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
-    if (!(nextView instanceof HTMLElement)) return;
+    if (!(nextView instanceof HTMLElement)) {
+      this.#setPendingNavigation(target, btn);
+      return;
+    }
 
+    this.#clearPendingNavigation();
     this.#transition(this.#activeView, nextView, 'forward');
+  }
+
+  /**
+   * Queue a navigation that couldn't resolve because the target view isn't
+   * in the DOM yet. Applies a loading indicator + aria-busy to the tapped
+   * button so the tap feels acknowledged during the SRA wait.
+   *
+   * @param {string} target
+   * @param {HTMLElement} btn
+   */
+  #setPendingNavigation(target, btn) {
+    // Replace any prior pending nav (user tapped a different item).
+    this.#clearPendingNavigation();
+    this.#pendingTarget = target;
+    this.#pendingButton = btn;
+    btn.classList.add('at-panel__nav-btn--loading');
+    btn.setAttribute('aria-busy', 'true');
+  }
+
+  #clearPendingNavigation() {
+    if (this.#pendingButton) {
+      this.#pendingButton.classList.remove('at-panel__nav-btn--loading');
+      this.#pendingButton.removeAttribute('aria-busy');
+    }
+    this.#pendingTarget = null;
+    this.#pendingButton = null;
+  }
+
+  /**
+   * Called from the DOM MutationObserver after each morph batch. If the
+   * user previously tapped a nav button whose target view didn't exist
+   * yet, check whether it's now present and complete the navigation.
+   */
+  #tryResolvePendingNavigation() {
+    if (!this.#pendingTarget || !this.#activeView) return;
+    const target = this.#pendingTarget;
+    const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
+    if (!(nextView instanceof HTMLElement)) return;
+    this.#clearPendingNavigation();
+    // If an animation is already in flight (unlikely during hydration but
+    // possible), defer one frame so the current animation can settle.
+    if (this.#animating) {
+      requestAnimationFrame(() => {
+        if (this.#activeView) this.#transition(this.#activeView, nextView, 'forward');
+      });
+    } else {
+      this.#transition(this.#activeView, nextView, 'forward');
+    }
   }
 
   /**
@@ -580,6 +650,7 @@ class AtMenuPanel extends Component {
     this.#activeView = this.querySelector('.at-panel__view[data-view="main"]');
     this.#viewStack = [];
     this.#animating = false;
+    this.#clearPendingNavigation();
     this.#clearBrandFilter();
   }
 

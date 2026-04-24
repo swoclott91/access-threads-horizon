@@ -1167,13 +1167,31 @@
 
     if (atDrawer && isMobileViewport) {
       let hydrated = false;
-      const onToggle = () => {
-        if (hydrated || !atDrawer.open) return;
+      const runHydrate = () => {
+        if (hydrated) return;
         hydrated = true;
-        atDrawer.removeEventListener('toggle', onToggle);
         hydrate('{{ section.id }}', url);
       };
-      atDrawer.addEventListener('toggle', onToggle);
+
+      /*
+       * Kick off hydration as early as we reasonably can so the sub-views
+       * have the best chance of being present by the time the user taps a
+       * nav button:
+       *   1. pointerdown on the hamburger <summary> — fires the instant a
+       *      finger touches the icon, ~100-200ms before the details
+       *      toggle event. This is the primary trigger for real users.
+       *   2. toggle on the <details> — a fallback for programmatic opens
+       *      or keyboard activation that might skip pointer events.
+       * Whichever fires first wins; the other becomes a no-op via the
+       * `hydrated` guard.
+       */
+      const summary = atDrawer.querySelector('summary');
+      if (summary) {
+        summary.addEventListener('pointerdown', runHydrate, { once: true });
+      }
+      atDrawer.addEventListener('toggle', () => {
+        if (atDrawer.open) runHydrate();
+      });
     } else {
       hydrate('{{ section.id }}', url);
     }
