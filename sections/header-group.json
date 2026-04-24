@@ -59,6 +59,7 @@
         },
         "header-menu": {
           "type": "_header-menu",
+          "disabled": true,
           "static": true,
           "settings": {
             "menu": "main-menu",
@@ -81,7 +82,6 @@
         },
         "at-menu": {
           "type": "_at-menu",
-          "disabled": true,
           "static": true,
           "settings": {
             "menu": "main-menu",
