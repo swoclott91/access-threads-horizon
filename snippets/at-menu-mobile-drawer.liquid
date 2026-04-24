@@ -305,24 +305,19 @@
                     {%- assign brand_first_letter = brand_link.title | upcase | slice: 0, 1 -%}
                     {%- if brand_first_letter == letter -%}
                       {%- liquid
+                        # PERF: metaobject lookup (brand_link.object.metafields.custom.brand.value)
+                        # forces an additional metaobject load per brand. On Shopify Growth plan
+                        # with ~100 brands, that's ~100 expensive storage-layer loads per page
+                        # (twice, because the desktop panel does it too), which pushes heavy
+                        # pages like collection listings past the server-render budget and
+                        # returns 5xx on mobile. The metafield-icon feature is disabled until
+                        # server-side metaobject access is cheaper or the views move to a
+                        # Section Rendering API fetch. featured_image still resolves normally.
                         assign brand_icon = blank
-
                         unless icon_source == 'initials_only'
-                          if icon_source == 'auto'
-                            assign brand_mobj = brand_link.object.metafields.custom.brand.value
-                            if brand_mobj != blank
-                              assign raw_icon = brand_mobj.icon
-                              if raw_icon != blank
-                                assign brand_icon = raw_icon
-                              endif
-                            endif
-                          endif
-
-                          if brand_icon == blank
-                            assign coll_img = brand_link.object.featured_image
-                            if coll_img != blank
-                              assign brand_icon = coll_img
-                            endif
+                          assign coll_img = brand_link.object.featured_image
+                          if coll_img != blank
+                            assign brand_icon = coll_img
                           endif
                         endunless
                       -%}

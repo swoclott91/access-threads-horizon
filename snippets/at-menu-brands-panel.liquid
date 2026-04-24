@@ -159,22 +159,13 @@
               >
                 {%- for brand_link in brands_linklist.links -%}
                   {%- liquid
+                    # PERF: see snippets/at-menu-mobile-drawer.liquid for the rationale.
+                    # Metaobject lookup removed to cut server-render cost on Growth plan.
                     assign brand_icon = blank
                     unless icon_source == 'initials_only'
-                      if icon_source == 'auto'
-                        assign brand_mobj = brand_link.object.metafields.custom.brand.value
-                        if brand_mobj != blank
-                          assign raw_icon = brand_mobj.icon
-                          if raw_icon != blank
-                            assign brand_icon = raw_icon
-                          endif
-                        endif
-                      endif
-                      if brand_icon == blank
-                        assign coll_img = brand_link.object.featured_image
-                        if coll_img != blank
-                          assign brand_icon = coll_img
-                        endif
+                      assign coll_img = brand_link.object.featured_image
+                      if coll_img != blank
+                        assign brand_icon = coll_img
                       endif
                     endunless
                   -%}
