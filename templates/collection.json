@@ -200,11 +200,11 @@
                   "name": "t:names.image",
                   "settings": {
                     "image": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
-                    "link": "",
+                    "link": "{{ closest.product.url }}",
                     "image_ratio": "adapt",
                     "width": "fill",
                     "custom_width": 100,
-                    "width_mobile": "fill",
+                    "width_mobile": "custom",
                     "custom_width_mobile": 100,
                     "height": "fill",
                     "border": "none",
