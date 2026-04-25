@@ -427,7 +427,7 @@
           "type": "text",
           "name": "t:names.header",
           "settings": {
-            "text": "<h3>Complimentary Styles</h3>",
+            "text": "<h3>Complementary Styles</h3>",
             "width": "fit-content",
             "max_width": "normal",
             "alignment": "left",
