@@ -725,21 +725,24 @@ export function calculateHeaderGroupHeight(
 ) {
   if (!headerGroup) return 0;
 
-  let totalHeight = 0;
+  let minTop = Number.POSITIVE_INFINITY;
+  let maxBottom = Number.NEGATIVE_INFINITY;
   const children = headerGroup.children;
   for (let i = 0; i < children.length; i++) {
     const element = children[i];
     if (!(element instanceof HTMLElement)) continue;
-    if (element === header || element.contains(header)) continue;
-    totalHeight += element.offsetHeight;
+
+    const measuredElement =
+      header instanceof HTMLElement && (element === header || element.contains(header)) ? header : element;
+    const { top, bottom } = measuredElement.getBoundingClientRect();
+
+    minTop = Math.min(minTop, top);
+    maxBottom = Math.max(maxBottom, bottom);
   }
 
-  // If the header is transparent and has a sibling section, add the height of the header to the total height
-  if (header instanceof HTMLElement && header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
-    return totalHeight + header.offsetHeight;
-  }
+  if (!Number.isFinite(minTop) || !Number.isFinite(maxBottom)) return 0;
 
-  return totalHeight;
+  return Math.max(0, maxBottom - minTop);
 }
 
 /**

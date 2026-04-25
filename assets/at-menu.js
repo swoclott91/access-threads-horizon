@@ -1,4 +1,5 @@
 import { Component } from '@theme/component';
+import { calculateHeaderGroupHeight } from '@theme/utilities';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    AtBrandsPanel
@@ -318,12 +319,8 @@ class AtBrandsPanel extends Component {
   /**
    * Recalculate `--header-group-height` after a double-rAF delay.
    *
-   * The stock ResizeObserver in header.js can produce an incomplete total
-   * when only some observed elements fire. This mirrors the logic in
-   * utilities.js `calculateHeaderGroupHeight` but correctly skips the
-   * section wrapper that *contains* `#header-component` (the stock
-   * function compares `child === header`, which never matches because
-   * the header is a grandchild of `#header-group`, not a direct child).
+   * This waits for header/menu layout to settle, then reapplies the shared
+   * header-group span calculation so transparent-header offsets stay correct.
    */
   static #fixHeaderGroupHeight() {
     requestAnimationFrame(() => {
@@ -332,15 +329,7 @@ class AtBrandsPanel extends Component {
         const header = document.querySelector('#header-component');
         if (!headerGroup || !(header instanceof HTMLElement)) return;
 
-        let height = 0;
-        for (const child of headerGroup.children) {
-          if (!(child instanceof HTMLElement)) continue;
-          if (child === header || child.contains(header)) continue;
-          height += child.offsetHeight;
-        }
-        if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
-          height += header.offsetHeight;
-        }
+        const height = calculateHeaderGroupHeight(header, headerGroup);
         document.body.style.setProperty('--header-group-height', `${Math.round(height)}px`);
       });
     });

@@ -61,20 +61,25 @@
         const headerTopRow = header.querySelector('.header__row--top');
         const headerHeight = header.offsetHeight;
 
-        // Calculate the total height of the header group
-        let headerGroupHeight = 0;
+        // Measure the full vertical span of the rendered header group.
+        let headerGroupMinTop = Number.POSITIVE_INFINITY;
+        let headerGroupMaxBottom = Number.NEGATIVE_INFINITY;
         const children = headerGroup.children;
         for (let i = 0; i < children.length; i++) {
           const element = children[i];
           if (!(element instanceof HTMLElement)) continue;
-          if (element === header || element.contains(header)) continue;
-          headerGroupHeight += element.offsetHeight;
+
+          const measuredElement = element === header || element.contains(header) ? header : element;
+          const rect = measuredElement.getBoundingClientRect();
+
+          headerGroupMinTop = Math.min(headerGroupMinTop, rect.top);
+          headerGroupMaxBottom = Math.max(headerGroupMaxBottom, rect.bottom);
         }
 
-        // Check for transparent header special case
-        if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
-          headerGroupHeight += headerHeight;
-        }
+        const headerGroupHeight =
+          Number.isFinite(headerGroupMinTop) && Number.isFinite(headerGroupMaxBottom)
+            ? Math.max(0, headerGroupMaxBottom - headerGroupMinTop)
+            : 0;
 
         // Set CSS variables
         document.body.style.setProperty('--header-height', `${headerHeight}px`);
