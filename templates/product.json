@@ -569,7 +569,7 @@
       "settings": {
         "product": "{{ closest.product }}",
         "recommendation_type": "complementary",
-        "layout_type": "grid",
+        "layout_type": "carousel",
         "carousel_on_mobile": true,
         "max_products": 10,
         "columns": 5,
