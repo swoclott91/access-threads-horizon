@@ -256,7 +256,34 @@
 {% endcase %}
 
 <script src="{{ 'at-menu.js' | asset_url }}" type="module"></script>
-{{ 'at-menu.css' | asset_url | stylesheet_tag }}
+
+{%- comment -%}
+  ══════════════════════════════════════════════════════════════════════
+  PERF: Load at-menu.css non-render-blocking
+  ══════════════════════════════════════════════════════════════════════
+  The closed-drawer state (hamburger button + cart/logo) is styled by
+  Horizon's stock header CSS, so at-menu.css only matters once the user
+  opens the drawer or hovers the desktop mega-panel. Loading it
+  render-blocking forces the browser to parse 27KB of CSS before painting
+  anything below the fold — particularly punishing on cold-cache pages
+  (newly-created collections, low-traffic PDPs) where TTFB is already
+  multiple seconds and any extra render-blocking work can push iOS Safari
+  past its renderer timeout / memory ceiling.
+
+  The `media="print"` trick downloads the stylesheet at low priority but
+  doesn't apply it until onload swaps media to "all". By the time the
+  user actually opens the drawer / hovers the panel (usually seconds
+  later), the CSS is loaded and ready.
+  ══════════════════════════════════════════════════════════════════════
+{%- endcomment -%}
+{%- assign at_menu_css_url = 'at-menu.css' | asset_url -%}
+<link
+  rel="stylesheet"
+  href="{{ at_menu_css_url }}"
+  media="print"
+  onload="this.media='all';this.onload=null;"
+>
+<noscript><link rel="stylesheet" href="{{ at_menu_css_url }}"></noscript>
 
 {% schema %}
 {
