@@ -662,7 +662,7 @@
       "name": "t:names.featured_collection",
       "settings": {
         "collection": "t-shirts",
-        "layout_type": "grid",
+        "layout_type": "carousel",
         "carousel_on_mobile": false,
         "max_products": 8,
         "columns": 4,
