@@ -84,7 +84,7 @@
             "horizontal_alignment": "flex-start",
             "vertical_alignment": "center",
             "align_baseline": false,
-            "horizontal_alignment_flex_direction_column": "center",
+            "horizontal_alignment_flex_direction_column": "flex-start",
             "vertical_alignment_flex_direction_column": "center",
             "gap": 12,
             "width": "fill",
@@ -161,9 +161,8 @@
         "section_height": "",
         "section_height_custom": 68,
         "color_scheme": "scheme-1",
-        "background_media": "image",
+        "background_media": "none",
         "video_position": "cover",
-        "background_image": "{{ collection.metafields.custom.brand.value.cover.value }}",
         "background_image_position": "cover",
         "border": "none",
         "border_width": 1,
@@ -173,8 +172,8 @@
         "overlay_color": "#00000026",
         "overlay_style": "solid",
         "gradient_direction": "to top",
-        "padding-block-start": 48,
-        "padding-block-end": 48
+        "padding-block-start": 0,
+        "padding-block-end": 0
       }
     },
     "main": {
