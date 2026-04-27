@@ -1,0 +1,605 @@
+{%- doc -%}
+  ════════════════════════════════════════════════════════════════════════
+  AT Menu Data — JIT-fetchable section for the heavy AT menu content
+  ════════════════════════════════════════════════════════════════════════
+
+  Purpose
+  -------
+  The AT menu's heavy content (the ~100-brand grid + every category
+  subnav, both mobile drawer views and desktop mega-panel content) used
+  to render alongside the header section on every page load — gated only
+  by Horizon's `eager_loading` (`section.index == blank`) trick to defer
+  to a Section Rendering API re-fetch of the WHOLE header. That still
+  caused two problems on cold-cache pages:
+
+    1. The header section's render time on origin includes the AT menu
+       block work even on the first (skeleton) render.
+    2. The SRA re-fetch's `render;dur` is dominated by ~100 brand
+       metaobject lookups + per-segment cart/customer state, so cache
+       hit rate is poor for the typical visitor segment.
+
+  This section moves the heavy content out into its own dedicated
+  section that:
+
+    - Renders absolutely nothing on the initial page render
+      (`section.index != blank`) so it adds no measurable cost to TTFB
+       or FCP, and Google's product-feed crawler never trips on it.
+    - When fetched explicitly via the Section Rendering API
+      (`/?section_id=at-menu-data`, triggered by JS on real user
+       intent — hamburger pointerdown on mobile, nav hover on desktop),
+       renders ONLY the heavy views with no other header chrome.
+    - Is segment-agnostic (no cart/customer/currency dependency in the
+       output), so origin page_cache + Cloudflare caches it efficiently
+       across all visitor segments.
+
+  After fetch, assets/at-menu.js distributes the views into the live
+  <at-menu-panel> (mobile) and <at-brands-panel> (desktop) custom element
+  instances rendered by the AT Menu block.
+
+  Routing markers
+  ---------------
+  Each emitted view carries a data attribute so the JS adopter knows
+  where to put it:
+
+    [data-at-mount="mobile-view"]            mobile drawer view
+                                             (data-view selects which)
+    [data-at-mount="desktop-cat-content"]    desktop cat-content body
+                                             (data-cat selects which)
+
+  Why all settings live on this section
+  -------------------------------------
+  Liquid sections cannot read another section's block settings, and the
+  Section Rendering API does not expose query strings to Liquid. So the
+  section must own its config. Its schema mirrors the AT Menu block's
+  relevant settings with identical defaults. For this private theme the
+  merchant configures them once in the theme editor; if the section
+  isn't configured, it gracefully renders no heavy content (the menu
+  falls back to skeleton-only main view).
+{%- enddoc -%}
+
+{%- liquid
+  assign s = section.settings
+  assign cats_handle    = s.at_categories_menu
+  assign brands_handle  = s.at_brands_menu
+  assign brands_item    = s.at_brands_item_handle | default: 'brands'
+  assign icon_source    = s.at_brand_icon_source  | default: 'auto'
+  assign show_search    = s.at_show_brand_search
+  assign cols           = s.at_brands_panel_columns  | default: 4
+  assign mobile_cols    = s.at_brands_mobile_columns | default: 2
+  assign img_radius     = s.at_brand_image_border_radius | default: 4
+
+  assign cats_ll   = linklists[cats_handle]
+  assign brands_ll = linklists[brands_handle]
+
+  # Eager-load gate: this section has no visible content on initial
+  # page renders (section.index is set to a numeric position) — only
+  # when fetched via the Section Rendering API does section.index go
+  # blank, at which point we emit the full payload.
+  assign emit = false
+  if section.index == blank
+    assign emit = true
+  endif
+
+  # Resolve the brands sidebar item from the categories linklist
+  assign brands_cat_link = nil
+  if cats_ll != blank
+    for cat_link in cats_ll.links
+      if cat_link.handle == brands_item
+        assign brands_cat_link = cat_link
+        break
+      endif
+    endfor
+  endif
+
+  # Brand source: prefer dedicated brands linklist, fall back to category sub-links
+  assign brand_source_links = blank
+  if brands_ll != blank
+    assign brand_source_links = brands_ll.links
+  elsif brands_cat_link != blank
+    assign brand_source_links = brands_cat_link.links
+  endif
+
+  assign brand_total = 0
+  if brand_source_links != blank
+    assign brand_total = brand_source_links.size
+  endif
+
+  assign brand_grid_rows = 1
+  if brand_total > 0
+    assign brand_grid_rows = brand_total | plus: cols | minus: 1 | divided_by: cols
+  endif
+
+  # Build alphabet array from brand links (mobile A-Z grouping)
+  assign all_letters = ''
+  if brand_source_links != blank
+    for brand_link in brand_source_links
+      assign letter = brand_link.title | upcase | slice: 0, 1
+      unless all_letters contains letter
+        assign all_letters = all_letters | append: letter | append: ','
+      endunless
+    endfor
+  endif
+  assign alpha_letters = all_letters | split: ','
+-%}
+
+{%- if emit and cats_ll != blank -%}
+  <at-menu-data hidden>
+
+    {%- comment -%} ═══════════════════════════════════════════════════════
+      MOBILE DRAWER VIEWS
+      Each emits as a [data-at-mount="mobile-view"] container holding a
+      single `.at-panel__view` element. assets/at-menu.js moves the
+      contained view into the live <at-menu-panel> as a sibling of the
+      main view.
+    ═══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+
+    {%- if brand_source_links != blank -%}
+      <div data-at-mount="mobile-view">
+        <div class="at-panel__view at-panel__view--brands" data-view="brands" hidden>
+
+          <div class="at-panel__header">
+            <button
+              type="button"
+              class="at-panel__back"
+              aria-label="{{ 'actions.back' | t | default: 'Back' }}"
+              on:click="/back"
+            >
+              <span class="svg-wrapper">{{- 'icon-chevron-left.svg' | inline_asset_content -}}</span>
+            </button>
+            <h2 class="at-panel__title">{{- brands_cat_link.title | default: 'Brands' | escape -}}</h2>
+            <button
+              type="button"
+              class="at-panel__close"
+              aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
+              on:click="header-drawer/close"
+            >
+              <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
+            </button>
+          </div>
+
+          {%- if show_search -%}
+            <div class="at-panel__search-wrapper" role="search">
+              <span class="at-panel__search-icon svg-wrapper" aria-hidden="true">
+                {{- 'icon-search.svg' | inline_asset_content -}}
+              </span>
+              <label for="at-panel-brand-search" class="visually-hidden">
+                {{ 'content.search' | t | default: 'Search brands' }}
+              </label>
+              <input
+                ref="searchInput"
+                id="at-panel-brand-search"
+                type="search"
+                class="at-panel__search"
+                placeholder="{{ 'placeholders.search' | t | default: 'Search brands…' }}"
+                autocomplete="off"
+                aria-controls="at-panel-brands-body"
+                aria-label="{{ 'content.search' | t | default: 'Search brands' }}"
+              >
+              <button
+                ref="searchClear"
+                type="button"
+                class="at-panel__search-clear"
+                aria-label="{{ 'actions.clear' | t | default: 'Clear' }}"
+                hidden
+              >
+                <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
+              </button>
+            </div>
+          {%- endif -%}
+
+          <span
+            ref="brandCount"
+            class="at-panel__brand-count"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            {{- brand_total -}}
+          </span>
+
+          <div
+            class="at-panel__body"
+            id="at-panel-brands-body"
+            ref="brandsBody"
+            role="list"
+            aria-label="{{ brands_cat_link.title | default: 'Brands' }}"
+            style="--at-brands-mobile-cols: {{ mobile_cols }};"
+          >
+            {%- for letter in alpha_letters -%}
+              {%- if letter != blank -%}
+                {%- liquid
+                  assign letter_brand_count = 0
+                  for brand_link in brand_source_links
+                    assign brand_first_letter = brand_link.title | upcase | slice: 0, 1
+                    if brand_first_letter == letter
+                      assign letter_brand_count = letter_brand_count | plus: 1
+                    endif
+                  endfor
+                  assign grid_rows = 1
+                  if letter_brand_count > 0
+                    assign grid_rows = letter_brand_count | plus: mobile_cols | minus: 1 | divided_by: mobile_cols
+                  endif
+                -%}
+                <div
+                  class="at-panel__letter-section"
+                  id="at-letter-{{ letter }}"
+                  role="listitem"
+                >
+                  <div class="at-panel__letter-header" aria-hidden="true">{{- letter -}}</div>
+                  <div
+                    class="at-panel__brand-grid"
+                    style="--at-panel-brand-rows: {{ grid_rows }};"
+                  >
+                    {%- for brand_link in brand_source_links -%}
+                      {%- assign brand_first_letter = brand_link.title | upcase | slice: 0, 1 -%}
+                      {%- if brand_first_letter == letter -%}
+                        {%- liquid
+                          assign brand_icon = blank
+                          unless icon_source == 'initials_only'
+                            assign coll_img = brand_link.object.featured_image
+                            if coll_img != blank
+                              assign brand_icon = coll_img
+                            endif
+                          endunless
+                        -%}
+                        <a
+                          href="{{ brand_link.url }}"
+                          class="at-panel__brand-item"
+                          data-brand-name="{{ brand_link.title | escape }}"
+                          {% if brand_link.current %}aria-current="page"{% endif %}
+                        >
+                          <span
+                            class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
+                            style="--at-brand-avatar-radius: {{ img_radius }}px;"
+                            aria-hidden="true"
+                            data-brand-name="{{ brand_link.title | escape }}"
+                          >
+                            {%- if brand_icon != blank -%}
+                              {{-
+                                brand_icon
+                                | image_url: width: 48, height: 48, crop: 'center'
+                                | image_tag:
+                                  alt: '',
+                                  loading: 'lazy',
+                                  fetchpriority: 'low',
+                                  decoding: 'async',
+                                  width: 24,
+                                  height: 24
+                              -}}
+                            {%- else -%}
+                              {{- brand_link.title | slice: 0, 2 | upcase -}}
+                            {%- endif -%}
+                          </span>
+                          <span class="at-panel__brand-name">{{- brand_link.title -}}</span>
+                        </a>
+                      {%- endif -%}
+                    {%- endfor -%}
+                  </div>
+                </div>
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+
+          {%- if alpha_letters.size > 0 -%}
+            <nav
+              ref="alphaBar"
+              class="at-panel__alpha-bar"
+              aria-label="{{ 'accessibility.skip_to_results_list' | t | default: 'Jump to letter' }}"
+            >
+              {%- for letter in alpha_letters -%}
+                {%- if letter != blank -%}
+                  <button
+                    type="button"
+                    class="at-panel__alpha-btn"
+                    data-letter="{{ letter }}"
+                    aria-label="{{ letter }}"
+                    on:click="/scrollToLetter"
+                  >
+                    {{- letter -}}
+                  </button>
+                {%- endif -%}
+              {%- endfor -%}
+            </nav>
+          {%- endif -%}
+        </div>
+      </div>
+    {%- endif -%}
+
+    {%- comment -%} ═══════════════════════════════════════════════════════
+      MOBILE per-category views
+      One per category that has children, excluding the brands item.
+    ═══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+    {%- for cat_link in cats_ll.links -%}
+      {%- if cat_link.links != blank and cat_link.handle != brands_item -%}
+        {%- liquid
+          assign has_groups = false
+          for sub_link in cat_link.links
+            if sub_link.links != blank
+              assign has_groups = true
+              break
+            endif
+          endfor
+
+          assign render_images = false
+          assign cat_collection_links = cat_link.links | where: 'type', 'collection_link'
+          assign cat_catalog_links = cat_link.links | where: 'type', 'catalog_link'
+          if cat_collection_links.size > 0 or cat_catalog_links.size > 0
+            assign render_images = true
+          endif
+        -%}
+        <div data-at-mount="mobile-view">
+          <div class="at-panel__view" data-view="cat-{{ cat_link.handle }}" hidden>
+
+            <div class="at-panel__header">
+              <button
+                type="button"
+                class="at-panel__back"
+                aria-label="{{ 'actions.back' | t | default: 'Back' }}"
+                on:click="/back"
+              >
+                <span class="svg-wrapper">{{- 'icon-chevron-left.svg' | inline_asset_content -}}</span>
+              </button>
+              <h2 class="at-panel__title">{{- cat_link.title | escape -}}</h2>
+              <button
+                type="button"
+                class="at-panel__close"
+                aria-label="{{ 'actions.close' | t | default: 'Close menu' }}"
+                on:click="header-drawer/close"
+              >
+                <span class="svg-wrapper">{{- 'icon-close.svg' | inline_asset_content -}}</span>
+              </button>
+            </div>
+
+            <div class="at-panel__body">
+              {%- if has_groups -%}
+                {%- for group_link in cat_link.links -%}
+                  {%- if group_link.links != blank -%}
+                    <div class="at-panel__group">
+                      <h3 class="at-panel__group-title">{{- group_link.title -}}</h3>
+                      <ul class="at-panel__grid{% if render_images %} at-panel__grid--images{% endif %}" role="list">
+                        {%- for item_link in group_link.links -%}
+                          <li>
+                            <a
+                              href="{{ item_link.url }}"
+                              class="at-panel__grid-item"
+                              {% if item_link.current %}aria-current="page"{% endif %}
+                            >
+                              {%- if render_images -%}
+                                {%- render 'link-featured-image',
+                                  link: item_link,
+                                  class: 'at-panel__grid-image',
+                                  sizes: 'auto, 200px'
+                                -%}
+                              {%- endif -%}
+                              <span class="at-panel__grid-item-text">{{- item_link.title -}}</span>
+                            </a>
+                          </li>
+                        {%- endfor -%}
+                      </ul>
+                    </div>
+                  {%- else -%}
+                    <a
+                      href="{{ group_link.url }}"
+                      class="at-panel__item at-panel__item--child"
+                      {% if group_link.current %}aria-current="page"{% endif %}
+                    >
+                      <span class="at-panel__item-text">{{- group_link.title -}}</span>
+                    </a>
+                  {%- endif -%}
+                {%- endfor -%}
+
+              {%- else -%}
+                <ul class="at-panel__grid{% if render_images %} at-panel__grid--images{% endif %}" role="list">
+                  {%- for sub_link in cat_link.links -%}
+                    <li>
+                      <a
+                        href="{{ sub_link.url }}"
+                        class="at-panel__grid-item"
+                        {% if sub_link.current %}aria-current="page"{% endif %}
+                      >
+                        {%- if render_images -%}
+                          {%- render 'link-featured-image',
+                            link: sub_link,
+                            class: 'at-panel__grid-image',
+                            sizes: 'auto, 200px'
+                          -%}
+                        {%- endif -%}
+                        <span class="at-panel__grid-item-text">{{- sub_link.title -}}</span>
+                      </a>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              {%- endif -%}
+
+              {%- if cat_link.url != blank -%}
+                <div class="at-panel__view-all">
+                  <a href="{{ cat_link.url }}" class="at-panel__view-all-link">
+                    Shop all {{ cat_link.title }} →
+                  </a>
+                </div>
+              {%- endif -%}
+            </div>
+          </div>
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+
+    {%- comment -%} ═══════════════════════════════════════════════════════
+      DESKTOP brand grid (mounts into the live brands cat-content panel)
+    ═══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+    {%- if brand_source_links != blank -%}
+      {%- assign brands_grid_id = 'at-brands-grid-desktop' -%}
+      <div data-at-mount="desktop-cat-content" data-cat="{{ brands_item }}">
+        <div
+          class="at-brands-panel__grid-wrapper"
+          id="{{ brands_grid_id }}"
+          role="list"
+          aria-label="{{ brands_cat_link.title | default: 'Brands' }}"
+        >
+          <div
+            class="at-brands-panel__grid"
+            style="--at-brands-cols: {{ cols }}; --at-brands-rows: {{ brand_grid_rows }};"
+          >
+            {%- for brand_link in brand_source_links -%}
+              {%- liquid
+                assign brand_icon = blank
+                unless icon_source == 'initials_only'
+                  assign coll_img = brand_link.object.featured_image
+                  if coll_img != blank
+                    assign brand_icon = coll_img
+                  endif
+                endunless
+              -%}
+              <a
+                href="{{ brand_link.url }}"
+                class="at-brands-panel__brand-item"
+                data-brand-name="{{ brand_link.title | escape }}"
+                role="listitem"
+                {% if brand_link.current %}aria-current="page"{% endif %}
+              >
+                <span
+                  class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
+                  style="--at-brand-avatar-radius: {{ img_radius }}px;"
+                  aria-hidden="true"
+                  data-brand-name="{{ brand_link.title | escape }}"
+                >
+                  {%- if brand_icon != blank -%}
+                    {{- brand_icon | image_url: width: 48, height: 48, crop: 'center'
+                        | image_tag:
+                          alt: '',
+                          loading: 'lazy',
+                          fetchpriority: 'low',
+                          decoding: 'async',
+                          width: 24,
+                          height: 24 -}}
+                  {%- else -%}
+                    {{- brand_link.title | slice: 0, 2 | upcase -}}
+                  {%- endif -%}
+                </span>
+                <span class="at-brands-panel__brand-name">{{- brand_link.title -}}</span>
+              </a>
+            {%- endfor -%}
+          </div>
+        </div>
+      </div>
+    {%- endif -%}
+
+    {%- comment -%} ═══════════════════════════════════════════════════════
+      DESKTOP per-category subnav grids
+    ═══════════════════════════════════════════════════════════════════ {%- endcomment -%}
+    {%- for cat_link in cats_ll.links -%}
+      {%- if cat_link.handle != brands_item and cat_link.links != blank -%}
+        <div data-at-mount="desktop-cat-content" data-cat="{{ cat_link.handle }}">
+          <div class="at-brands-panel__grid-wrapper">
+            <ul class="at-brands-panel__subnav-grid list-unstyled" role="list">
+              {%- for sub_link in cat_link.links -%}
+                <li role="listitem">
+                  <a
+                    href="{{ sub_link.url }}"
+                    class="at-brands-panel__subnav-item"
+                    {% if sub_link.current %}aria-current="page"{% endif %}
+                  >
+                    {%- if sub_link.object.featured_image != blank -%}
+                      <span class="at-brand-avatar at-brand-avatar--image" aria-hidden="true"
+                        style="--at-brand-avatar-radius: {{ img_radius }}px;">
+                        {{- sub_link.object.featured_image
+                            | image_url: width: 48, height: 48, crop: 'center'
+                            | image_tag:
+                              alt: '',
+                              loading: 'lazy',
+                              fetchpriority: 'low',
+                              decoding: 'async',
+                              width: 24,
+                              height: 24 -}}
+                      </span>
+                    {%- endif -%}
+                    <span class="at-brands-panel__brand-name">{{- sub_link.title -}}</span>
+                    {%- if sub_link.links != blank -%}
+                      <span class="at-brands-panel__cat-chevron svg-wrapper" aria-hidden="true">
+                        {{- 'icon-chevron-right.svg' | inline_asset_content -}}
+                      </span>
+                    {%- endif -%}
+                  </a>
+                </li>
+              {%- endfor -%}
+            </ul>
+          </div>
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+
+  </at-menu-data>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "AT Menu Data",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Settings here should mirror the AT Menu block (Header → AT Menu). This section emits the heavy menu views that load on demand when a user opens the drawer (mobile) or hovers the nav (desktop). It renders nothing on initial page loads."
+    },
+    {
+      "type": "header",
+      "content": "Menu sources"
+    },
+    {
+      "type": "link_list",
+      "id": "at_categories_menu",
+      "label": "Categories sidebar menu",
+      "info": "Match the AT Menu block's 'Categories sidebar menu'."
+    },
+    {
+      "type": "link_list",
+      "id": "at_brands_menu",
+      "label": "Brands source menu",
+      "info": "Match the AT Menu block's 'Brands source menu'."
+    },
+    {
+      "type": "text",
+      "id": "at_brands_item_handle",
+      "label": "Brands sidebar item handle",
+      "default": "brands"
+    },
+    {
+      "type": "header",
+      "content": "Brand grid"
+    },
+    {
+      "type": "select",
+      "id": "at_brand_icon_source",
+      "label": "Brand icon source",
+      "options": [
+        { "value": "auto",                  "label": "Auto" },
+        { "value": "collection_image_only", "label": "Collection image only" },
+        { "value": "initials_only",         "label": "Initials only" }
+      ],
+      "default": "auto"
+    },
+    {
+      "type": "checkbox",
+      "id": "at_show_brand_search",
+      "label": "Show brand search",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "at_brands_panel_columns",
+      "label": "Desktop columns",
+      "min": 3, "max": 6, "step": 1, "default": 4
+    },
+    {
+      "type": "range",
+      "id": "at_brands_mobile_columns",
+      "label": "Mobile columns",
+      "min": 1, "max": 3, "step": 1, "default": 2
+    },
+    {
+      "type": "range",
+      "id": "at_brand_image_border_radius",
+      "label": "Brand image border radius",
+      "min": 0, "max": 32, "step": 1, "unit": "px", "default": 4
+    }
+  ]
+}
+{% endschema %}

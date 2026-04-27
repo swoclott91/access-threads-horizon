@@ -2,6 +2,113 @@ import { Component } from '@theme/component';
 import { calculateHeaderGroupHeight } from '@theme/utilities';
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   MenuDataFetcher
+   ----------------
+   Singleton that fetches `sections/at-menu-data.liquid` exactly once per
+   page load via the Shopify Section Rendering API. The section renders
+   nothing on the initial page load (intentional, see its docs); only when
+   we explicitly hit `?section_id=at-menu-data` does the server emit the
+   heavy menu views (~100-brand grid + every per-category subnav, both
+   mobile drawer views and desktop mega-panel content).
+
+   Both <at-brands-panel> (desktop) and <at-menu-panel> (mobile) subscribe
+   to the same instance — fetch happens at most once per page, and each
+   consumer clones the bits it needs into its own DOM. Subsequent
+   subscribers after resolution receive the cached document immediately
+   (via a microtask).
+
+   Trigger policy: fetch is started ONLY on real user intent — hamburger
+   pointerdown on mobile, nav pointerenter/focus on desktop. Crawlers
+   that never interact never trigger the fetch, so the heavy section
+   never burdens TTFB for Google's product-feed crawler / soft-error
+   detectors that have been tripping GMC disapprovals.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+class MenuDataFetcher {
+  /** @type {MenuDataFetcher | null} */
+  static #instance = null;
+
+  static get() {
+    if (!MenuDataFetcher.#instance) {
+      MenuDataFetcher.#instance = new MenuDataFetcher();
+    }
+    return MenuDataFetcher.#instance;
+  }
+
+  /** @type {Document | null} */
+  #doc = null;
+
+  /** @type {Promise<Document | null> | null} */
+  #promise = null;
+
+  /** @type {Set<(doc: Document) => void>} */
+  #consumers = new Set();
+
+  /**
+   * Subscribe to the fetched menu-data document. Callback fires once
+   * (immediately via microtask if already resolved). Subscribing does
+   * NOT trigger the fetch — call request() to start it.
+   *
+   * @param {(doc: Document) => void} cb
+   */
+  subscribe(cb) {
+    if (this.#doc) {
+      queueMicrotask(() => cb(/** @type {Document} */ (this.#doc)));
+      return;
+    }
+    this.#consumers.add(cb);
+  }
+
+  /**
+   * Kick off the fetch (idempotent). Returns the in-flight promise.
+   *
+   * @returns {Promise<Document | null>}
+   */
+  request() {
+    if (this.#promise) return this.#promise;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('page');
+    url.searchParams.set('section_id', 'at-menu-data');
+
+    this.#promise = fetch(url.toString(), {
+      credentials: 'same-origin',
+      headers: { Accept: 'text/html' },
+    })
+      .then(async (resp) => {
+        if (!resp.ok) {
+          console.warn('[at-menu] data fetch returned', resp.status);
+          return null;
+        }
+        const html = await resp.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        if (!doc.querySelector('at-menu-data')) {
+          console.warn('[at-menu] no <at-menu-data> in response');
+          return null;
+        }
+        this.#doc = doc;
+        for (const cb of this.#consumers) {
+          try {
+            cb(doc);
+          } catch (err) {
+            console.error('[at-menu] consumer threw', err);
+          }
+        }
+        this.#consumers.clear();
+        return doc;
+      })
+      .catch((err) => {
+        console.warn('[at-menu] data fetch failed', err);
+        // Reset so a future user interaction can retry.
+        this.#promise = null;
+        return null;
+      });
+
+    return this.#promise;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    AtBrandsPanel
    Desktop mega-menu panel for the Brands nav item.
    Manages:
@@ -9,6 +116,7 @@ import { calculateHeaderGroupHeight } from '@theme/utilities';
    - Category switching in the sidebar
    - Brand search / filter
    - Alphabet quick-jump (used by the mobile drawer too via delegation)
+   - Adopting heavy view content from at-menu-data on first interaction
    ───────────────────────────────────────────────────────────────────────────── */
 
 /**
@@ -44,6 +152,18 @@ class AtBrandsPanel extends Component {
   /** @type {MutationObserver | null} */
   #avatarObserver = null;
 
+  /**
+   * Whether we've already requested at-menu-data for this panel.
+   * @type {boolean}
+   */
+  #dataRequested = false;
+
+  /**
+   * Whether we've already adopted heavy views into the panel.
+   * @type {boolean}
+   */
+  #dataAdopted = false;
+
   connectedCallback() {
     super.connectedCallback();
     this.addEventListener('pointerenter', this.#onPointerEnter);
@@ -52,16 +172,24 @@ class AtBrandsPanel extends Component {
     this.addEventListener('input', this.#onDelegatedSearchInput);
     this.addEventListener('click', this.#onDelegatedSearchClearClick);
     this.addEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
+    // Trigger menu-data fetch on first focus too (keyboard users).
+    this.addEventListener('focusin', this.#onFirstInteraction, { once: true });
 
     AtBrandsPanel.#fixHeaderGroupHeight();
 
-    // Watch for brand items arriving via Section Rendering API morph
-    // (they render with data-brand-name but no --at-brand-avatar-bg, which
-    // is computed client-side). The initial render emits an empty shell
-    // on most pages, so the first real avatars usually arrive via morph.
+    // Initials avatars compute their colors client-side; rehydrate as
+    // new brand items arrive (either from at-menu-data adoption below,
+    // or from any future SRA morph that may touch the panel).
     hydrateAvatarsIn(this);
     this.#avatarObserver = new MutationObserver(() => hydrateAvatarsIn(this));
     this.#avatarObserver.observe(this, { childList: true, subtree: true });
+
+    // Subscribe to the menu-data fetcher. We don't request the fetch
+    // here — that happens on first interaction (#onFirstInteraction).
+    // But if the mobile drawer already requested it (which can happen
+    // on tablets that have both pointer types), we'll get the doc as
+    // soon as it resolves and adopt the desktop views.
+    MenuDataFetcher.get().subscribe((doc) => this.#adoptDesktopViews(doc));
   }
 
   disconnectedCallback() {
@@ -72,6 +200,7 @@ class AtBrandsPanel extends Component {
     this.removeEventListener('input', this.#onDelegatedSearchInput);
     this.removeEventListener('click', this.#onDelegatedSearchClearClick);
     this.removeEventListener('pointerover', this.#onDelegatedSidebarPointerOver);
+    this.removeEventListener('focusin', this.#onFirstInteraction);
     this.#clearCloseTimer();
     this.#clearFocusOutTimer();
     this.#unbindHeaderLayoutListeners();
@@ -80,8 +209,84 @@ class AtBrandsPanel extends Component {
   }
 
   #onPointerEnter = () => {
+    this.#onFirstInteraction();
     this.open();
   };
+
+  /**
+   * First user signal that the desktop nav is engaged. Triggers the
+   * one-time at-menu-data fetch so the heavy views are adopted before
+   * the user activates a category. Safe to call multiple times — both
+   * the request() and the adopt step are idempotent.
+   */
+  #onFirstInteraction = () => {
+    if (this.#dataRequested) return;
+    if (!AtBrandsPanel.#desktopFinePointerMql.matches) {
+      // On tablets / hybrid devices we still want to support desktop
+      // hover-style menus, so allow the request even without fine
+      // pointer. This is just an early-warmup.
+    }
+    this.#dataRequested = true;
+    MenuDataFetcher.get().request();
+  };
+
+  /**
+   * Clone heavy desktop views from the fetched at-menu-data document
+   * into the live panel. Each `[data-at-mount="desktop-cat-content"]`
+   * container in the source document holds the body for one category
+   * (matched by `data-cat`), and we append its children into the
+   * matching `.at-brands-panel__cat-content[data-cat="…"]` element
+   * in the live DOM (before the existing footer if any).
+   *
+   * Idempotent — guarded by `#dataAdopted` so re-firing observer
+   * callbacks won't duplicate views.
+   *
+   * @param {Document} doc
+   */
+  #adoptDesktopViews(doc) {
+    if (this.#dataAdopted) return;
+
+    const data = doc.querySelector('at-menu-data');
+    if (!data) return;
+
+    const mounts = data.querySelectorAll('[data-at-mount="desktop-cat-content"]');
+    if (!mounts.length) return;
+
+    let adoptedAny = false;
+
+    for (const mount of mounts) {
+      const cat = mount.getAttribute('data-cat');
+      if (!cat) continue;
+
+      const target = this.querySelector(
+        `.at-brands-panel__cat-content[data-cat="${CSS.escape(cat)}"]`
+      );
+      if (!(target instanceof HTMLElement)) continue;
+
+      const footer = target.querySelector('.at-brands-panel__footer');
+
+      for (const child of Array.from(mount.children)) {
+        const clone = child.cloneNode(true);
+        if (footer) {
+          target.insertBefore(clone, footer);
+        } else {
+          target.appendChild(clone);
+        }
+      }
+      adoptedAny = true;
+    }
+
+    if (adoptedAny) {
+      this.#dataAdopted = true;
+      hydrateAvatarsIn(this);
+      // If the panel is currently open and showing a category whose
+      // grid we just inserted, re-apply any active search filter.
+      if (this.dataset.open !== undefined) {
+        const q = this.querySelector('.at-brands-panel__search')?.value.trim().toLowerCase() ?? '';
+        this.#applyFilter(q);
+      }
+    }
+  }
 
   /** @param {Event} event */
   #onDelegatedSearchInput = (event) => {
@@ -475,6 +680,24 @@ class AtMenuPanel extends Component {
   /** @type {HTMLElement | null} */
   #pendingButton = null;
 
+  /**
+   * Whether we've already requested at-menu-data for this drawer.
+   * @type {boolean}
+   */
+  #dataRequested = false;
+
+  /**
+   * Whether we've already adopted heavy mobile views into the panel.
+   * @type {boolean}
+   */
+  #dataAdopted = false;
+
+  /** @type {HTMLElement | null} */
+  #drawerSummary = null;
+
+  /** @type {HTMLDetailsElement | null} */
+  #drawerDetails = null;
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -484,9 +707,11 @@ class AtMenuPanel extends Component {
     this.addEventListener('input', this.#onSearchInput);
     this.addEventListener('click', this.#onSearchClearClick);
 
-    // Reset to main view whenever the parent <details> drawer closes.
+    // Reset to main view whenever the parent <details> drawer closes,
+    // and use the same details element to drive the at-menu-data fetch.
     const details = this.closest('details.menu-drawer-container');
-    if (details) {
+    if (details instanceof HTMLDetailsElement) {
+      this.#drawerDetails = details;
       this.#detailsObserver = new MutationObserver((mutations) => {
         for (const m of mutations) {
           if (m.attributeName === 'open' && !details.hasAttribute('open')) {
@@ -495,20 +720,37 @@ class AtMenuPanel extends Component {
         }
       });
       this.#detailsObserver.observe(details, { attributes: true });
+
+      // Hydration triggers — fire as early as we reasonably can so the
+      // heavy views are most likely to be present by the time the user
+      // taps a nav button:
+      //   1. pointerdown on the hamburger <summary>: ~100-200ms before
+      //      the details `toggle` event. Primary trigger for touch.
+      //   2. toggle: catches keyboard activation and any programmatic
+      //      opens that skip pointer events.
+      const summary = details.querySelector('summary');
+      if (summary instanceof HTMLElement) {
+        this.#drawerSummary = summary;
+        summary.addEventListener('pointerdown', this.#onFirstInteraction, { once: true });
+      }
+      details.addEventListener('toggle', this.#onDrawerToggle);
     }
 
-    // Watch for brand items + sub-views arriving via Section Rendering API
-    // morph (brands + per-category views only render during the SRA
-    // re-fetch). When new nodes appear we do two things:
+    // Watch for brand items + sub-views arriving via at-menu-data
+    // adoption. When new nodes appear we do two things:
     //   1. Apply computed avatar colors to any initials avatars.
-    //   2. Resolve a pending navigation if the user tapped "Brands" or a
-    //      category before its view was in the DOM.
+    //   2. Resolve a pending navigation if the user tapped "Brands" or
+    //      a category before its view was in the DOM.
     hydrateAvatarsIn(this);
     this.#avatarObserver = new MutationObserver(() => {
       hydrateAvatarsIn(this);
       this.#tryResolvePendingNavigation();
     });
     this.#avatarObserver.observe(this, { childList: true, subtree: true });
+
+    // Subscribe to the menu-data fetcher. The fetch itself is started
+    // via #onFirstInteraction (hamburger pointerdown / toggle).
+    MenuDataFetcher.get().subscribe((doc) => this.#adoptMobileViews(doc));
   }
 
   disconnectedCallback() {
@@ -517,8 +759,69 @@ class AtMenuPanel extends Component {
     this.removeEventListener('click', this.#onSearchClearClick);
     this.#detailsObserver?.disconnect();
     this.#detailsObserver = null;
+    if (this.#drawerSummary) {
+      this.#drawerSummary.removeEventListener('pointerdown', this.#onFirstInteraction);
+    }
+    if (this.#drawerDetails) {
+      this.#drawerDetails.removeEventListener('toggle', this.#onDrawerToggle);
+    }
     this.#avatarObserver?.disconnect();
     this.#avatarObserver = null;
+  }
+
+  /**
+   * Drawer `toggle` listener — fires on every open/close. We use this
+   * as a fallback hydration trigger if pointerdown was skipped.
+   *
+   * @param {Event} event
+   */
+  #onDrawerToggle = (event) => {
+    const details = event.currentTarget;
+    if (details instanceof HTMLDetailsElement && details.open) {
+      this.#onFirstInteraction();
+    }
+  };
+
+  /**
+   * Trigger the one-time at-menu-data fetch. Idempotent.
+   */
+  #onFirstInteraction = () => {
+    if (this.#dataRequested) return;
+    this.#dataRequested = true;
+    MenuDataFetcher.get().request();
+  };
+
+  /**
+   * Clone heavy mobile views from the fetched at-menu-data document
+   * and append them into this panel as siblings of the main view.
+   * The MutationObserver above will then resolve any pending
+   * navigation (a tap on "Brands" or a category that arrived before
+   * the views were here).
+   *
+   * Idempotent — guarded by `#dataAdopted`.
+   *
+   * @param {Document} doc
+   */
+  #adoptMobileViews(doc) {
+    if (this.#dataAdopted) return;
+
+    const data = doc.querySelector('at-menu-data');
+    if (!data) return;
+
+    const mounts = data.querySelectorAll('[data-at-mount="mobile-view"]');
+    if (!mounts.length) return;
+
+    const fragment = document.createDocumentFragment();
+    for (const mount of mounts) {
+      for (const child of Array.from(mount.children)) {
+        fragment.appendChild(child.cloneNode(true));
+      }
+    }
+
+    if (!fragment.childNodes.length) return;
+
+    this.appendChild(fragment);
+    this.#dataAdopted = true;
   }
 
   // ─── View navigation ──────────────────────────────────────────────────────

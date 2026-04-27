@@ -1140,61 +1140,17 @@
     import { hydrate } from '@theme/section-hydration';
     const url = new URL(window.location.href);
     url.searchParams.delete('page');
-
     /*
-     * AT-menu customization (mobile JIT hydration)
-     * ============================================
-     * Stock Horizon hydrates the header on idle so the mobile drawer is
-     * ready before the user taps the hamburger. That pattern is cheap when
-     * the drawer is small (stock ships a plain menu tree) but expensive for
-     * the AT menu, which adds ~100 brand cards + per-category subnavs on
-     * hydration. On slow mobile CPUs / slow Shopify plans this SRA round
-     * trip + morph can starve render of heavy collection pages (e.g. the
-     * Gildan collection) and has been correlated with the "There was a
-     * problem loading this website" WebKit renderer crash.
-     *
-     * Strategy:
-     *   - Desktop: hydrate on idle as usual — the mega-panel must be ready
-     *     for the first hover.
-     *   - Mobile with AT drawer present: wait until the user actually opens
-     *     the drawer, then run hydration once. Pages where the user never
-     *     opens the drawer pay zero SRA / morph cost.
-     *   - Any other case (stock header on mobile, reduced-motion, etc.):
-     *     fall back to the stock idle hydration behaviour.
+     * AT-menu architecture note
+     * =========================
+     * The AT menu's heavy content (brands grid + per-category subnavs)
+     * no longer rides on the header section's SRA hydration. It lives in
+     * `sections/at-menu-data.liquid` (mounted from `layout/theme.liquid`)
+     * and is fetched on demand by `assets/at-menu.js`. So the header
+     * section can use Horizon's stock idle-hydration, identical to a
+     * theme without the AT menu.
      */
-    const atDrawer = document.getElementById('at-menu-drawer-container');
-    const isMobileViewport = window.matchMedia('(max-width: 749px)').matches;
-
-    if (atDrawer && isMobileViewport) {
-      let hydrated = false;
-      const runHydrate = () => {
-        if (hydrated) return;
-        hydrated = true;
-        hydrate('{{ section.id }}', url);
-      };
-
-      /*
-       * Kick off hydration as early as we reasonably can so the sub-views
-       * have the best chance of being present by the time the user taps a
-       * nav button:
-       *   1. pointerdown on the hamburger <summary> — fires the instant a
-       *      finger touches the icon, ~100-200ms before the details
-       *      toggle event. This is the primary trigger for real users.
-       *   2. toggle on the <details> — a fallback for programmatic opens
-       *      or keyboard activation that might skip pointer events.
-       * Whichever fires first wins; the other becomes a no-op via the
-       * `hydrated` guard.
-       */
-      const summary = atDrawer.querySelector('summary');
-      if (summary) {
-        summary.addEventListener('pointerdown', runHydrate, { once: true });
-      }
-      atDrawer.addEventListener('toggle', () => {
-        if (atDrawer.open) runHydrate();
-      });
-    } else {
-      hydrate('{{ section.id }}', url);
-    }
+    hydrate('{{ section.id }}', url);
   </script>
 {% endunless %}
 

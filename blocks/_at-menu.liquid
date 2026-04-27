@@ -25,29 +25,32 @@
   assign cats_ll          = linklists[block_settings.at_categories_menu]
   assign brands_ll        = linklists[block_settings.at_brands_menu]
 
-  # ─── Two-phase render (Horizon-native pattern) ────────────────────────────
-  # Mirrors snippets/header-drawer.liquid lines 25-37. On the INITIAL page
-  # render, `section.index` is set to the section's numeric index, so
-  # `eager_loading` stays false and we ship a lightweight skeleton: just the
-  # top-level nav links (desktop) and the main drawer view (mobile), with no
-  # ~100-brand grid, no per-category subnavs, no image dereferences.
+  # ─── Render strategy ──────────────────────────────────────────────────────
+  # This block emits ONLY the lightweight chrome on every page render:
+  #   • Mobile: the main drawer view (top-level nav + non-panel accordions)
+  #   • Desktop: the trigger button, sidebar rail, and per-category content
+  #     headers (title + search input + count badge)
   #
-  # When Shopify re-fetches the header via the Section Rendering API
-  # (assets/section-hydration.js -> sectionRenderer, kicked off on idle after
-  # DOMContentLoaded), `section.index` is blank — that's the Section Rendering
-  # API contract. In that render we flip `eager_loading` to true and emit the
-  # full menu. assets/morph.js's morphHydrationByKey then morphs only elements
-  # tagged with data-hydration-key, preserving the already-live <at-menu-panel>
-  # and <at-brands-panel> custom element instances while appending the heavy
-  # content as real DOM.
+  # The heavy content (~100-brand grid, every per-category subnav grid, all
+  # the per-category drill-down views on mobile) lives in
+  # `sections/at-menu-data.liquid`, mounted via `{% section 'at-menu-data' %}`
+  # in `layout/theme.liquid`. That section renders empty on initial page
+  # loads and only emits the heavy views when assets/at-menu.js explicitly
+  # fetches it via the Section Rendering API after a real user interaction:
+  # hamburger pointerdown on mobile, nav hover on desktop.
   #
-  # Net effect on mobile: initial page HTML stays small enough for iOS
-  # WebKit's parse/memory budget even on a heavy collection template. The
-  # full menu arrives asynchronously after the page is already interactive.
-  assign eager_loading = false
-  if section.index == blank
-    assign eager_loading = true
-  endif
+  # Net effects:
+  #   • Initial page render is identical in cost to a stock Horizon header
+  #     for the AT menu portion — no metaobject lookups, no image deref.
+  #     Cold-cache pages (newly-created collections, low-traffic PDPs)
+  #     stop tripping iOS Safari's renderer timeout.
+  #   • Search-engine and product-feed crawlers that never trigger
+  #     interaction never hit the heavy section, so GMC disapprovals from
+  #     intermittent crawl errors stop.
+  #   • The dedicated section is segment-agnostic (no cart/customer
+  #     state) so origin page_cache + Cloudflare cache it efficiently
+  #     across all visitors — first user in any segment warms the cache
+  #     for everyone.
 
   # Find the panel trigger link in the main menu
   assign panel_link = nil
@@ -108,16 +111,13 @@
             class="menu-drawer color-{{ block_settings.color_scheme }}"
           >
             {%- render 'at-menu-mobile-drawer',
-              section: block,
               menu_links: menu_links,
-              panel_link: panel_link,
               panel_handle: panel_handle,
               categories_linklist: cats_ll,
               brands_linklist: brands_ll,
               brands_handle: brands_handle,
               highlight_handle: highlight_handle,
-              mobile_drawer_label: block_settings.at_mobile_drawer_label,
-              eager_loading: eager_loading
+              mobile_drawer_label: block_settings.at_mobile_drawer_label
             -%}
           </div>
         </details>
@@ -164,7 +164,6 @@
     <header-menu
       class="header-menu{{ color_scheme_classes }}"
       {{ block.shopify_attributes }}
-      data-hydration-key="at-header-menu"
     >
       <div class="header-menu__inner">
         <nav
@@ -191,8 +190,7 @@
                 brands_linklist: brands_ll,
                 categories_linklist: cats_ll,
                 brands_handle: brands_handle,
-                section: block,
-                eager_loading: eager_loading
+                section: block
               -%}
 
             {%- elsif link.links != blank -%}

@@ -12,36 +12,25 @@
   @param {object} [brands_linklist]   - Linklist whose links are displayed as the brand grid.
   @param {string} [brands_handle]     - Handle of the sidebar item that should show the brand grid.
   @param {object} section             - The block object (used for settings).
-  @param {boolean} eager_loading      - When false (initial page render) the
-                                        brand grid and per-category subnav grids
-                                        are skipped to keep initial HTML small.
-                                        When true (Section Rendering API
-                                        re-fetch) they render as real DOM and
-                                        are morphed into the existing
-                                        <at-brands-panel> via data-hydration-key
-                                        on the parent <header-menu>.
+
+  Architecture note (perf)
+  ------------------------
+  Renders only the lightweight chrome: the trigger button, sidebar
+  category buttons, and per-category content headers (title + search
+  input + count badge). The actual brand grid and per-category subnav
+  grids live in `sections/at-menu-data.liquid` and are fetched on
+  demand by assets/at-menu.js when the user first hovers the AT nav.
+  This keeps initial HTML tiny on every page, including for crawlers.
 {%- enddoc -%}
 
 {%- liquid
   assign block_settings = section.settings
-  assign icon_source    = block_settings.at_brand_icon_source | default: 'auto'
   assign show_search    = block_settings.at_show_brand_search
-  assign cols           = block_settings.at_brands_panel_columns | default: 4
-  assign img_radius     = block_settings.at_brand_image_border_radius | default: 4
   assign brand_total    = brands_linklist.links.size | default: 0
   assign panel_id         = 'at-panel-' | append: panel_link.handle
   assign brands_grid_id   = 'at-brands-grid-' | append: panel_link.handle
   assign brands_search_id = 'at-brands-search-' | append: panel_link.handle
   assign brands_handle    = brands_handle | default: 'brands'
-
-  # Row count for column-major CSS grid: ceil(brand_total / cols)
-  assign brand_grid_rows = 1
-  if brand_total > 0
-    assign brand_grid_rows = brand_total | plus: cols | minus: 1 | divided_by: cols
-  endif
-
-  # First sidebar item handle — used to set the initially active state
-  assign first_cat_handle = categories_linklist.links.first.handle
 -%}
 
 <at-brands-panel
@@ -154,79 +143,11 @@
               </span>
             </div>
 
-            {%- comment -%} ─── Brand grid ───────────────────────────────────
-              Gated on eager_loading. On the initial page render (eager_loading
-              false) this is skipped entirely — no <img> tags, no ~100 brand
-              anchors, no grid wrapper. The content-header above (title +
-              search input + count badge) still renders so the panel feels
-              present if a user somehow triggers it during the small window
-              before Shopify's Section Rendering API re-fetch arrives.
-
-              On the SRA re-fetch (eager_loading true) the grid renders as
-              real DOM and morphs into the live <at-brands-panel> via
-              data-hydration-key on the parent <header-menu>.
-            ─────────────────────────────────────────────────────────────── {%- endcomment -%}
-            {%- if eager_loading -%}
-            <div
-              class="at-brands-panel__grid-wrapper"
-              id="{{ brands_grid_id }}"
-              role="list"
-              aria-label="{{ cat_link.title }}"
-            >
-              <div
-                class="at-brands-panel__grid"
-                style="--at-brands-cols: {{ cols }}; --at-brands-rows: {{ brand_grid_rows }};"
-              >
-                {%- for brand_link in brands_linklist.links -%}
-                  {%- liquid
-                    # PERF: see snippets/at-menu-mobile-drawer.liquid for the rationale.
-                    # Metaobject lookup removed to cut server-render cost on Growth plan.
-                    assign brand_icon = blank
-                    unless icon_source == 'initials_only'
-                      assign coll_img = brand_link.object.featured_image
-                      if coll_img != blank
-                        assign brand_icon = coll_img
-                      endif
-                    endunless
-                  -%}
-                  <a
-                    href="{{ brand_link.url }}"
-                    class="at-brands-panel__brand-item"
-                    data-brand-name="{{ brand_link.title | escape }}"
-                    role="listitem"
-                    {% if brand_link.current %}aria-current="page"{% endif %}
-                  >
-                    <span
-                      class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
-                      style="--at-brand-avatar-radius: {{ img_radius }}px;"
-                      aria-hidden="true"
-                      data-brand-name="{{ brand_link.title | escape }}"
-                    >
-                      {%- if brand_icon != blank -%}
-                        {{- brand_icon | image_url: width: 48, height: 48, crop: 'center'
-                            | image_tag:
-                              alt: '',
-                              loading: 'lazy',
-                              fetchpriority: 'low',
-                              decoding: 'async',
-                              width: 24,
-                              height: 24 -}}
-                      {%- else -%}
-                        {{- brand_link.title | slice: 0, 2 | upcase -}}
-                      {%- endif -%}
-                    </span>
-                    <span class="at-brands-panel__brand-name">{{- brand_link.title -}}</span>
-                  </a>
-                {%- else -%}
-                  <p class="at-brands-panel__empty">
-                    No brands found. In the theme editor, set the
-                    <strong>Brands source menu</strong> in the AT&nbsp;Menu block
-                    to a menu that contains your brand collection links.
-                  </p>
-                {%- endfor -%}
-              </div>
-            </div>
-            {%- endif -%}
+            {%- comment -%}
+              Brand grid is fetched on demand from at-menu-data and
+              adopted into this cat-content panel by assets/at-menu.js.
+              See sections/at-menu-data.liquid.
+            {%- endcomment -%}
 
             {%- if cat_link.url != blank -%}
               <div class="at-brands-panel__footer">
@@ -257,53 +178,18 @@
               {%- endif -%}
             </div>
 
-            {%- if eager_loading and cat_link.links != blank -%}
-              {%- comment -%} ─── Category subnav grid ───────────────────────
-                Gated on eager_loading (same rationale as the brand grid).
-                Rendered only on Section Rendering API re-fetch, then morphed
-                into the live DOM via data-hydration-key.
-              ─────────────────────────────────────────────────────────────── {%- endcomment -%}
-              <div class="at-brands-panel__grid-wrapper">
-                <ul class="at-brands-panel__subnav-grid list-unstyled" role="list">
-                  {%- for sub_link in cat_link.links -%}
-                    <li role="listitem">
-                      <a
-                        href="{{ sub_link.url }}"
-                        class="at-brands-panel__subnav-item"
-                        {% if sub_link.current %}aria-current="page"{% endif %}
-                      >
-                        {%- if sub_link.object.featured_image != blank -%}
-                          <span class="at-brand-avatar at-brand-avatar--image" aria-hidden="true"
-                            style="--at-brand-avatar-radius: {{ img_radius }}px;">
-                            {{- sub_link.object.featured_image
-                                | image_url: width: 48, height: 48, crop: 'center'
-                                | image_tag:
-                                  alt: '',
-                                  loading: 'lazy',
-                                  fetchpriority: 'low',
-                                  decoding: 'async',
-                                  width: 24,
-                                  height: 24 -}}
-                          </span>
-                        {%- endif -%}
-                        <span class="at-brands-panel__brand-name">{{- sub_link.title -}}</span>
-                        {%- if sub_link.links != blank -%}
-                          <span class="at-brands-panel__cat-chevron svg-wrapper" aria-hidden="true">
-                            {{- 'icon-chevron-right.svg' | inline_asset_content -}}
-                          </span>
-                        {%- endif -%}
-                      </a>
-                    </li>
-                  {%- endfor -%}
-                </ul>
-              </div>
-            {%- elsif cat_link.links == blank -%}
+            {%- if cat_link.links == blank -%}
               <div class="at-brands-panel__placeholder">
                 <a href="{{ cat_link.url }}" class="button button--secondary button--small">
                   Shop {{ cat_link.title }} &rarr;
                 </a>
               </div>
             {%- endif -%}
+            {%- comment -%}
+              Category subnav grid is fetched on demand from at-menu-data
+              and adopted into this cat-content panel by assets/at-menu.js
+              when the user activates this category.
+            {%- endcomment -%}
           </div>
         {%- endif -%}
       {%- endfor -%}
