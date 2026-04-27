@@ -33,11 +33,11 @@
   #
   # The heavy content (~100-brand grid, every per-category subnav grid, all
   # the per-category drill-down views on mobile) lives in
-  # `sections/at-menu-data.liquid`, mounted via `{% section 'at-menu-data' %}`
-  # in `layout/theme.liquid`. That section renders empty on initial page
-  # loads and only emits the heavy views when assets/at-menu.js explicitly
-  # fetches it via the Section Rendering API after a real user interaction:
-  # hamburger pointerdown on mobile, nav hover on desktop.
+  # `sections/at-menu-data.liquid`, mounted from `layout/theme.liquid`.
+  # That section renders empty on initial page loads and only emits the
+  # heavy views when assets/at-menu.js explicitly fetches it via the
+  # Section Rendering API after a real user interaction: hamburger
+  # pointerdown on mobile, nav hover on desktop.
   #
   # Net effects:
   #   • Initial page render is identical in cost to a stock Horizon header
