@@ -673,13 +673,10 @@ class AtMenuPanel extends Component {
   /** @type {MutationObserver | null} */
   #detailsObserver = null;
 
-  /** @type {MutationObserver | null} */
-  #avatarObserver = null;
-
   /**
-   * When the user taps a nav button (e.g. "Brands") before SRA hydration
-   * has inserted the target view, we queue the navigation here so it can
-   * resolve the moment the view appears in the DOM. See `navigate()` and
+   * When the user taps a nav button (e.g. "Brands") before the
+   * at-menu-data fetch has resolved, we queue the navigation here so
+   * it can complete the moment the doc arrives. See `navigate()` and
    * `#tryResolvePendingNavigation()`.
    * @type {string | null}
    */
@@ -695,10 +692,21 @@ class AtMenuPanel extends Component {
   #dataRequested = false;
 
   /**
-   * Whether we've already adopted heavy mobile views into the panel.
-   * @type {boolean}
+   * Cached at-menu-data document. Set by the MenuDataFetcher subscriber.
+   * Heavy views are NOT eagerly cloned into the live DOM — only the view
+   * the user actually navigates to is adopted, one at a time, to keep
+   * mobile WebKit from blowing memory on the ~100-brand grid plus 8
+   * category subnav grids all at once.
+   * @type {Document | null}
    */
-  #dataAdopted = false;
+  #dataDoc = null;
+
+  /**
+   * Set of `data-view` names we've already adopted into the live DOM.
+   * Each one is appended exactly once.
+   * @type {Set<string>}
+   */
+  #adoptedViews = new Set();
 
   /** @type {HTMLElement | null} */
   #drawerSummary = null;
@@ -744,21 +752,21 @@ class AtMenuPanel extends Component {
       details.addEventListener('toggle', this.#onDrawerToggle);
     }
 
-    // Watch for brand items + sub-views arriving via at-menu-data
-    // adoption. When new nodes appear we do two things:
-    //   1. Apply computed avatar colors to any initials avatars.
-    //   2. Resolve a pending navigation if the user tapped "Brands" or
-    //      a category before its view was in the DOM.
+    // Hydrate any already-present initials avatars. Subsequent avatars
+    // are hydrated on-the-fly inside #ensureView() right after each
+    // single-view adoption, which is more efficient than a broad
+    // subtree MutationObserver.
     hydrateAvatarsIn(this);
-    this.#avatarObserver = new MutationObserver(() => {
-      hydrateAvatarsIn(this);
-      this.#tryResolvePendingNavigation();
-    });
-    this.#avatarObserver.observe(this, { childList: true, subtree: true });
 
     // Subscribe to the menu-data fetcher. The fetch itself is started
-    // via #onFirstInteraction (hamburger pointerdown / toggle).
-    MenuDataFetcher.get().subscribe((doc) => this.#adoptMobileViews(doc));
+    // via #onFirstInteraction (hamburger pointerdown / toggle). When the
+    // doc resolves, retry any pending navigation but do NOT pre-adopt
+    // any views — adoption happens lazily per-view in #ensureView().
+    MenuDataFetcher.get().subscribe((doc) => {
+      console.log('[at-menu mobile] doc cached, ready for lazy adoption');
+      this.#dataDoc = doc;
+      this.#tryResolvePendingNavigation();
+    });
   }
 
   disconnectedCallback() {
@@ -773,8 +781,6 @@ class AtMenuPanel extends Component {
     if (this.#drawerDetails) {
       this.#drawerDetails.removeEventListener('toggle', this.#onDrawerToggle);
     }
-    this.#avatarObserver?.disconnect();
-    this.#avatarObserver = null;
   }
 
   /**
@@ -796,53 +802,48 @@ class AtMenuPanel extends Component {
   #onFirstInteraction = () => {
     if (this.#dataRequested) return;
     this.#dataRequested = true;
+    console.log('[at-menu mobile] first interaction — kicking fetch');
     MenuDataFetcher.get().request();
   };
 
   /**
-   * Clone heavy mobile views from the fetched at-menu-data document
-   * and append them into this panel as siblings of the main view.
-   * The MutationObserver above will then resolve any pending
-   * navigation (a tap on "Brands" or a category that arrived before
-   * the views were here).
+   * Lazy single-view adopter. Ensures the named view is present in the
+   * live DOM, cloning it from the cached at-menu-data document if
+   * needed. Returns true if the view is now in the live DOM (either
+   * already there or just adopted), false if the doc isn't loaded yet.
    *
-   * Idempotent — guarded by `#dataAdopted`.
+   * Each view is adopted at most once.
    *
-   * @param {Document} doc
+   * @param {string} viewName - e.g. "brands" or "cat-tshirts"
+   * @returns {boolean}
    */
-  #adoptMobileViews(doc) {
-    if (this.#dataAdopted) return;
-
-    const data = doc.querySelector('at-menu-data');
-    if (!data) {
-      console.warn('[at-menu mobile] no <at-menu-data> in fetched doc');
-      return;
+  #ensureView(viewName) {
+    if (this.querySelector(`.at-panel__view[data-view="${viewName}"]`)) {
+      return true;
+    }
+    if (this.#adoptedViews.has(viewName)) {
+      return false;
+    }
+    if (!this.#dataDoc) {
+      return false;
     }
 
-    const mounts = data.querySelectorAll('[data-at-mount="mobile-view"]');
-    console.log('[at-menu mobile] adopting', mounts.length, 'mounts');
-    if (!mounts.length) return;
+    const root = this.#dataDoc.querySelector('at-menu-data');
+    if (!root) return false;
 
-    const fragment = document.createDocumentFragment();
-    const adoptedViews = [];
-    for (const mount of mounts) {
-      for (const child of Array.from(mount.children)) {
-        const clone = child.cloneNode(true);
-        fragment.appendChild(clone);
-        if (clone instanceof HTMLElement) {
-          adoptedViews.push(clone.dataset.view ?? '(no data-view)');
-        }
-      }
+    const view = root.querySelector(`.at-panel__view[data-view="${viewName}"]`);
+    if (!view) {
+      console.warn('[at-menu mobile] view not in fetched doc:', viewName);
+      this.#adoptedViews.add(viewName);
+      return false;
     }
 
-    if (!fragment.childNodes.length) {
-      console.warn('[at-menu mobile] mounts had no children');
-      return;
-    }
-
-    this.appendChild(fragment);
-    this.#dataAdopted = true;
-    console.log('[at-menu mobile] views adopted:', adoptedViews);
+    const clone = view.cloneNode(true);
+    this.appendChild(clone);
+    this.#adoptedViews.add(viewName);
+    if (clone instanceof HTMLElement) hydrateAvatarsIn(clone);
+    console.log('[at-menu mobile] view adopted:', viewName);
+    return true;
   }
 
   // ─── View navigation ──────────────────────────────────────────────────────
@@ -851,14 +852,11 @@ class AtMenuPanel extends Component {
    * Navigate forward to a named view. Called via on:click="/navigate"
    * with data-target="viewName" on the trigger element.
    *
-   * Views other than "main" are rendered only during the Section Rendering
-   * API re-fetch (eager_loading=true in blocks/_at-menu.liquid). On mobile
-   * that fetch is kicked off when the drawer opens (see header.liquid), so
-   * there's a brief window where the user might tap "Brands" or a category
-   * before its view exists in the DOM. In that window we queue the
-   * navigation, show a loading state on the tapped button, and complete
-   * the navigation the moment the view is morphed in (see the
-   * MutationObserver in connectedCallback).
+   * Views other than "main" live in the cached at-menu-data document
+   * and are adopted lazily — only the requested view is cloned into
+   * the live DOM. If the doc isn't loaded yet (very brief window after
+   * the user opens the drawer), the tap is queued and the loading
+   * indicator is applied to the button until the doc resolves.
    *
    * @param {MouseEvent} event
    */
@@ -871,6 +869,11 @@ class AtMenuPanel extends Component {
 
     const target = btn.dataset.target;
     if (!target || !this.#activeView) return;
+
+    if (!this.#ensureView(target)) {
+      this.#setPendingNavigation(target, btn);
+      return;
+    }
 
     const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
     if (!(nextView instanceof HTMLElement)) {
@@ -909,18 +912,17 @@ class AtMenuPanel extends Component {
   }
 
   /**
-   * Called from the DOM MutationObserver after each morph batch. If the
-   * user previously tapped a nav button whose target view didn't exist
-   * yet, check whether it's now present and complete the navigation.
+   * Called by the MenuDataFetcher subscriber after the doc resolves.
+   * If the user tapped a nav button before the doc was available, this
+   * adopts the requested view and completes the navigation.
    */
   #tryResolvePendingNavigation() {
     if (!this.#pendingTarget || !this.#activeView) return;
     const target = this.#pendingTarget;
+    if (!this.#ensureView(target)) return;
     const nextView = this.querySelector(`.at-panel__view[data-view="${target}"]`);
     if (!(nextView instanceof HTMLElement)) return;
     this.#clearPendingNavigation();
-    // If an animation is already in flight (unlikely during hydration but
-    // possible), defer one frame so the current animation can settle.
     if (this.#animating) {
       requestAnimationFrame(() => {
         if (this.#activeView) this.#transition(this.#activeView, nextView, 'forward');
