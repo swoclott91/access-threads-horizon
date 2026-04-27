@@ -58,9 +58,18 @@
 {%- enddoc -%}
 
 {%- liquid
+  # ─── Configuration ────────────────────────────────────────────────────────
+  # Static sections rendered from layout/theme.liquid are not editable in
+  # Horizon's customizer, so this section's schema settings can never be
+  # changed from defaults. We therefore source values from section.settings
+  # (which falls back to schema defaults) but hardcode the two link_list
+  # handles below — link_list schema types don't accept defaults.
+  #
+  # IMPORTANT: keep these in sync with the AT Menu block configuration in
+  # sections/header-group.json (block type "_at-menu", id "at-menu").
   assign s = section.settings
-  assign cats_handle    = s.at_categories_menu
-  assign brands_handle  = s.at_brands_menu
+  assign cats_handle    = 'at-categories'
+  assign brands_handle  = 'at-brands'
   assign brands_item    = s.at_brands_item_handle | default: 'brands'
   assign icon_source    = s.at_brand_icon_source  | default: 'auto'
   assign show_search    = s.at_show_brand_search
