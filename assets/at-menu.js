@@ -71,21 +71,30 @@ class MenuDataFetcher {
     url.searchParams.delete('page');
     url.searchParams.set('section_id', 'at-menu-data');
 
+    console.log('[at-menu] fetching', url.toString());
     this.#promise = fetch(url.toString(), {
       credentials: 'same-origin',
       headers: { Accept: 'text/html' },
     })
       .then(async (resp) => {
         if (!resp.ok) {
-          console.warn('[at-menu] data fetch returned', resp.status);
+          console.warn('[at-menu] data fetch returned', resp.status, resp.statusText);
           return null;
         }
         const html = await resp.text();
+        console.log('[at-menu] response length', html.length, 'bytes');
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        if (!doc.querySelector('at-menu-data')) {
-          console.warn('[at-menu] no <at-menu-data> in response');
+        const root = doc.querySelector('at-menu-data');
+        if (!root) {
+          console.warn(
+            '[at-menu] no <at-menu-data> in response. First 300 chars:',
+            html.slice(0, 300)
+          );
           return null;
         }
+        const mobileMounts = root.querySelectorAll('[data-at-mount="mobile-view"]').length;
+        const desktopMounts = root.querySelectorAll('[data-at-mount="desktop-cat-content"]').length;
+        console.log('[at-menu] parsed', { mobileMounts, desktopMounts });
         this.#doc = doc;
         for (const cb of this.#consumers) {
           try {
@@ -99,7 +108,6 @@ class MenuDataFetcher {
       })
       .catch((err) => {
         console.warn('[at-menu] data fetch failed', err);
-        // Reset so a future user interaction can retry.
         this.#promise = null;
         return null;
       });
@@ -806,22 +814,35 @@ class AtMenuPanel extends Component {
     if (this.#dataAdopted) return;
 
     const data = doc.querySelector('at-menu-data');
-    if (!data) return;
+    if (!data) {
+      console.warn('[at-menu mobile] no <at-menu-data> in fetched doc');
+      return;
+    }
 
     const mounts = data.querySelectorAll('[data-at-mount="mobile-view"]');
+    console.log('[at-menu mobile] adopting', mounts.length, 'mounts');
     if (!mounts.length) return;
 
     const fragment = document.createDocumentFragment();
+    const adoptedViews = [];
     for (const mount of mounts) {
       for (const child of Array.from(mount.children)) {
-        fragment.appendChild(child.cloneNode(true));
+        const clone = child.cloneNode(true);
+        fragment.appendChild(clone);
+        if (clone instanceof HTMLElement) {
+          adoptedViews.push(clone.dataset.view ?? '(no data-view)');
+        }
       }
     }
 
-    if (!fragment.childNodes.length) return;
+    if (!fragment.childNodes.length) {
+      console.warn('[at-menu mobile] mounts had no children');
+      return;
+    }
 
     this.appendChild(fragment);
     this.#dataAdopted = true;
+    console.log('[at-menu mobile] views adopted:', adoptedViews);
   }
 
   // ─── View navigation ──────────────────────────────────────────────────────
