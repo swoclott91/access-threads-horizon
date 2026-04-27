@@ -139,16 +139,5 @@
       {% render 'quick-add-modal' %}
     {% endif %}
 
-    {%- comment -%}
-      AT Menu Data — JIT-fetchable, segment-agnostic source for the heavy
-      AT menu views. Renders empty on initial page loads (zero TTFB cost,
-      invisible to crawlers); populated only when assets/at-menu.js
-      explicitly fetches `?section_id=at-menu-data` after a user opens
-      the drawer (mobile) or hovers the nav (desktop). Keeping it in
-      theme.liquid (not the header section) lets it cache independently
-      of cart/customer state. See sections/at-menu-data.liquid for
-      details.
-    {%- endcomment -%}
-    {% section 'at-menu-data' %}
   </body>
 </html>

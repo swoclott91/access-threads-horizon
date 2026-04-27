@@ -1,4 +1,4 @@
-{%- doc -%}
+{%- comment -%}
   ════════════════════════════════════════════════════════════════════════
   AT Menu Data — JIT-fetchable section for the heavy AT menu content
   ════════════════════════════════════════════════════════════════════════
@@ -21,20 +21,18 @@
   This section moves the heavy content out into its own dedicated
   section that:
 
-    - Renders absolutely nothing on the initial page render
-      (`section.index != blank`) so it adds no measurable cost to TTFB
-       or FCP, and Google's product-feed crawler never trips on it.
-    - When fetched explicitly via the Section Rendering API
+    - Is NOT rendered anywhere in any layout or section group, so it
+      adds zero overhead to initial page renders and is invisible to
+      crawlers walking the HTML graph.
+    - Is fetched explicitly via the Section Rendering API
       (`/?section_id=at-menu-data`, triggered by JS on real user
-       intent — hamburger pointerdown on mobile, nav hover on desktop),
-       renders ONLY the heavy views with no other header chrome.
+      intent — hamburger pointerdown on mobile, nav hover on desktop)
+      and assets/at-menu.js distributes the views into the live
+      <at-menu-panel> (mobile) and <at-brands-panel> (desktop) custom
+      element instances rendered by the AT Menu block.
     - Is segment-agnostic (no cart/customer/currency dependency in the
-       output), so origin page_cache + Cloudflare caches it efficiently
-       across all visitor segments.
-
-  After fetch, assets/at-menu.js distributes the views into the live
-  <at-menu-panel> (mobile) and <at-brands-panel> (desktop) custom element
-  instances rendered by the AT Menu block.
+      output), so origin page_cache + Cloudflare caches it efficiently
+      across all visitor segments.
 
   Routing markers
   ---------------
@@ -46,16 +44,14 @@
     [data-at-mount="desktop-cat-content"]    desktop cat-content body
                                              (data-cat selects which)
 
-  Why all settings live on this section
-  -------------------------------------
-  Liquid sections cannot read another section's block settings, and the
-  Section Rendering API does not expose query strings to Liquid. So the
-  section must own its config. Its schema mirrors the AT Menu block's
-  relevant settings with identical defaults. For this private theme the
-  merchant configures them once in the theme editor; if the section
-  isn't configured, it gracefully renders no heavy content (the menu
-  falls back to skeleton-only main view).
-{%- enddoc -%}
+  Configuration
+  -------------
+  Static sections file-mounted via the SRA endpoint do not appear in
+  Horizon's customizer (no place to render them = no editable instance).
+  Settings here therefore always resolve to schema defaults; the two
+  link_list handles (which can't have schema defaults) are hardcoded
+  below to match the AT Menu block in sections/header-group.json.
+{%- endcomment -%}
 
 {%- liquid
   # ─── Configuration ────────────────────────────────────────────────────────
@@ -79,15 +75,6 @@
 
   assign cats_ll   = linklists[cats_handle]
   assign brands_ll = linklists[brands_handle]
-
-  # Eager-load gate: this section has no visible content on initial
-  # page renders (section.index is set to a numeric position) — only
-  # when fetched via the Section Rendering API does section.index go
-  # blank, at which point we emit the full payload.
-  assign emit = false
-  if section.index == blank
-    assign emit = true
-  endif
 
   # Resolve the brands sidebar item from the categories linklist
   assign brands_cat_link = nil
@@ -131,7 +118,7 @@
   assign alpha_letters = all_letters | split: ','
 -%}
 
-{%- if emit and cats_ll != blank -%}
+{%- if cats_ll != blank -%}
   <at-menu-data hidden>
 
     {%- comment -%} ═══════════════════════════════════════════════════════
@@ -542,7 +529,7 @@
 {% schema %}
 {
   "name": "AT Menu Data",
-  "tag": null,
+  "tag": "div",
   "settings": [
     {
       "type": "paragraph",
