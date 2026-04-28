@@ -949,10 +949,19 @@
   border-block-end: 1px solid rgb(var(--color-foreground-rgb) / 0.06);
 }
 
+/*
+ * Mobile per-letter grid. Row-major flow (default) — items wrap naturally
+ * into rows based on the column count. Reads left-to-right alphabetically
+ * within each letter, which matches user expectation for a sorted list.
+ *
+ * Previously column-major (grid-auto-flow: column) with a Liquid-computed
+ * row count, but that required a per-letter brand-count walk on every
+ * mobile fetch of the menu-data section, which contributed to 5xx errors
+ * on cold cache. The single-pass brand emitter in sections/at-menu-data.liquid
+ * no longer pre-counts per letter, so we let CSS auto-flow handle layout.
+ */
 .at-panel__brand-grid {
   display: grid;
-  grid-auto-flow: column;
-  grid-template-rows: repeat(var(--at-panel-brand-rows, 1), auto);
   grid-template-columns: repeat(var(--at-brands-mobile-cols, 2), minmax(0, 1fr));
   padding-inline: var(--padding-sm);
   padding-block: var(--padding-xs);
