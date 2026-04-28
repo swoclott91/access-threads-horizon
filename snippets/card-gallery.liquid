@@ -84,18 +84,51 @@
 >
   {%- if product.media.size > 0 -%}
     {% liquid
-      # Check if there are generic media that are not variant images
-      assign variant_images = product.images | where: 'attached_to_variant?', true | map: 'src'
-      assign generic_media_size = product.media.size | minus: variant_images.size
+      # AT: Branch on whether the per-card slideshow is actually enabled.
+      #
+      # The full path below walks `product.images` (one access per variant),
+      # `product.media` twice (via `reject:` and `concat:`), and `map: 'src'`
+      # over the variant-image array — five full collection passes per card,
+      # regardless of whether those slides will ever render.
+      #
+      # On cold-cache, variant-dense collection / home pages this was the
+      # dominant per-card cost on the Growth-plan complexity budget and a
+      # major contributor to the GC pressure that produced intermittent 5xx
+      # ("There was a problem loading this website") on mobile.
+      #
+      # When `settings.product_card_carousel` is OFF the slideshow is
+      # disabled-by-default by line 156 below anyway, so we only ever need
+      # the featured media (plus one extra slide when hover-swap is on).
+      # Replacing the walks with an O(1) `slice:` cuts per-card cost by an
+      # order of magnitude with zero visual change in this configuration.
 
-      # Sort media so product.featured_media.preview_image comes first as that is the most relevant image to display
-      # product.featured_media updates based on search context and filters applied
+      if settings.product_card_carousel
+        # CAROUSEL ON — full media list with variant-image attribution for
+        # slide swaps when a swatch is selected.
+        assign variant_images = product.images | where: 'attached_to_variant?', true | map: 'src'
+        assign generic_media_size = product.media.size | minus: variant_images.size
 
-      assign other_media = product.media | reject: 'src', product.featured_media
-      assign media_list_to_show = product.featured_media | concat: other_media
+        # Sort media so product.featured_media.preview_image comes first as that is the most relevant image to display
+        # product.featured_media updates based on search context and filters applied
+        assign other_media = product.media | reject: 'src', product.featured_media
+        assign media_list_to_show = product.featured_media | concat: other_media
 
-      if product.media.size > 2 and generic_media_size > 0
-        assign show_arrows = true
+        if product.media.size > 2 and generic_media_size > 0
+          assign show_arrows = true
+        endif
+      else
+        # CAROUSEL OFF — only the featured slide renders, plus a single alt
+        # slide when hover-swap is enabled. No variant-image attribution
+        # needed because there is no inter-slide swap on variant selection
+        # when the slideshow is disabled.
+        assign variant_images = empty
+        assign generic_media_size = 0
+        if settings.show_second_image_on_hover and product.media.size > 1
+          assign other_media = product.media | slice: 1, 1
+        else
+          assign other_media = product.media | slice: 0, 0
+        endif
+        assign media_list_to_show = product.featured_media | concat: other_media
       endif
 
       # Don't overfetch media if we don't need to
