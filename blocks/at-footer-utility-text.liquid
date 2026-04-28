@@ -1,0 +1,90 @@
+{%- comment -%}
+  AT: optional footer utilities line (Policies and links section). Matches copyright typography.
+{%- endcomment -%}
+{% doc %}
+  Rich text line for the footer utilities row; uses the same typography hooks as the copyright block.
+
+  @example
+  {% content_for 'block', type: 'at-footer-utility-text', id: 'footer-extra-line' %}
+{% enddoc %}
+{% assign block_settings = block.settings %}
+<div
+  class="
+    footer-utilities__group-copyright
+    custom-typography
+    {% if block_settings.font_size != "" %}custom-font-size{% endif %}
+  "
+  style="{% render 'typography-style', preset: 'custom', settings: block_settings %}"
+  {{ block.shopify_attributes }}
+>
+  {% if block_settings.text != blank %}
+    <div class="footer-utilities__text rte">
+      {{ block_settings.text }}
+    </div>
+  {% endif %}
+</div>
+
+{% schema %}
+{
+  "name": "AT Footer text",
+  "tag": null,
+  "settings": [
+    {
+      "type": "inline_richtext",
+      "id": "text",
+      "label": "t:settings.text",
+      "default": ""
+    },
+    {
+      "type": "select",
+      "id": "font_size",
+      "label": "t:settings.size",
+      "options": [
+        {
+          "value": "0.625rem",
+          "label": "10px"
+        },
+        {
+          "value": "0.75rem",
+          "label": "12px"
+        },
+        {
+          "value": "0.875rem",
+          "label": "14px"
+        },
+        {
+          "value": "1rem",
+          "label": "16px"
+        },
+        {
+          "value": "1.125rem",
+          "label": "18px"
+        }
+      ],
+      "default": "0.75rem"
+    },
+    {
+      "type": "select",
+      "id": "case",
+      "label": "t:settings.case",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:options.default"
+        },
+        {
+          "value": "uppercase",
+          "label": "t:options.uppercase"
+        }
+      ],
+      "default": "none"
+    }
+  ],
+  "presets": [
+    {
+      "name": "AT Footer text",
+      "category": "t:categories.footer"
+    }
+  ]
+}
+{% endschema %}

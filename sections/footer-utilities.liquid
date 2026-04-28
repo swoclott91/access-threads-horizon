@@ -83,15 +83,38 @@
       justify-self: end;
       text-align: right;
     }
+
+    /* AT CUSTOM: four-column grid when Policies and links includes `at-footer-utility-text` (merge with upstream) */
+    /* 4 blocks: four columns, edges flush, inner columns centered */
+    .utilities--blocks-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .utilities--blocks-4 > *:nth-child(2),
+    .utilities--blocks-4 > *:nth-child(3) {
+      justify-self: center;
+      text-align: center;
+    }
+
+    .utilities--blocks-4 > *:nth-child(4) {
+      justify-self: end;
+      text-align: right;
+    }
+    /* /AT CUSTOM */
   }
 {% endstylesheet %}
+
+{%- comment -%}
+  AT CUSTOM (schema): `max_blocks` is 4 and `blocks` includes `at-footer-utility-text`.
+  On upstream merge, keep this block entry and layout CSS above with Horizon’s footer-utilities changes.
+{%- endcomment -%}
 
 {% schema %}
 {
   "name": "t:names.policies_and_links",
   "tag": "div",
   "class": "footer-utilities",
-  "max_blocks": 3,
+  "max_blocks": 4,
   "enabled_on": {
     "groups": ["footer"]
   },
@@ -172,6 +195,9 @@
     },
     {
       "type": "social-links"
+    },
+    {
+      "type": "at-footer-utility-text"
     }
   ],
   "presets": [
