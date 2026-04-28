@@ -336,7 +336,11 @@
         "collection": "popular",
         "layout_type": "carousel",
         "carousel_on_mobile": false,
+<<<<<<< Updated upstream
         "max_products": 6,
+=======
+        "max_products": 4,
+>>>>>>> Stashed changes
         "columns": 4,
         "mobile_columns": "2",
         "mobile_card_size": "44cqw",
@@ -897,7 +901,11 @@
         "collection": "sale",
         "layout_type": "carousel",
         "carousel_on_mobile": false,
+<<<<<<< Updated upstream
         "max_products": 6,
+=======
+        "max_products": 4,
+>>>>>>> Stashed changes
         "columns": 4,
         "mobile_columns": "2",
         "mobile_card_size": "44cqw",
@@ -1130,7 +1138,11 @@
         "collection": "t-shirts",
         "layout_type": "carousel",
         "carousel_on_mobile": false,
+<<<<<<< Updated upstream
         "max_products": 6,
+=======
+        "max_products": 4,
+>>>>>>> Stashed changes
         "columns": 4,
         "mobile_columns": "2",
         "mobile_card_size": "44cqw",

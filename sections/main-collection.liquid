@@ -40,11 +40,16 @@
       results_size: collection.products_count
     %}
 
-    {% assign products_per_page = 24 %}
-
-    {% if section.settings.enable_infinite_scroll == false %}
-      {% assign products_per_page = section.settings.products_per_page %}
-    {% endif %}
+    {%- comment -%}
+      AT: Always honour the merchant-configured products_per_page, even when infinite
+      scroll is on. Stock Horizon hardcodes 24 here on infinite-scroll collections,
+      which is too expensive on cold cache for our variant-dense / metaobject-heavy
+      cards (Growth-plan complexity budget) — the initial render of 24 cards was
+      tipping over 5xx. Lowering the default to 12 (with subsequent pages still
+      auto-loading via the Section Rendering API) keeps UX identical while halving
+      first-render cost.
+    {%- endcomment -%}
+    {% assign products_per_page = section.settings.products_per_page | default: 12 %}
 
     {% paginate collection.products by products_per_page %}
       {% capture children %}
@@ -161,8 +166,7 @@
       "min": 8,
       "max": 36,
       "step": 4,
-      "default": 24,
-      "visible_if": "{{ section.settings.enable_infinite_scroll == false }}"
+      "default": 12
     },
     {
       "type": "header",
