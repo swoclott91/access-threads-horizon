@@ -240,7 +240,7 @@
               "type": "image",
               "name": "t:names.image",
               "settings": {
-                "image": "{{ closest.product.metafields.custom.brand.value.logo.value }}",
+                "image": "{{ closest.product.metafields.custom.brand_image.value }}",
                 "link": "{{ closest.product.url }}",
                 "image_ratio": "adapt",
                 "width": "custom",

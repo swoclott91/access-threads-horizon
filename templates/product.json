@@ -190,6 +190,18 @@
             "padding-inline-end": 0
           },
           "blocks": {
+            "icon_VLNh7q": {
+              "type": "icon",
+              "name": "t:names.icon",
+              "settings": {
+                "icon": "price_tag",
+                "width": 24,
+                "link_collection": "",
+                "link": "",
+                "open_in_new_tab": false
+              },
+              "blocks": {}
+            },
             "group_icgrde": {
               "type": "group",
               "name": "Header",
@@ -397,6 +409,7 @@
             }
           },
           "block_order": [
+            "icon_VLNh7q",
             "group_icgrde",
             "divider_VJhene",
             "variant_picker_R3rGDr",
