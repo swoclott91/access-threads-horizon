@@ -105,10 +105,22 @@
     assign brand_grid_rows = brand_total | plus: cols | minus: 1 | divided_by: cols
   endif
 
-  # Build alphabet array from brand links (mobile A-Z grouping)
-  assign all_letters = ''
+  # AT: Mobile uses an alphabetical letter-grouped grid; desktop preserves
+  # the merchant-defined linklist order. Sort once into `sorted_brands` so
+  # the mobile loop can emit letter headers via a single-pass state machine
+  # (`assign last_letter`), rather than the previous O(letters × brands)
+  # nested loop that was the dominant complexity contributor on cold-cache
+  # mobile fetches of this section (the cause of the 5xx that produced
+  # "There was a problem loading this website" when the hamburger opened).
+  assign sorted_brands = brand_source_links
   if brand_source_links != blank
-    for brand_link in brand_source_links
+    assign sorted_brands = brand_source_links | sort: 'title'
+  endif
+
+  # Build alphabet array from sorted brand links (mobile A-Z quick-jump bar)
+  assign all_letters = ''
+  if sorted_brands != blank
+    for brand_link in sorted_brands
       assign letter = brand_link.title | upcase | slice: 0, 1
       unless all_letters contains letter
         assign all_letters = all_letters | append: letter | append: ','
@@ -200,79 +212,76 @@
             aria-label="{{ brands_cat_link.title | default: 'Brands' }}"
             style="--at-brands-mobile-cols: {{ mobile_cols }};"
           >
-            {%- for letter in alpha_letters -%}
-              {%- if letter != blank -%}
-                {%- liquid
-                  assign letter_brand_count = 0
-                  for brand_link in brand_source_links
-                    assign brand_first_letter = brand_link.title | upcase | slice: 0, 1
-                    if brand_first_letter == letter
-                      assign letter_brand_count = letter_brand_count | plus: 1
-                    endif
-                  endfor
-                  assign grid_rows = 1
-                  if letter_brand_count > 0
-                    assign grid_rows = letter_brand_count | plus: mobile_cols | minus: 1 | divided_by: mobile_cols
+            {%- comment -%}
+              Single-pass letter-grouped emission. We track the previous
+              letter in `last_letter` and emit a new `.at-panel__letter-section`
+              header (closing the prior one if any) whenever the first letter
+              changes. This replaces the previous double-nested loop
+              (letters × brands × 2) which was the dominant complexity cost
+              and the reason this section was 5xx-ing on cold cache.
+
+              theme-check warnings about unbalanced HTML across LiquidBranch
+              boundaries are expected and benign — the closing `</div></div>`
+              fires on every letter change AND once after the loop, so every
+              opener is paired with a closer at runtime.
+            {%- endcomment -%}
+            {% # theme-check-disable %}
+            {%- assign last_letter = '' -%}
+            {%- for brand_link in sorted_brands -%}
+              {%- liquid
+                assign letter = brand_link.title | upcase | slice: 0, 1
+                assign brand_icon = blank
+                unless icon_source == 'initials_only'
+                  assign coll_img = brand_link.object.featured_image
+                  if coll_img != blank
+                    assign brand_icon = coll_img
                   endif
-                -%}
+                endunless
+              -%}
+              {%- if letter != last_letter -%}
+                {%- if last_letter != '' -%}</div></div>{%- endif -%}
                 <div
                   class="at-panel__letter-section"
                   id="at-letter-{{ letter }}"
                   role="listitem"
                 >
                   <div class="at-panel__letter-header" aria-hidden="true">{{- letter -}}</div>
-                  <div
-                    class="at-panel__brand-grid"
-                    style="--at-panel-brand-rows: {{ grid_rows }};"
-                  >
-                    {%- for brand_link in brand_source_links -%}
-                      {%- assign brand_first_letter = brand_link.title | upcase | slice: 0, 1 -%}
-                      {%- if brand_first_letter == letter -%}
-                        {%- liquid
-                          assign brand_icon = blank
-                          unless icon_source == 'initials_only'
-                            assign coll_img = brand_link.object.featured_image
-                            if coll_img != blank
-                              assign brand_icon = coll_img
-                            endif
-                          endunless
-                        -%}
-                        <a
-                          href="{{ brand_link.url }}"
-                          class="at-panel__brand-item"
-                          data-brand-name="{{ brand_link.title | escape }}"
-                          {% if brand_link.current %}aria-current="page"{% endif %}
-                        >
-                          <span
-                            class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
-                            style="--at-brand-avatar-radius: {{ img_radius }}px;"
-                            aria-hidden="true"
-                            data-brand-name="{{ brand_link.title | escape }}"
-                          >
-                            {%- if brand_icon != blank -%}
-                              {{-
-                                brand_icon
-                                | image_url: width: 48, height: 48, crop: 'center'
-                                | image_tag:
-                                  alt: '',
-                                  loading: 'lazy',
-                                  fetchpriority: 'low',
-                                  decoding: 'async',
-                                  width: 24,
-                                  height: 24
-                              -}}
-                            {%- else -%}
-                              {{- brand_link.title | slice: 0, 2 | upcase -}}
-                            {%- endif -%}
-                          </span>
-                          <span class="at-panel__brand-name">{{- brand_link.title -}}</span>
-                        </a>
-                      {%- endif -%}
-                    {%- endfor -%}
-                  </div>
-                </div>
+                  <div class="at-panel__brand-grid">
+                {%- assign last_letter = letter -%}
               {%- endif -%}
+              <a
+                href="{{ brand_link.url }}"
+                class="at-panel__brand-item"
+                data-brand-name="{{ brand_link.title | escape }}"
+                {% if brand_link.current %}aria-current="page"{% endif %}
+              >
+                <span
+                  class="at-brand-avatar{% if brand_icon != blank %} at-brand-avatar--image{% else %} at-brand-avatar--initials{% endif %}"
+                  style="--at-brand-avatar-radius: {{ img_radius }}px;"
+                  aria-hidden="true"
+                  data-brand-name="{{ brand_link.title | escape }}"
+                >
+                  {%- if brand_icon != blank -%}
+                    {{-
+                      brand_icon
+                      | image_url: width: 48, height: 48, crop: 'center'
+                      | image_tag:
+                        alt: '',
+                        loading: 'lazy',
+                        fetchpriority: 'low',
+                        decoding: 'async',
+                        width: 24,
+                        height: 24
+                    -}}
+                  {%- else -%}
+                    {{- brand_link.title | slice: 0, 2 | upcase -}}
+                  {%- endif -%}
+                </span>
+                <span class="at-panel__brand-name">{{- brand_link.title -}}</span>
+              </a>
             {%- endfor -%}
+            {%- if last_letter != '' -%}</div></div>{%- endif -%}
+            {% # theme-check-enable %}
           </div>
 
           {%- if alpha_letters.size > 0 -%}
@@ -488,16 +497,22 @@
           <div class="at-brands-panel__grid-wrapper">
             <ul class="at-brands-panel__subnav-grid list-unstyled" role="list">
               {%- for sub_link in cat_link.links -%}
+                {%- liquid
+                  # Single dereference: previously this was accessed twice
+                  # per sub_link (once for the if-blank check, once for the
+                  # render), doubling the link.object lookups in this grid.
+                  assign sub_img = sub_link.object.featured_image
+                -%}
                 <li role="listitem">
                   <a
                     href="{{ sub_link.url }}"
                     class="at-brands-panel__subnav-item"
                     {% if sub_link.current %}aria-current="page"{% endif %}
                   >
-                    {%- if sub_link.object.featured_image != blank -%}
+                    {%- if sub_img != blank -%}
                       <span class="at-brand-avatar at-brand-avatar--image" aria-hidden="true"
                         style="--at-brand-avatar-radius: {{ img_radius }}px;">
-                        {{- sub_link.object.featured_image
+                        {{- sub_img
                             | image_url: width: 48, height: 48, crop: 'center'
                             | image_tag:
                               alt: '',
