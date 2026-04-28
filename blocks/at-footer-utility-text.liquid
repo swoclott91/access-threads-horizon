@@ -1,12 +1,7 @@
 {%- comment -%}
   AT: optional footer utilities line (Policies and links section). Matches copyright typography.
+  Setting id is not `text` — that id is reserved by the theme editor for dynamic block titles.
 {%- endcomment -%}
-{% doc %}
-  Rich text line for the footer utilities row; uses the same typography hooks as the copyright block.
-
-  @example
-  {% content_for 'block', type: 'at-footer-utility-text', id: 'footer-extra-line' %}
-{% enddoc %}
 {% assign block_settings = block.settings %}
 <div
   class="
@@ -17,9 +12,9 @@
   style="{% render 'typography-style', preset: 'custom', settings: block_settings %}"
   {{ block.shopify_attributes }}
 >
-  {% if block_settings.text != blank %}
+  {% if block_settings.line != blank %}
     <div class="footer-utilities__text rte">
-      {{ block_settings.text }}
+      {{ block_settings.line }}
     </div>
   {% endif %}
 </div>
@@ -31,9 +26,8 @@
   "settings": [
     {
       "type": "inline_richtext",
-      "id": "text",
-      "label": "t:settings.text",
-      "default": ""
+      "id": "line",
+      "label": "t:settings.text"
     },
     {
       "type": "select",

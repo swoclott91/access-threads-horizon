@@ -69,7 +69,7 @@ These core Horizon files contain AT customizations and may need manual conflict 
 
 | Block | Purpose |
 |-------|---------|
-| `blocks/at-footer-utility-text.liquid` | Optional extra line in the **Policies and links** (`footer-utilities`) row: `inline_richtext` plus copyright-matched typography (size/case). Block schema uses the literal editor name **AT Footer text** (same pattern as AT Buy buttons). Section registers `at-footer-utility-text` and four-column layout CSS. |
+| `blocks/at-footer-utility-text.liquid` | Optional extra line in the **Policies and links** (`footer-utilities`) row: `inline_richtext` (setting id **`line`**, not `text`, so the theme editor does not treat it as the dynamic block title) plus copyright-matched typography. Block name **AT Footer text** in schema (literal, like AT Buy buttons). Section registers `at-footer-utility-text` and four-column layout CSS. |
 | `blocks/at-buy-buttons.liquid` | Buy buttons with bulk form support. Enables a "Bulk Add to Cart" secondary button (`at_enable_bulk_popup`) that opens a `dialog-component` containing the AT bulk grid modal. Scripts (`dialog.js`, `at-bulk-grid.js`) and CSS are loaded conditionally. The form's `data-at-bulk-form` and `data-at-bulk-line-items` attributes are set whenever bulk popup OR bulk quantities are enabled. |
 | `blocks/at-popup-link.liquid` | Standalone popup/link block. Also supports bulk grid inside the popup. May be deprecated in favour of `at-buy-buttons` bulk popup once migrated. |
 | `blocks/at-variant-picker.liquid` | Variant picker that publishes bulk grid config (`script[data-at-bulk-grid-config]`) for `at-bulk-grid.js` to read. |
