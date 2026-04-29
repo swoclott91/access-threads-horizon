@@ -137,38 +137,11 @@
             "padding-inline-end": 0
           },
           "blocks": {}
-        },
-        "text_Jqj3in": {
-          "type": "text",
-          "name": "t:names.text",
-          "settings": {
-            "text": "<p>Access Threads. </p><p>Operated by TLW Holdings, LLC.</p>",
-            "width": "100%",
-            "max_width": "normal",
-            "alignment": "center",
-            "type_preset": "custom",
-            "font": "var(--font-body--family)",
-            "font_size": "1rem",
-            "line_height": "tight",
-            "letter_spacing": "tight",
-            "case": "none",
-            "wrap": "balance",
-            "color": "var(--color-foreground)",
-            "background": false,
-            "background_color": "#00000026",
-            "corner_radius": 0,
-            "padding-block-start": 0,
-            "padding-block-end": 0,
-            "padding-inline-start": 0,
-            "padding-inline-end": 0
-          },
-          "blocks": {}
         }
       },
       "block_order": [
         "group_wErUQf",
-        "email-signup_HafH7P",
-        "text_Jqj3in"
+        "email-signup_HafH7P"
       ],
       "name": "t:names.footer",
       "settings": {
@@ -187,6 +160,16 @@
           "name": "t:names.copyright",
           "settings": {
             "show_powered_by": false,
+            "font_size": "0.75rem",
+            "case": "none"
+          },
+          "blocks": {}
+        },
+        "at_footer_utility_text_RYCGtH": {
+          "type": "at-footer-utility-text",
+          "name": "AT Footer text",
+          "settings": {
+            "line": "Operated by TLW Holdings, LLC",
             "font_size": "0.75rem",
             "case": "none"
           },
@@ -222,12 +205,13 @@
       },
       "block_order": [
         "footer_copyright_aLBAbU",
+        "at_footer_utility_text_RYCGtH",
         "policy_list",
         "social_icons"
       ],
       "settings": {
         "section_width": "page-width",
-        "gap": 24,
+        "gap": 8,
         "divider_thickness": 1,
         "color_scheme": "scheme-5",
         "padding-block-start": 12,
