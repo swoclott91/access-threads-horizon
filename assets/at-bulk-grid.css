@@ -34,10 +34,18 @@
  * sizing, scroll behaviour, and sticky footer feel identical across contexts.
  *
  * Desktop (≥750px): max-width/max-height only – table wrapper scrolls internally.
- * Mobile (<750px):  explicit height:85dvh flex column – inner is the scroll container.
+ * Mobile (<750px): viewport-based sheet height; .at-bulk-grid__body scrolls; footer stays visible.
  * ─────────────────────────────────────────────────────────────────────────── */
 
 #at-bulk-grid-quick-add-dialog {
+  --at-bulk-sheet-height: min(
+    94dvh,
+    calc(
+      100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--padding-md, 1rem)
+    )
+  );
+
+  position: relative;
   box-shadow: var(--shadow-popover);
   border: var(--style-border-popover);
   border-radius: var(--style-border-radius-popover);
@@ -64,10 +72,17 @@
   animation: modalSlideOutTop var(--animation-speed) var(--animation-easing) forwards;
 }
 
-/* Mobile: fill most of viewport and let inner scroll (mirrors mobile at-popup-link rules) */
+/* Mobile: fill viewport (safe areas); scroll lives in .at-bulk-grid__body so footer stays visible */
 @media screen and (max-width: 749px) {
   #at-bulk-grid-quick-add-dialog[open] {
-    height: 85dvh;
+    width: 100%;
+    max-width: 100%;
+    height: var(--at-bulk-sheet-height);
+    max-height: var(--at-bulk-sheet-height);
+    padding-block-start: calc(var(--minimum-touch-target) + var(--padding-xs));
+    padding-inline: var(--padding-md);
+    padding-inline-end: calc(var(--minimum-touch-target) + var(--padding-sm));
+    padding-block-end: var(--padding-md);
     display: flex;
     flex-direction: column;
   }
@@ -75,7 +90,7 @@
   #at-bulk-grid-quick-add-dialog[open] .at-bulk-grid-modal__inner {
     flex: 1 1 0;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -85,6 +100,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 }
 
@@ -94,9 +110,29 @@
   overflow-x: auto;
 }
 
-.at-bulk-grid-modal__close {
+/* Pin close to dialog box (overrides global .close-button position: fixed) so it does not cover the search field */
+#at-bulk-grid-quick-add-dialog .at-bulk-grid-modal__close {
+  position: absolute;
   top: var(--margin-2xs);
   right: var(--margin-2xs);
+  z-index: var(--layer-raised);
+  width: var(--minimum-touch-target);
+  height: var(--minimum-touch-target);
+  opacity: 0.8;
+  animation: none;
+}
+
+.at-buy-buttons__bulk-dialog {
+  position: relative;
+}
+
+.at-buy-buttons__bulk-dialog .at-buy-buttons__bulk-close {
+  position: absolute;
+  top: var(--margin-2xs);
+  right: var(--margin-2xs);
+  z-index: var(--layer-raised);
+  width: var(--minimum-touch-target);
+  height: var(--minimum-touch-target);
   opacity: 0.8;
   animation: none;
 }
@@ -107,6 +143,14 @@
   flex-direction: column;
   gap: var(--at-bulk-grid-gap);
   min-height: 200px;
+}
+
+/* Scrollable region (search + grid/accordions); footer sits outside on mobile modals with fixed height */
+.at-bulk-grid__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--at-bulk-grid-gap);
+  min-width: 0;
 }
 
 .at-bulk-grid__loading,
@@ -130,10 +174,25 @@
 .at-bulk-grid__search {
   width: 100%;
   max-width: 280px;
-  padding: var(--padding-sm) var(--padding-md);
-  border: var(--style-border-width-inputs) solid var(--color-border);
+  border: none;
   border-radius: var(--style-border-radius-inputs);
-  font-size: var(--font-size--sm);
+  padding: var(--input-padding, var(--padding-sm) var(--padding-md));
+  font-size: var(--font-paragraph--size, var(--font-size--sm));
+  line-height: var(--font-paragraph--line-height, 1.4);
+  box-shadow: var(--input-box-shadow);
+  background-color: var(--color-input-background);
+  color: var(--color-input-text);
+  transition: box-shadow var(--animation-speed) ease, background-color var(--animation-speed) ease;
+}
+
+.at-bulk-grid__search::placeholder {
+  color: rgb(var(--color-foreground-rgb) / var(--opacity-50));
+}
+
+.at-bulk-grid__search:is(:focus, :focus-visible) {
+  outline: none;
+  box-shadow: var(--input-box-shadow-focus);
+  background-color: var(--color-input-hover-background);
 }
 
 .at-bulk-grid__table-wrapper {
@@ -257,7 +316,7 @@
   color: var(--color-outofstock, red);
 }
 
-/* Footer: always visible, sticky at bottom */
+/* Footer: desktop uses sticky inside scroll; mobile uses flex sibling (see mobile section) */
 .at-bulk-grid__actions {
   display: flex;
   flex-wrap: wrap;
@@ -304,19 +363,41 @@
 
 /* Mobile: full-width sheet feel; accordion per color */
 @media screen and (max-width: 749px) {
-  /* Only when modal is open: bulk grid modal at least 85dvh so sticky footer has a proper viewport */
+  .at-popup-link .popup-link__content:has(.at-bulk-grid) {
+    --at-bulk-sheet-height: min(
+      94dvh,
+      calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--padding-md, 1rem))
+    );
+  }
+
+  /* Only when modal is open: bulk grid uses most of the viewport */
   .at-popup-link .popup-link__content:has(.at-bulk-grid)[open] {
-    max-height: 85dvh;
-    height: 85dvh;
+    position: relative;
+    max-height: var(--at-bulk-sheet-height);
+    height: var(--at-bulk-sheet-height);
+    width: 100%;
+    max-width: 100%;
+    padding-block-start: calc(var(--minimum-touch-target) + var(--padding-xs));
+    padding-inline: var(--padding-md);
+    padding-inline-end: calc(var(--minimum-touch-target) + var(--padding-sm));
+    padding-block-end: var(--padding-md);
     display: flex;
     flex-direction: column;
   }
 
-  /* Only when modal is open: inner is the scroll container so sticky footer sticks to bottom */
+  .at-popup-link .popup-link__content:has(.at-bulk-grid)[open] .popup-link__close {
+    position: absolute;
+    top: var(--margin-2xs);
+    right: var(--margin-2xs);
+    z-index: var(--layer-raised);
+    width: var(--minimum-touch-target);
+    height: var(--minimum-touch-target);
+  }
+
   .at-popup-link .popup-link__content:has(.at-bulk-grid)[open] .popup-link__inner {
     flex: 1 1 0;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -326,26 +407,62 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    padding-block-end: 0;
   }
 
-  .at-bulk-grid {
-    padding-block-end: var(--padding-2xl);
+  .at-bulk-grid__body {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
-  /* Sticky footer sticks to bottom of .popup-link__inner (the scroll container) */
   .at-bulk-grid__actions {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
-    margin-top: auto;
+    flex-shrink: 0;
+    position: static;
+    margin-top: 0;
     padding-block-start: var(--gap-md);
-    padding-block-end: var(--padding-xs);
+    padding-block-end: 0;
     background: var(--color-background);
     box-shadow: 0 -1px 0 var(--color-border);
   }
 
   .at-bulk-grid__search {
     max-width: none;
+  }
+
+  /* Product page bulk dialog (non-drawer): same sheet height and pinned footer */
+  .at-buy-buttons__bulk-dialog[open]:not(.at-buy-buttons__bulk-dialog--drawer) {
+    --at-bulk-sheet-height: min(
+      94dvh,
+      calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--padding-md, 1rem))
+    );
+
+    width: 100%;
+    max-width: 100%;
+    height: var(--at-bulk-sheet-height);
+    max-height: var(--at-bulk-sheet-height);
+    padding-block-start: calc(var(--minimum-touch-target) + var(--padding-xs));
+    padding-inline: var(--padding-md);
+    padding-inline-end: calc(var(--minimum-touch-target) + var(--padding-sm));
+    padding-block-end: var(--padding-md);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .at-buy-buttons__bulk-dialog[open]:not(.at-buy-buttons__bulk-dialog--drawer) .at-buy-buttons__bulk-dialog-inner {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .at-buy-buttons__bulk-dialog[open]:not(.at-buy-buttons__bulk-dialog--drawer) .at-bulk-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .at-bulk-grid__table th,

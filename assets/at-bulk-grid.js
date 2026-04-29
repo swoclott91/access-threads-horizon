@@ -380,6 +380,7 @@ function renderDesktopGrid(container, config, sectionId) {
   };
 
   let html = '';
+  html += '<div class="at-bulk-grid__body">';
   html += '<div class="at-bulk-grid__search-wrap">';
   html += `<input type="search" class="at-bulk-grid__search" placeholder="Search ${optionRowName}..." data-at-bulk-search aria-label="Search ${optionRowName}">`;
   html += '</div>';
@@ -441,6 +442,7 @@ function renderDesktopGrid(container, config, sectionId) {
   });
 
   html += '</tbody></table></div>';
+  html += '</div>';
   html +=
     '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
@@ -595,7 +597,13 @@ function renderMobileGrid(container, config, sectionId) {
   };
 
   let html = '';
-  html += '<input type="search" class="at-bulk-grid__search" placeholder="Search ' + escapeAttr(optionRowName) + '..." data-at-bulk-search aria-label="Search ' + escapeAttr(optionRowName) + '">';
+  html += '<div class="at-bulk-grid__body">';
+  html +=
+    '<input type="search" class="at-bulk-grid__search" placeholder="Search ' +
+    escapeAttr(optionRowName) +
+    '..." data-at-bulk-search aria-label="Search ' +
+    escapeAttr(optionRowName) +
+    '">';
   html += '<div class="at-bulk-grid__mobile-accordions">';
 
   colorValues.forEach((color) => {
@@ -656,6 +664,7 @@ function renderMobileGrid(container, config, sectionId) {
     html += '</div></div>';
   });
 
+  html += '</div>';
   html += '</div>';
   html +=
     '<div class="at-bulk-grid__actions">' +

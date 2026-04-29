@@ -11,7 +11,7 @@
 
 {%- if block_settings.at_enable_bulk_grid -%}
   {{ 'at-bulk-grid.css' | asset_url | stylesheet_tag }}
-  <script src="{{ 'at-bulk-grid.js' | asset_url }}?v=2" type="module"></script>
+  <script src="{{ 'at-bulk-grid.js' | asset_url }}?v=3" type="module"></script>
 {%- endif -%}
 
 <dialog-component
@@ -83,7 +83,7 @@
     border-radius: var(--style-border-radius-popover);
     background-color: var(--color-background);
     padding: var(--padding-4xl) var(--padding-xl) var(--padding-xl);
-    max-width: var(--normal-content-width);
+    max-width: var(--wide-content-width);
     max-height: var(--modal-max-height);
 
     @media screen and (min-width: 750px) {
