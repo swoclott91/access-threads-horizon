@@ -79,9 +79,10 @@
     max-width: 100%;
     height: var(--at-bulk-sheet-height);
     max-height: var(--at-bulk-sheet-height);
+    --at-bulk-modal-inline: max(var(--padding-md), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+
     padding-block-start: calc(var(--minimum-touch-target) + var(--padding-xs));
-    padding-inline: var(--padding-md);
-    padding-inline-end: calc(var(--minimum-touch-target) + var(--padding-sm));
+    padding-inline: var(--at-bulk-modal-inline);
     padding-block-end: var(--padding-md);
     display: flex;
     flex-direction: column;
@@ -120,6 +121,13 @@
   height: var(--minimum-touch-target);
   opacity: 0.8;
   animation: none;
+}
+
+@media screen and (max-width: 749px) {
+  #at-bulk-grid-quick-add-dialog .at-bulk-grid-modal__close {
+    right: var(--at-bulk-modal-inline);
+    top: max(var(--margin-2xs), env(safe-area-inset-top, 0px));
+  }
 }
 
 .at-buy-buttons__bulk-dialog {
@@ -376,14 +384,15 @@
 
   /* Only when modal is open: bulk grid uses most of the viewport */
   .at-popup-link .popup-link__content:has(.at-bulk-grid)[open] {
+    --at-bulk-modal-inline: max(var(--padding-md), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+
     position: relative;
     max-height: var(--at-bulk-sheet-height);
     height: var(--at-bulk-sheet-height);
     width: 100%;
     max-width: 100%;
     padding-block-start: calc(var(--minimum-touch-target) + var(--padding-xs));
-    padding-inline: var(--padding-md);
-    padding-inline-end: calc(var(--minimum-touch-target) + var(--padding-sm));
+    padding-inline: var(--at-bulk-modal-inline);
     padding-block-end: var(--padding-md);
     display: flex;
     flex-direction: column;
@@ -391,8 +400,8 @@
 
   .at-popup-link .popup-link__content:has(.at-bulk-grid)[open] .popup-link__close {
     position: absolute;
-    top: var(--margin-2xs);
-    right: var(--margin-2xs);
+    top: max(var(--margin-2xs), env(safe-area-inset-top, 0px));
+    right: var(--at-bulk-modal-inline);
     z-index: var(--layer-raised);
     width: var(--minimum-touch-target);
     height: var(--minimum-touch-target);
@@ -438,6 +447,7 @@
 
   /* Product page bulk dialog (non-drawer): same sheet height and pinned footer */
   .at-buy-buttons__bulk-dialog[open]:not(.at-buy-buttons__bulk-dialog--drawer) {
+    --at-bulk-modal-inline: max(var(--padding-md), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
     --at-bulk-sheet-height: min(
       94dvh,
       calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - var(--padding-md, 1rem))
@@ -448,11 +458,15 @@
     height: var(--at-bulk-sheet-height);
     max-height: var(--at-bulk-sheet-height);
     padding-block-start: calc(var(--minimum-touch-target) + var(--padding-xs));
-    padding-inline: var(--padding-md);
-    padding-inline-end: calc(var(--minimum-touch-target) + var(--padding-sm));
+    padding-inline: var(--at-bulk-modal-inline);
     padding-block-end: var(--padding-md);
     display: flex;
     flex-direction: column;
+  }
+
+  .at-buy-buttons__bulk-dialog[open]:not(.at-buy-buttons__bulk-dialog--drawer) .at-buy-buttons__bulk-close {
+    top: max(var(--margin-2xs), env(safe-area-inset-top, 0px));
+    right: var(--at-bulk-modal-inline);
   }
 
   .at-buy-buttons__bulk-dialog[open]:not(.at-buy-buttons__bulk-dialog--drawer) .at-buy-buttons__bulk-dialog-inner {
