@@ -6,6 +6,7 @@
 
 import { formatMoney } from '@theme/money-formatting';
 import { CartAddEvent } from '@theme/events';
+import { onAnimationEnd, yieldToMainThread } from '@theme/utilities';
 
 const BULK_GRID_SELECTORS = {
   container: '[data-at-bulk-grid]',
@@ -27,8 +28,24 @@ const QUICK_ADD_SECTION_KEY = '__at_quick_add__';
 const CART_ICON_SELECTOR = '.header-actions__cart-icon';
 
 /**
- * On successful bulk add: optional fly animation, close modal, reset inputs, dispatch CartAddEvent.
- * Cart opens after fly animation completes (0.6s) to match theme add-to-cart timing.
+ * Same success treatment as AddToCartComponent.animateAddToCart (product-form.js):
+ * `data-added` drives base.css checkmark / label transitions; then reset after 800ms.
+ * @param {HTMLButtonElement | null} addBtn
+ */
+async function playBulkAddToCartButtonSuccessAnimation(addBtn) {
+  if (!addBtn) return;
+  if (addBtn.dataset.added !== 'true') {
+    addBtn.dataset.added = 'true';
+  }
+  await yieldToMainThread();
+  await onAnimationEnd(addBtn);
+  await new Promise((r) => setTimeout(r, 800));
+  addBtn.removeAttribute('data-added');
+}
+
+/**
+ * On successful bulk add: same visuals as individual add — fly-to-cart (when enabled) +
+ * add-to-cart button burst (always). Mirrors product-form AddToCartComponent.handleClick.
  * @param {HTMLElement} container - Bulk grid container
  * @param {() => void} updateTotal - Function to refresh total display
  * @param {HTMLButtonElement | null} addBtn - Add to cart button (source for fly animation)
@@ -39,12 +56,13 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
   const doAnimation = container.dataset.atBulkAddToCartAnimation === 'true';
   const config = getBulkConfig(sectionId) || bulkGridConfigCache.get(sectionId);
   const productImage = config?.productFeaturedImage;
+  /** Individual quick-add skips fly when inside .quick-add-modal (product-form.js). */
+  const skipFlyToCart = !!(addBtn && addBtn.closest('.quick-add-modal'));
 
   /** @type {Element | null} */
   let flyToCartEl = null;
-  if (doAnimation && addBtn && productImage && customElements.get('fly-to-cart')) {
+  if (doAnimation && addBtn && productImage && customElements.get('fly-to-cart') && !skipFlyToCart) {
     const cartIcon = document.querySelector(CART_ICON_SELECTOR);
-    const dialog = container.closest('dialog');
     if (cartIcon) {
       flyToCartEl = document.createElement('fly-to-cart');
       flyToCartEl.classList.add('fly-to-cart--main');
@@ -52,17 +70,14 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
       flyToCartEl.style.setProperty('--start-opacity', '0');
       flyToCartEl.source = addBtn;
       flyToCartEl.destination = cartIcon;
-      // Append to dialog (top layer) so animation appears above the modal
-      const flyParent = dialog || document.body;
-      flyParent.appendChild(flyToCartEl);
+      document.body.appendChild(flyToCartEl);
     }
   }
 
-  // Wait for fly animation to complete (0.6s) before closing modal and opening cart.
-  // Fixed delay matches fly-to-cart--main animation-duration in base.css.
-  if (flyToCartEl) {
-    await new Promise((r) => setTimeout(r, 650));
-  }
+  const pending = [];
+  if (addBtn) pending.push(playBulkAddToCartButtonSuccessAnimation(addBtn));
+  if (flyToCartEl) pending.push(onAnimationEnd(flyToCartEl));
+  if (pending.length) await Promise.all(pending);
 
   const dialogComponent = container.closest('dialog-component');
   if (dialogComponent && typeof dialogComponent.closeDialog === 'function') {
@@ -100,6 +115,21 @@ async function handleBulkAddSuccess(container, updateTotal, addBtn, sectionId, c
 /** Theme add-to-cart icon (icon-add-to-cart.svg) – same as add-to-cart-button secondary */
 const ADD_TO_CART_ICON_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="var(--icon-stroke-width)" d="M16.608 9.421V6.906H3.392v8.016c0 .567.224 1.112.624 1.513.4.402.941.627 1.506.627H8.63M8.818 3h2.333c.618 0 1.212.247 1.649.686a2.35 2.35 0 0 1 .683 1.658v1.562H6.486V5.344c0-.622.246-1.218.683-1.658A2.33 2.33 0 0 1 8.82 3"/><path stroke="currentColor" stroke-linecap="round" stroke-width="var(--icon-stroke-width)" d="M14.608 12.563v5m2.5-2.5h-5"/></svg>';
+
+/** From assets/icon-checkmark-burst.svg (snippets/add-to-cart-button.liquid) */
+const CHECKMARK_BURST_SVG =
+  '<svg aria-hidden="true" class="checkmark-burst" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g class="check"><circle class="ring" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path class="tick" d="M9 12.75L11.25 15L15 9.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g><g class="burst"><g style="--index: 0;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 1;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 2;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 3;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 4;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 5;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 6;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g><g style="--index: 7;"><line class="line" stroke-linecap="round" pathLength="1" x1="12" y1="8.5" x2="12" y2="15.5" stroke="currentColor"/></g></g></svg>';
+
+/** Inner markup for bulk ATC — mirrors snippets/add-to-cart-button.liquid */
+const BULK_ADD_TO_CART_BUTTON_MARKUP =
+  '<span class="add-to-cart-text">' +
+  '<span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
+  ADD_TO_CART_ICON_SVG +
+  '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
+  '<span class="add-to-cart__added">' +
+  '<span class="svg-wrapper add-to-cart__added-icon">' +
+  CHECKMARK_BURST_SVG +
+  '</span></span>';
 
 /** Theme accordion caret – same as icon-caret.svg (mobile bulk grid expand/collapse) */
 const ICON_CARET_SVG =
@@ -447,9 +477,7 @@ function renderDesktopGrid(container, config, sectionId) {
     '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
     '<button type="button" class="button add-to-cart-button button-primary" data-at-bulk-add-to-cart>' +
-    '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
-    ADD_TO_CART_ICON_SVG +
-    '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
+    BULK_ADD_TO_CART_BUTTON_MARKUP +
     '</button>' +
     '</div>';
 
@@ -670,9 +698,7 @@ function renderMobileGrid(container, config, sectionId) {
     '<div class="at-bulk-grid__actions">' +
     '<span class="at-bulk-grid__total" data-at-bulk-total>Total: 0</span>' +
     '<button type="button" class="button add-to-cart-button button-primary" data-at-bulk-add-to-cart>' +
-    '<span class="add-to-cart-text"><span aria-hidden="true" class="svg-wrapper add-to-cart-icon">' +
-    ADD_TO_CART_ICON_SVG +
-    '</span><span class="add-to-cart-text__content">Add to cart</span></span>' +
+    BULK_ADD_TO_CART_BUTTON_MARKUP +
     '</button>' +
     '</div>';
 

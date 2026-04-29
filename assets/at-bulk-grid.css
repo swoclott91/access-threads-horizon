@@ -350,6 +350,10 @@
   min-height: var(--height-buy-buttons);
 }
 
+.at-bulk-grid__actions .add-to-cart-button {
+  position: relative;
+}
+
 .at-bulk-grid__actions .add-to-cart-button .add-to-cart-icon {
   display: inline-flex;
   align-items: center;
