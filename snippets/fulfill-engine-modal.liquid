@@ -151,6 +151,14 @@
     }
   }
 
+  /* Author-sheet display:flex beats the UA-sheet [hidden]{display:none}.
+     This compound selector restores the correct hidden behaviour while
+     keeping flex layout for every visible state. */
+  .fe-designer-modal__state[hidden],
+  .fe-designer-modal__iframe-wrap[hidden] {
+    display: none;
+  }
+
   .fe-designer-modal__state {
     display: flex;
     flex: 1;
