@@ -101,10 +101,7 @@
     --fe-modal-max-width: 1200px;
     --fe-modal-height: 85dvh;
 
-    display: flex;
-    flex-direction: column;
     width: min(var(--fe-modal-max-width), 96vw);
-    height: var(--fe-modal-height);
     max-height: var(--fe-modal-height);
     padding: 0;
     overflow: hidden;
@@ -120,8 +117,14 @@
     }
   }
 
-  .fe-designer-modal__dialog:modal {
-    max-height: var(--fe-modal-height);
+  /* Only apply flex layout when the dialog is actually open.
+     Without this, display:flex would override the browser's default
+     display:none for a closed <dialog> element, causing it to render
+     in the document flow below the page content. */
+  .fe-designer-modal__dialog[open] {
+    display: flex;
+    flex-direction: column;
+    height: var(--fe-modal-height);
   }
 
   .fe-designer-modal__close {
