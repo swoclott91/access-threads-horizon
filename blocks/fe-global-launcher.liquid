@@ -1,0 +1,195 @@
+{% doc %}
+  Fulfill Engine – global "Design Custom Apparel" launcher.
+
+  Can be placed in any section that accepts @theme blocks: hero, media-with-content,
+  featured-product, standalone sections, etc.
+
+  Launches the FE designer without a pre-selected product; the customer selects
+  garments inside the FE iframe experience.
+
+  @example
+    {% content_for 'block', type: 'fe-global-launcher', id: 'fe-launcher' %}
+{% enddoc %}
+
+{%- liquid
+  assign button_text    = block.settings.button_text    | default: 'Design Custom Apparel'
+  assign button_style   = block.settings.button_style   | default: 'button'
+  assign subheading     = block.settings.subheading
+  assign layout         = block.settings.layout         | default: 'inline'
+  assign shop_domain    = shop.permanent_domain
+-%}
+
+<wagner-fe-trigger
+  class="fe-launcher-block fe-launcher-block--{{ layout }}"
+  {{ block.shopify_attributes }}
+  data-source="global"
+  data-shop-domain="{{ shop_domain }}"
+  style="{% render 'spacing-style', settings: block.settings %}"
+>
+  {%- if subheading != blank -%}
+    <p class="fe-launcher-block__subheading">{{ subheading | escape }}</p>
+  {%- endif -%}
+
+  <button
+    type="button"
+    class="{{ button_style }} fe-launcher-block__btn"
+    ref="triggerBtn"
+    on:click="/handleLaunch"
+  >
+    {%- if block.settings.show_icon -%}
+      <span
+        class="svg-wrapper fe-launcher-block__icon"
+        aria-hidden="true"
+      >
+        {{- 'icon-arrow.svg' | inline_asset_content -}}
+      </span>
+    {%- endif -%}
+    <span>{{ button_text }}</span>
+  </button>
+</wagner-fe-trigger>
+
+{% stylesheet %}
+  .fe-launcher-block {
+    display: block;
+  }
+
+  .fe-launcher-block--centered {
+    text-align: center;
+  }
+
+  .fe-launcher-block__subheading {
+    margin-block-end: var(--gap-sm, 0.75rem);
+    font-size: var(--font-size--sm, 0.875rem);
+    color: var(--color-foreground-secondary, var(--color-foreground));
+  }
+
+  .fe-launcher-block__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-xs, 0.5rem);
+    text-transform: var(--button-text-case-primary);
+  }
+
+  .fe-launcher-block--full-width .fe-launcher-block__btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fe-launcher-block__btn:focus-visible {
+    outline: 0.2rem solid rgb(var(--color-foreground-rgb) / 0.5);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    .fe-launcher-block__btn:focus-visible {
+      outline: 0.2rem solid transparent;
+    }
+  }
+
+  .fe-launcher-block__icon {
+    line-height: 0;
+    flex-shrink: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.fe_global_launcher",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Opens the Fulfill Engine designer without a pre-selected product. Use on hero sections, landing pages, or anywhere customers should start a design from scratch."
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Design Custom Apparel"
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "options": [
+        { "value": "button", "label": "Primary" },
+        { "value": "button button--secondary", "label": "Secondary" }
+      ],
+      "default": "button"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "options": [
+        { "value": "inline", "label": "Inline" },
+        { "value": "centered", "label": "Centered" },
+        { "value": "full-width", "label": "Full width" }
+      ],
+      "default": "inline"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "info": "Optional line of text shown above the button."
+    },
+    {
+      "type": "checkbox",
+      "id": "show_icon",
+      "label": "Show icon",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "Top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "Bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "Left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "Right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.fe_global_launcher",
+      "category": "Custom Apparel"
+    }
+  ]
+}
+{% endschema %}

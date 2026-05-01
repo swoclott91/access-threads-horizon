@@ -1,0 +1,174 @@
+{% doc %}
+  Fulfill Engine – product page "Customize" button.
+
+  Place this block inside the product details area (e.g. under the buy-buttons
+  block). It reads the currently selected Shopify variant and opens the FE
+  designer via the Wagner app proxy.
+
+  Variant selection is tracked automatically via the theme's VariantUpdateEvent
+  – no manual wiring needed.
+
+  @example
+    {% content_for 'block', type: 'fe-customize-button', id: 'fe-customize' %}
+{% enddoc %}
+
+{%- liquid
+  assign product = closest.product
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+
+  assign selected_variant = product.selected_or_first_available_variant
+  assign button_text   = block.settings.button_text | default: 'Customize'
+  assign button_style  = block.settings.button_style | default: 'button button--secondary'
+  assign shop_domain   = shop.permanent_domain
+-%}
+
+{%- if product != blank -%}
+  <wagner-fe-trigger
+    class="fe-customize-block"
+    {{ block.shopify_attributes }}
+    data-source="product_page"
+    data-shop-domain="{{ shop_domain }}"
+    data-product-id="{{ product.id }}"
+    data-variant-id="{{ selected_variant.id }}"
+    data-variant-sku="{{ selected_variant.sku | escape }}"
+    style="{% render 'spacing-style', settings: block.settings %}"
+  >
+    <button
+      type="button"
+      class="{{ button_style }} fe-customize-block__btn"
+      ref="triggerBtn"
+      on:click="/handleLaunch"
+      aria-label="{{ button_text | escape }}: {{ product.title | escape }}"
+    >
+      {%- if block.settings.show_icon -%}
+        <span
+          class="svg-wrapper fe-customize-block__icon"
+          aria-hidden="true"
+        >
+          {{- 'icon-arrow.svg' | inline_asset_content -}}
+        </span>
+      {%- endif -%}
+      <span>{{ button_text }}</span>
+    </button>
+  </wagner-fe-trigger>
+{%- endif -%}
+
+{% stylesheet %}
+  .fe-customize-block {
+    display: block;
+    width: 100%;
+  }
+
+  .fe-customize-block__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-xs, 0.5rem);
+    width: 100%;
+    height: var(--height-buy-buttons, 3rem);
+    text-transform: var(--button-text-case-secondary);
+  }
+
+  .fe-customize-block__btn:focus-visible {
+    outline: 0.2rem solid rgb(var(--color-foreground-rgb) / 0.5);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    .fe-customize-block__btn:focus-visible {
+      outline: 0.2rem solid transparent;
+    }
+  }
+
+  .fe-customize-block__icon {
+    line-height: 0;
+    flex-shrink: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.fe_customize_button",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Opens the Fulfill Engine product designer. Place below the Add to Cart button on product pages."
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Customize"
+    },
+    {
+      "type": "select",
+      "id": "button_style",
+      "label": "Button style",
+      "options": [
+        { "value": "button", "label": "Primary" },
+        { "value": "button button--secondary", "label": "Secondary" }
+      ],
+      "default": "button button--secondary"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_icon",
+      "label": "Show icon",
+      "default": false
+    },
+    {
+      "type": "header",
+      "content": "Padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "Top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "Bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "Left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "Right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ],
+  "presets": [
+    {
+      "name": "t:names.fe_customize_button",
+      "category": "Product"
+    }
+  ]
+}
+{% endschema %}

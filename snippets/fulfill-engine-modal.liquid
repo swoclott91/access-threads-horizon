@@ -1,0 +1,219 @@
+{% doc %}
+  Fulfill Engine designer iframe modal.
+
+  Rendered once from layout/theme.liquid. Works as a singleton – any number of
+  wagner-fe-trigger blocks on the page share this single dialog.
+
+  Depends on assets/wagner-fe.js for the WagnerFeDialog and WagnerFeTrigger
+  custom elements.
+
+  @example
+    {% render 'fulfill-engine-modal' %}
+{% enddoc %}
+
+<script
+  src="{{ 'wagner-fe.js' | asset_url }}"
+  type="module"
+></script>
+
+<wagner-fe-dialog>
+  <dialog
+    ref="dialog"
+    class="dialog-modal fe-designer-modal__dialog"
+    aria-labelledby="fe-designer-modal-heading"
+    scroll-lock
+  >
+    <h2
+      id="fe-designer-modal-heading"
+      class="visually-hidden"
+    >
+      {{- 'blocks.fe_designer_heading' | t | default: 'Product Designer' -}}
+    </h2>
+
+    <button
+      type="button"
+      class="button button-unstyled close-button fe-designer-modal__close"
+      on:click="/closeDialog"
+      aria-label="{{ 'accessibility.close_dialog' | t | default: 'Close designer' }}"
+    >
+      <span class="svg-wrapper">
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </span>
+    </button>
+
+    {%- comment -%} Loading state {%- endcomment -%}
+    <div
+      ref="loadingState"
+      class="fe-designer-modal__state fe-designer-modal__loading"
+      aria-live="polite"
+    >
+      <div
+        class="fe-designer-modal__spinner"
+        aria-hidden="true"
+      ></div>
+      <p class="fe-designer-modal__state-text">Opening designer…</p>
+    </div>
+
+    {%- comment -%} Error state {%- endcomment -%}
+    <div
+      ref="errorState"
+      class="fe-designer-modal__state fe-designer-modal__error"
+      role="alert"
+      hidden
+    >
+      <span class="svg-wrapper fe-designer-modal__error-icon">
+        {{- 'icon-error.svg' | inline_asset_content -}}
+      </span>
+      <p
+        ref="errorMessage"
+        class="fe-designer-modal__error-text"
+      ></p>
+      <button
+        type="button"
+        class="button fe-designer-modal__close-error"
+        on:click="/closeDialog"
+      >
+        Close
+      </button>
+    </div>
+
+    {%- comment -%} Iframe container {%- endcomment -%}
+    <div
+      ref="iframeContainer"
+      class="fe-designer-modal__iframe-wrap"
+      hidden
+    >
+      <iframe
+        ref="feIframe"
+        class="fe-designer-modal__iframe"
+        title="{{ 'blocks.fe_designer_heading' | t | default: 'Product Designer' }}"
+        src=""
+        allow="clipboard-write; fullscreen"
+        loading="lazy"
+      ></iframe>
+    </div>
+  </dialog>
+</wagner-fe-dialog>
+
+{% stylesheet %}
+  .fe-designer-modal__dialog {
+    --fe-modal-padding: var(--padding-2xl, 2rem);
+    --fe-modal-max-width: 1200px;
+    --fe-modal-height: 85dvh;
+
+    display: flex;
+    flex-direction: column;
+    width: min(var(--fe-modal-max-width), 96vw);
+    height: var(--fe-modal-height);
+    max-height: var(--fe-modal-height);
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--color-background);
+    border: none;
+    border-radius: var(--style-border-radius-inputs, 4px);
+
+    @media screen and (max-width: 749px) {
+      --fe-modal-height: 92dvh;
+
+      width: 98vw;
+      border-radius: 0;
+    }
+  }
+
+  .fe-designer-modal__dialog:modal {
+    max-height: var(--fe-modal-height);
+  }
+
+  .fe-designer-modal__close {
+    position: absolute;
+    inset-block-start: var(--padding-md, 1rem);
+    inset-inline-end: var(--padding-md, 1rem);
+    z-index: 1;
+    padding: var(--padding-xs, 0.5rem);
+    color: var(--color-foreground);
+    background-color: var(--color-background);
+    border-radius: 50%;
+    line-height: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .fe-designer-modal__close:focus-visible {
+    outline: 0.2rem solid rgb(var(--color-foreground-rgb) / 0.5);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    .fe-designer-modal__close:focus-visible {
+      outline: 0.2rem solid transparent;
+    }
+  }
+
+  .fe-designer-modal__state {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap-md, 1.5rem);
+    padding: var(--fe-modal-padding);
+    text-align: center;
+  }
+
+  .fe-designer-modal__state-text {
+    margin: 0;
+    font-size: var(--font-size--sm, 0.875rem);
+    color: var(--color-foreground-secondary, var(--color-foreground));
+  }
+
+  .fe-designer-modal__spinner {
+    --fe-spinner-size: 3rem;
+
+    width: var(--fe-spinner-size);
+    height: var(--fe-spinner-size);
+    border: 3px solid rgb(var(--color-foreground-rgb) / 0.15);
+    border-block-start-color: rgb(var(--color-foreground-rgb) / 0.75);
+    border-radius: 50%;
+    animation: fe-spin 0.75s linear infinite;
+  }
+
+  @keyframes fe-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fe-designer-modal__spinner {
+      animation-duration: 3s;
+    }
+  }
+
+  .fe-designer-modal__error {
+    gap: var(--gap-md, 1.5rem);
+  }
+
+  .fe-designer-modal__error-icon {
+    color: var(--color-error, #dc3545);
+    line-height: 0;
+  }
+
+  .fe-designer-modal__error-text {
+    margin: 0;
+    font-size: var(--font-size--sm, 0.875rem);
+    max-width: 36ch;
+  }
+
+  .fe-designer-modal__iframe-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .fe-designer-modal__iframe {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+{% endstylesheet %}
