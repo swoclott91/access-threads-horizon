@@ -328,6 +328,20 @@
               },
               "blocks": {}
             },
+            "fe_customize_button_Uy7xGR": {
+              "type": "fe-customize-button",
+              "name": "t:names.fe_customize_button",
+              "settings": {
+                "button_text": "Customize",
+                "button_style": "button button--secondary",
+                "show_icon": false,
+                "padding-block-start": 0,
+                "padding-block-end": 0,
+                "padding-inline-start": 0,
+                "padding-inline-end": 0
+              },
+              "blocks": {}
+            },
             "at_buy_buttons_NKcy8K": {
               "type": "at-buy-buttons",
               "name": "AT Buy buttons",
@@ -400,6 +414,7 @@
             "group_icgrde",
             "divider_VJhene",
             "variant_picker_R3rGDr",
+            "fe_customize_button_Uy7xGR",
             "at_buy_buttons_NKcy8K",
             "text_aEtTtq"
           ]
