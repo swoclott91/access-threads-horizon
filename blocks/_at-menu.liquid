@@ -59,16 +59,6 @@
       assign panel_link = link
     endif
   endfor
-
-  # Conditional color-scheme class — only apply when different from parent row
-  # (mirrors _header-menu behaviour so transparency settings are inherited)
-  assign color_scheme_classes = ''
-  assign color_scheme_setting_id = 'color_scheme_' | append: section.settings.menu_row
-  assign current_color_scheme = block_settings.color_scheme
-  assign parent_color_scheme = section.settings[color_scheme_setting_id]
-  if current_color_scheme != blank and parent_color_scheme.id != current_color_scheme.id
-    assign color_scheme_classes = ' color-' | append: current_color_scheme
-  endif
 -%}
 
 {% case variant %}
@@ -108,7 +98,7 @@
 
           <div
             ref="menuDrawer"
-            class="menu-drawer color-{{ block_settings.color_scheme }}"
+            class="menu-drawer color-custom-drawer"
           >
             {%- render 'at-menu-mobile-drawer',
               menu_links: menu_links,
@@ -129,8 +119,13 @@
   ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {% when 'navigation_bar' %}
     {%- if block_settings.at_mobile_navigation_bar -%}
+      {% render 'contrast-override',
+        background_color: block_settings.background_color_navigation_bar,
+        text_color: block_settings.text_color_navigation_bar,
+        section_id: block.id
+      %}
       <div
-        class="menu-list menu-list--mobile{% if transparent == blank %} color-{{ block_settings.color_scheme_navigation_bar }}{% endif %}"
+        class="menu-list menu-list--mobile{% if transparent == blank %} color-custom-{{ block.id }}{% endif %}"
         style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;"
         {{ block.shopify_attributes }}
       >
@@ -160,9 +155,21 @@
     built-in _header-menu block.
   ══════════════════════════════════════════════════════════════════ {%- endcomment -%}
   {% else %}
+    {% liquid
+      render 'contrast-override', background_color: block_settings.background_color, text_color: block_settings.text_color, section_id: block.id
+
+      assign background_color_classes = ''
+      assign background_color_setting_id = 'background_color_' | append: section.settings.menu_row
+      assign current_background_color = block_settings.background_color | default: settings.page_background_color
+      assign parent_background_color = section.settings[background_color_setting_id] | default: settings.page_background_color
+
+      if parent_background_color != current_background_color or block_settings.text_color != blank
+        assign background_color_classes = ' color-custom-' | append: block.id
+      endif
+    %}
 
     <header-menu
-      class="header-menu{{ color_scheme_classes }}"
+      class="header-menu{{ background_color_classes }}"
       {{ block.shopify_attributes }}
     >
       <div class="header-menu__inner">
@@ -213,7 +220,7 @@
                 >
                   <span class="menu-list__link-title">{{- link.title -}}</span>
                 </a>
-                <div class="menu-list__submenu{{ color_scheme_classes }}">
+                <div class="menu-list__submenu{{ background_color_classes }}">
                   <div id="{{ submenu_id }}" class="menu-list__submenu-inner"
                     style="{%- render 'submenu-font-styles', settings: block_settings -%}">
                     <div class="mega-menu section section--full-width-margin section--{{ section.settings.section_width }}">
@@ -478,10 +485,20 @@
       "content": "t:content.appearance"
     },
     {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "primary"
+      "type": "paragraph",
+      "content": "t:content.menu_appearance_paragraph"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "default": "{{ settings.color_palette.background }}"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default"
     },
     {
       "type": "select",
@@ -533,6 +550,20 @@
       "id": "at_mobile_navigation_bar",
       "label": "t:settings.at_mobile_navigation_bar",
       "default": false
+    },
+    {
+      "type": "color",
+      "id": "background_color_navigation_bar",
+      "label": "t:settings.navigation_bar_background_color",
+      "default": "{{ settings.color_palette.background }}",
+      "visible_if": "{{ block.settings.at_mobile_navigation_bar }}"
+    },
+    {
+      "type": "color",
+      "id": "text_color_navigation_bar",
+      "label": "t:settings.navigation_bar_text_color",
+      "placeholder": "t:settings.default",
+      "visible_if": "{{ block.settings.at_mobile_navigation_bar }}"
     }
   ]
 }
