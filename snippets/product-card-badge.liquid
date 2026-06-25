@@ -6,15 +6,15 @@
 
 {%- liquid
   assign badge_label = blank
-  assign badge_color_scheme = blank
+  assign badge_class = 'color-custom-badge-sale'
 
   if product != blank
     if product.available == false
       assign badge_label = 'content.product_badge_sold_out' | t
-      assign badge_color_scheme = settings.badge_sold_out_color_scheme
+      assign badge_class = 'color-custom-badge-sold-out'
     elsif product.compare_at_price > product.price
       assign badge_label = 'content.product_badge_sale' | t
-      assign badge_color_scheme = settings.badge_sale_color_scheme
+      assign badge_class = 'color-custom-badge-sale'
     else
       assign badge_slots = '1,2,3,4,5,6,7,8' | split: ','
 
@@ -22,7 +22,6 @@
         assign enabled_setting_id = 'badge_custom_' | append: badge_slot | append: '_enabled'
         assign label_setting_id = 'badge_custom_' | append: badge_slot | append: '_label'
         assign tag_setting_id = 'badge_custom_' | append: badge_slot | append: '_tag'
-        assign color_scheme_setting_id = 'badge_custom_' | append: badge_slot | append: '_color_scheme'
 
         if settings[enabled_setting_id]
           assign custom_badge_label = settings[label_setting_id] | strip
@@ -34,7 +33,7 @@
 
               if normalized_product_tag == custom_badge_tag
                 assign badge_label = custom_badge_label
-                assign badge_color_scheme = settings[color_scheme_setting_id]
+                assign badge_class = 'color-custom-badge-sale'
                 break
               endif
             endfor
@@ -47,12 +46,10 @@
       endfor
     endif
   endif
-
-  assign badge_color_scheme = badge_color_scheme | default: settings.badge_sale_color_scheme | default: 'scheme-4'
 -%}
 
 {%- if badge_label != blank -%}
-  <div class="product-badges__badge product-badges__badge--rectangle color-{{ badge_color_scheme | escape }}">
+  <div class="product-badges__badge product-badges__badge--rectangle {{ badge_class }}">
     {{ badge_label | escape }}
   </div>
 {%- endif -%}

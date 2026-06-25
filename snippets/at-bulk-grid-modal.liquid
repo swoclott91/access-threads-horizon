@@ -24,7 +24,7 @@
 ></script>
 <dialog
   id="at-bulk-grid-quick-add-dialog"
-  class="at-bulk-grid-modal__dialog color-{{ settings.popover_color_scheme }}"
+  class="at-bulk-grid-modal__dialog color-custom-popover"
   aria-labelledby="at-bulk-grid-quick-add-heading"
 >
   <h2
@@ -36,7 +36,7 @@
 
   <div class="at-bulk-grid-modal__inner">
     {% if settings.at_discount_progress_enabled %}
-      <div class="at-dp-condensed-strip--tight at-discount-progress-scheme-wrap{% if settings.at_discount_progress_color_scheme != blank %} color-{{ settings.at_discount_progress_color_scheme }}{% endif %}">
+      <div class="at-dp-condensed-strip--tight at-discount-progress-scheme-wrap color-custom-at-discount-progress">
         {% render 'at-discount-progress',
           context: 'bulk-modal',
           layout: 'drawer_header',

@@ -1,19 +1,21 @@
 {%- doc -%}
   @param [limit] - {number}
-  @param [live_region] - {boolean}
-  @param [text_id] - {string} Optional id for the bubble text node (drawer uses a unique id).
 
-  The maximum number of items in the cart to display. If the number of items in the cart is greater than this limit, the
-  count will be displayed as "99+".
+  The maximum number of items to display. Anything above shows as "99+".
+
+  Colors: reads --cart-bubble-background / --cart-bubble-text from an ancestor. Falls back to a contrasting pair
+  computed from the palette foreground when unset.
 {%- enddoc -%}
 
-{%- liquid
-  assign bubble_text_id = text_id | default: 'cart-bubble-text'
--%}
+{% liquid
+  assign bubble_bg_fallback = settings.page_text_color
+  assign bubble_text_fallback = settings.page_background_color
+%}
 
 <div
   ref="cartBubble"
   class="cart-bubble{% if cart == empty %} visually-hidden{% endif %}"
+  style="--cart-bubble-background-fallback: {{ bubble_bg_fallback }}; --cart-bubble-text-fallback: {{ bubble_text_fallback }};"
   {% assign item_count = cart.item_count %}
   {% if item_count <= 99 %}
     data-maintain-ratio
@@ -22,16 +24,9 @@
   <span class="cart-bubble__background"></span>
   <span
     ref="cartBubbleText"
-    id="{{ bubble_text_id }}"
+    id="cart-bubble-text"
     class="cart-bubble__text"
-    {% if live_region %}
-      role="status"
-    {% endif %}
   >
-    <span class="visually-hidden">
-      {{- 'accessibility.cart_count' | t -}}
-      : {{ cart.item_count }}
-    </span>
     <span
       class="cart-bubble__text-count{% if cart == empty %} hidden{% endif %}"
       ref="cartBubbleCount"
@@ -58,7 +53,7 @@
     line-height: normal;
     align-items: center;
     justify-content: center;
-    color: var(--color-primary-button-text);
+    color: var(--cart-bubble-text, var(--cart-bubble-text-fallback));
     padding-inline: var(--cart-padding);
   }
 
@@ -73,7 +68,7 @@
   .cart-bubble__background {
     position: absolute;
     inset: 0;
-    background-color: var(--color-primary-button-background);
+    background-color: var(--cart-bubble-background, var(--cart-bubble-background-fallback));
     border-radius: var(--style-border-radius-lg);
   }
 

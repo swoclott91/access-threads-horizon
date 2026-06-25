@@ -27,11 +27,15 @@
   assign cats_ll = linklists[section.settings.at_categories_menu]
 
   assign section_id = 'at-menu-' | append: section.id
+
+  if section.settings.background_color != blank
+    render 'contrast-override', background_color: section.settings.background_color, text_color: section.settings.text_color, section_id: section.id
+  endif
 -%}
 
 <at-menu-component
   id="{{ section_id }}"
-  class="at-menu color-{{ section.settings.color_scheme }}"
+  class="at-menu{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
   style="
     --at-brand-avatar-size: 1.5rem;
     {% render 'menu-font-styles', settings: section.settings %}
@@ -414,10 +418,16 @@
       "content": "t:content.appearance"
     },
     {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "primary"
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "default": "{{ settings.color_palette.background }}"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default"
     },
     {
       "type": "select",

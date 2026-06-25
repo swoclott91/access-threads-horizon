@@ -9,6 +9,12 @@
   @param {string} [customer_account_menu] - Menu handle for shopify-account (default matches header: customer-account-main-menu).
   @param {string} [layout] - 'drawer_header' for inline “Get member discounts” + Log in (cart drawer header, bulk modals when logged out); default is the card prompt.
 {%- enddoc -%}
+{% render 'contrast-override',
+  background_color: '#2c2c2c',
+  text_color: '#f7f2ea',
+  section_id: 'at-discount-progress',
+  preset: 'ui'
+%}
 {%- liquid
   assign dp_customer_account_menu = customer_account_menu | default: 'customer-account-main-menu'
   assign dp_layout = layout | default: ''
