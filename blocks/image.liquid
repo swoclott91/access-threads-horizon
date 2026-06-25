@@ -18,12 +18,20 @@
 
 {% capture class %}
   image-block image-block--{{ block.id }} image-block--height-{{ block_settings.height }} spacing-style size-style
+  {%- if block_settings.hover_scale %} image-block--hover-scale{%- endif -%}
+  {%- if block_settings.hover_tint_color != blank %} image-block--hover-tint{%- endif -%}
 {% endcapture %}
 
 {% capture style %}
   --ratio: {{ ratio }};
   {% render 'size-style', settings: block_settings %}
   {% render 'spacing-style', settings: block_settings %}
+  {%- if block_settings.hover_tint_color != blank -%}
+    --image-hover-tint-color: {{ block_settings.hover_tint_color }};
+  {%- endif -%}
+  {%- if block_settings.border_radius > 0 -%}
+    --image-block-radius: {{ block_settings.border_radius }}px;
+  {%- endif -%}
 {% endcapture %}
 
 {% capture image_border_style %}
@@ -107,6 +115,37 @@
   .image-block__image {
     object-fit: cover;
     aspect-ratio: var(--ratio);
+  }
+
+  /* Hover effects */
+  .image-block--hover-scale .image-block__image,
+  .image-block--hover-tint .image-block__image {
+    transition: transform var(--hover-transition-duration, 0.25s) var(--hover-transition-timing, ease-out);
+  }
+
+  /* Tint color overlay using mix-blend-mode: multiply so white SVG pixels take on the chosen colour
+     while transparent SVG areas remain transparent (isolation: isolate keeps blending contained) */
+  .image-block--hover-tint {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: var(--image-block-radius, 0);
+  }
+
+  .image-block--hover-tint::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--image-hover-tint-color);
+    mix-blend-mode: multiply;
+    opacity: 0;
+    transition: opacity var(--hover-transition-duration, 0.25s) var(--hover-transition-timing, ease-out);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .image-block--hover-tint:hover::after {
+    opacity: 1;
   }
 {% endstylesheet %}
 
@@ -275,6 +314,13 @@
       "visible_if": "{{ block.settings.border != 'none' }}"
     },
     {
+      "type": "color",
+      "id": "border_color",
+      "label": "t:settings.color",
+      "placeholder": "t:settings.default",
+      "visible_if": "{{ block.settings.border != 'none' }}"
+    },
+    {
       "type": "range",
       "id": "border_radius",
       "label": "t:settings.border_radius",
@@ -327,6 +373,21 @@
       "step": 1,
       "unit": "px",
       "default": 0
+    },
+    {
+      "type": "header",
+      "content": "t:content.hover_effects"
+    },
+    {
+      "type": "checkbox",
+      "id": "hover_scale",
+      "label": "t:settings.hover_scale",
+      "default": false
+    },
+    {
+      "type": "color",
+      "id": "hover_tint_color",
+      "label": "t:settings.hover_tint_color"
     }
   ],
   "presets": [

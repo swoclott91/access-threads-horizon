@@ -89,7 +89,7 @@
 
       <dialog
         ref="dialog"
-        class="at-buy-buttons__bulk-dialog dialog-modal color-{{ settings.popover_color_scheme }}{% if block_settings.at_bulk_behavior == 'drawer' %} at-buy-buttons__bulk-dialog--drawer dialog-drawer{% endif %}"
+        class="at-buy-buttons__bulk-dialog dialog-modal color-custom-popover{% if block_settings.at_bulk_behavior == 'drawer' %} at-buy-buttons__bulk-dialog--drawer dialog-drawer{% endif %}"
         scroll-lock
         aria-labelledby="at-bulk-dialog-heading-{{ block.id }}"
       >
@@ -101,7 +101,7 @@
         </h2>
         <div class="at-buy-buttons__bulk-dialog-inner">
           {% if settings.at_discount_progress_enabled %}
-            <div class="at-dp-condensed-strip--tight at-discount-progress-scheme-wrap{% if settings.at_discount_progress_color_scheme != blank %} color-{{ settings.at_discount_progress_color_scheme }}{% endif %}">
+            <div class="at-dp-condensed-strip--tight at-discount-progress-scheme-wrap color-custom-at-discount-progress">
               {% render 'at-discount-progress',
                 context: 'bulk-modal',
                 layout: 'drawer_header',
@@ -408,7 +408,7 @@
         </div>
         <dialog
           ref="dialog"
-          class="dialog-modal dialog-drawer pickup-location__dialog color-{{ settings.drawer_color_scheme }}"
+          class="dialog-modal dialog-drawer pickup-location__dialog color-custom-drawer"
           scroll-lock
           aria-labelledby="pickup-dialog-heading"
           data-testid="pickup-location-dialog"

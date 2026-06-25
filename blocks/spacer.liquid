@@ -62,7 +62,8 @@
     .layout-panel-flex--column > .spacer-block--size-mobile-percent,
     .mobile-column > .spacer-block--size-percent:not(.spacer-block--size-mobile-pixel) {
       width: 100%;
-      flex: var(--spacer-size-mobile);
+      /* Fall back to the desktop flex ratio when no mobile override is set */
+      flex: var(--spacer-size-mobile, var(--spacer-size));
     }
 
     /* Pixel */
@@ -76,6 +77,18 @@
       width: 100%;
       flex: 0;
       height: var(--spacer-size-mobile);
+    }
+
+    /*
+     * Pixel spacer inside a row-direction group that goes vertical on mobile
+     * and has no custom mobile size set. Rotate the fixed size from width → height
+     * so the spacer keeps its intended visual gap. Uses desktop --spacer-size as
+     * the height value since no mobile override exists.
+     */
+    .mobile-column > .spacer-block--size-pixel:not(.spacer-block--size-mobile-pixel):not(.spacer-block--size-mobile-percent) {
+      width: 100%;
+      flex: 0;
+      height: var(--spacer-size);
     }
   }
 {% endstylesheet %}
