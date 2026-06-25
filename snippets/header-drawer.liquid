@@ -35,10 +35,6 @@
   if section.index == blank
     assign eager_loading = true
   endif
-
-  if block_settings.background_color != blank or block_settings.text_color != blank
-    render 'contrast-override', background_color: block_settings.background_color, text_color: block_settings.text_color, section_id: block.id
-  endif
 %}
 
 <script
@@ -74,13 +70,11 @@
       ref="menuDrawer"
       class="
         menu-drawer
-        {% if block_settings.background_color != blank or block_settings.text_color != blank %}
-          color-custom-{{ block.id }}
-        {% endif %}
+        color-{{ block_settings.color_scheme }}
       "
     >
       <button
-        class="button close-button menu-drawer__close-button focus-inset"
+        class="button close-button menu-drawer__close-button"
         type="button"
         aria-label="{{ 'actions.close' | t }}"
         on:click="/close"
@@ -303,7 +297,7 @@
                             <span class="menu-drawer__menu-item-text wrap-text">{{ link.title | escape }}</span>
                           </button>
                           <button
-                            class="button button-unstyled close-button menu-drawer__close-button focus-inset"
+                            class="button button-unstyled close-button menu-drawer__close-button"
                             type="button"
                             aria-label="{{ 'actions.close' | t }}"
                             on:click="header-drawer/close"
@@ -546,8 +540,7 @@
                                         resource: product,
                                         resource_type: 'product',
                                         image_aspect_ratio: ratio,
-                                        image_sizes: 'auto, 400px',
-                                        product_view_context: 'dialog'
+                                        image_sizes: 'auto, 400px'
                                       %}
                                     </li>
                                   {%- endfor -%}
@@ -596,7 +589,7 @@
         %}
         {% if data_header_drawer_type == 'mobile-drawer' and show_country or show_language %}
           {% liquid
-            assign background_brightness = block_settings.background_color | color_brightness
+            assign background_brightness = block.settings.color_scheme.settings.background | color_brightness
             if background_brightness < 64
               assign flag_shadow_size = 4
             else
@@ -608,7 +601,7 @@
             assign form_style = localization_font | append: color_shadow
           %}
           {% if show_language and show_country == false %}
-            <div class="menu-drawer__localization color-custom-popover">
+            <div class="menu-drawer__localization color-{{ settings.popover_color_scheme }}">
               {% render 'localization-form',
                 show_country: show_country,
                 show_language: show_language,
@@ -626,14 +619,14 @@
               >
                 <summary
                   id="HeaderDrawer-localization"
-                  class="drawer-localization__button h3 focus-inset"
+                  class="drawer-localization__button h3 link focus-inset"
                   aria-expanded="false"
                   on:click="header-drawer/open/submenu"
                   style="{{ form_style }}"
                 >
                   <div class="drawer-localization__button--label h6">
                     {%- if show_country -%}
-                      <div class="mobile-localization mobile-localization--country">
+                      <div class="mobile-localization mobile-localization--country link">
                         {%- if section.settings.country_selector_style == true -%}
                           <span
                             class="icon-flag"
@@ -655,7 +648,7 @@
                     {%- endif -%}
 
                     {%- if show_language -%}
-                      <div class="mobile-localization mobile-localization--country">
+                      <div class="mobile-localization mobile-localization--country link">
                         <span>
                           {{ localization.language.iso_code | upcase }}
                         </span>
@@ -668,14 +661,15 @@
                 </summary>
 
                 <div
-                  class="menu-drawer__submenu has-submenu color-custom-drawer"
+                  class="menu-drawer__submenu has-submenu color-{{ settings.drawer_color_scheme }}"
+                  style=""
                 >
                   <div
                     class="menu-drawer__nav-buttons"
                     ref="navButtons"
                   >
                     <button
-                      class="button menu-drawer__back-button focus-inset"
+                      class="button menu-drawer__back-button link focus-inset"
                       on:click="header-drawer/back"
                     >
                       <span class="svg-wrapper icon-caret icon-caret--backward">
@@ -684,7 +678,7 @@
                       {{ 'content.localization_region_and_language' | t }}
                     </button>
                     <button
-                      class="button close-button menu-drawer__close-button focus-inset"
+                      class="button close-button menu-drawer__close-button"
                       type="button"
                       aria-label="{{ 'actions.close' | t }}"
                       on:click="header-drawer/close"
@@ -753,8 +747,7 @@
                       resource: product,
                       resource_type: 'product',
                       image_aspect_ratio: ratio,
-                      image_sizes: 'auto, 400px',
-                      product_view_context: 'dialog'
+                      image_sizes: 'auto, 400px'
                     %}
                   </li>
                 {%- endfor -%}
@@ -867,6 +860,7 @@
     overflow: auto;
     display: flex;
     border-right: var(--style-border-drawer);
+    box-shadow: var(--shadow-drawer);
     flex-direction: column;
 
     @media screen and (min-width: 750px) {
@@ -886,7 +880,7 @@
     width: 100vw;
     height: 100dvh;
     backdrop-filter: brightness(0.75);
-    z-index: var(--layer-overlay);
+    z-index: var(--layer-heightened);
     opacity: 0;
     transition: opacity var(--drawer-animation-speed) ease;
 
@@ -1186,11 +1180,6 @@
     box-shadow: none;
   }
 
-  .menu-drawer__close-button.menu-drawer__close-button,
-  .menu-drawer__back-button.menu-drawer__back-button {
-    outline-color: var(--color-foreground-subdued);
-  }
-
   .menu-drawer__menu-item-text {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1250,6 +1239,7 @@
     padding: 0;
     margin-block: auto var(--padding-sm);
     margin-inline-start: var(--padding-xl);
+    background-color: rgb(var(--color-foreground) 0.03);
   }
 
   .menu-drawer__account {
@@ -1415,7 +1405,6 @@
 
   .drawer-localization .language-selector .svg-wrapper.icon-caret {
     transform: translateY(-50%) rotate(0deg);
-    right: 20px;
   }
 
   .drawer-localization .language-selector .svg-wrapper.icon-caret svg {

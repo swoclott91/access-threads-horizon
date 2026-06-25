@@ -9,23 +9,13 @@
   fetchpriority="low"
 ></script>
 
-{% render 'text-component-shimmer-styles' %}
-
-{% liquid
-  if section.settings.background_color != blank
-    render 'contrast-override', background_color: section.settings.background_color, section_id: section.id
-  endif
-%}
-
-<div
-  class="section-background{% if section.settings.background_color != blank %} color-custom-{{ section.id }}{% endif %}"
-></div>
+<div class="section-background color-{{ section.settings.color_scheme }}"></div>
 
 <div
   class="
     section
     section--{{ section.settings.section_width }}
-    {% if section.settings.background_color != blank %}color-custom-{{ section.id }}{% endif %}
+    color-{{ section.settings.color_scheme }}
     section-resource-list
     spacing-style
     gap-style
@@ -40,7 +30,6 @@
     data-section-id="{{ section.id }}"
     data-product-id="{{ product.id }}"
     data-cart-variant-ids="{{ items_in_cart | map: 'variant_id' | json | escape }}"
-    data-cart-line-keys="{{ items_in_cart | map: 'key' | json | escape }}"
     data-url="{{ product.url }}"
     on:submit="/handleSubmit"
   >
@@ -151,7 +140,6 @@
                 <div
                   class="quick-order-list__grid-row variant-item"
                   data-variant-id="{{ variant.id }}"
-                  data-cart-line-key="{{ variant_line_item.key }}"
                   ref="variantRows[]"
                   role="row"
                 >
@@ -1148,10 +1136,10 @@
       "default": false
     },
     {
-      "type": "color",
-      "id": "background_color",
-      "label": "t:settings.background_color",
-      "placeholder": "t:settings.default"
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1"
     },
     {
       "type": "header",

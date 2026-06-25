@@ -1,9 +1,11 @@
 /**
- * Request an idle callback or fallback to setTimeout
- * @returns {function} The requestIdleCallback function
+ * Schedules a callback during idle periods, or falls back to setTimeout.
+ * @type {(callback: IdleRequestCallback, options?: IdleRequestOptions) => number}
  */
 export const requestIdleCallback =
-  typeof window.requestIdleCallback == 'function' ? window.requestIdleCallback : setTimeout;
+  typeof window.requestIdleCallback === 'function'
+    ? (cb, opts) => window.requestIdleCallback(cb, opts)
+    : (cb) => window.setTimeout(cb, 0);
 
 /**
  * Returns a promise that resolves after yielding to the main thread.
@@ -36,6 +38,25 @@ export function isLowPowerDevice() {
  */
 export function supportsViewTransitions() {
   return typeof document.startViewTransition === 'function';
+}
+
+/**
+ * Detect Facebook / Instagram in-app browsers (Meta WebView).
+ *
+ * Reports of Meta's in-app browsers (Facebook, Instagram) that fail to paint during
+ * cross-document (MPA) View Transitions implementation that can freeze or
+ * white-screen the storefront on navigation. June 2026 testing.
+ * Remove check if every resolved.
+ *
+ * Note: the IIFE in view-transitions.js has an inline copy of this logic (it
+ * runs before modules load) — keep the two in sync.
+ * @param {string} [userAgent=navigator.userAgent] - User-agent string to test.
+ *   Defaults to the live `navigator.userAgent`; pass an explicit value to keep
+ *   the function pure and testable without overriding the browser UA.
+ * @returns {boolean} True if running inside a Facebook/Instagram in-app browser.
+ */
+export function isMetaInAppBrowser(userAgent = navigator.userAgent) {
+  return /\b(FBAN|FBAV|FB_IAB|FBIOS|Instagram)\b/i.test(userAgent || '');
 }
 
 /**
@@ -91,9 +112,8 @@ const viewTransitionTypes = {
  */
 export function startViewTransition(callback, types) {
   // Check if the API is supported and transitions are desired
-  if (!supportsViewTransitions() || isLowPowerDevice() || prefersReducedMotion()) {
-    callback();
-    return Promise.resolve();
+  if (!supportsViewTransitions() || isLowPowerDevice() || prefersReducedMotion() || isMetaInAppBrowser()) {
+    return Promise.resolve(callback());
   }
 
   // eslint-disable-next-line no-async-promise-executor
@@ -259,10 +279,11 @@ export function onDocumentLoaded(callback) {
  * Check if the DOM is ready and call the callback when it is.
  * This fires when the DOM is fully parsed but before all resources are loaded.
  * @param {() => void} callback The function to call when the DOM is ready.
+ * @param {AddEventListenerOptions} [options] The options to pass to `document.addEventListener`.
  */
-export function onDocumentReady(callback) {
+export function onDocumentReady(callback, options) {
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', callback);
+    document.addEventListener('DOMContentLoaded', callback, options);
   } else {
     callback();
   }
@@ -302,6 +323,57 @@ export function onAnimationEnd(elements, callback, options = { subtree: true }) 
   }, /** @type {Promise<Animation>[]} */ ([]));
 
   return Promise.allSettled(animationPromises).then(callback);
+}
+
+/** @type {Set<Element>} */
+const scrollLockOwners = new Set();
+
+/** @type {MutationObserver | undefined} */
+let scrollLockObserver;
+
+function pruneDisconnectedScrollLockOwners() {
+  for (const owner of scrollLockOwners) {
+    if (!owner.isConnected) {
+      scrollLockOwners.delete(owner);
+    }
+  }
+}
+
+function syncScrollLock() {
+  pruneDisconnectedScrollLockOwners();
+
+  if (scrollLockOwners.size > 0) {
+    document.documentElement.setAttribute('scroll-lock', '');
+
+    if (!scrollLockObserver) {
+      scrollLockObserver = new MutationObserver(syncScrollLock);
+      scrollLockObserver.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
+    return;
+  }
+
+  document.documentElement.removeAttribute('scroll-lock');
+  scrollLockObserver?.disconnect();
+  scrollLockObserver = undefined;
+}
+
+/**
+ * Locks root scrolling for an owning element.
+ * @param {Element} owner - The element that owns the scroll lock.
+ */
+export function lockScroll(owner) {
+  scrollLockOwners.add(owner);
+  syncScrollLock();
+}
+
+/**
+ * Unlocks root scrolling for an owning element.
+ * @param {Element} owner - The element that owns the scroll lock.
+ */
+export function unlockScroll(owner) {
+  scrollLockOwners.delete(owner);
+  syncScrollLock();
 }
 
 /**
